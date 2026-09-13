@@ -351,22 +351,34 @@ function renderBlocksToDocx(blocksJsonStr: string): (Paragraph | Table)[] {
   return elements;
 }
 
+import { MASTER_SECTIONS } from '@/lib/sectionsData';
+
 export async function GET() {
   try {
-    const sections = await prisma.documentSection.findMany({
-      include: {
-        subSections: { orderBy: { displayOrder: 'asc' } },
-      },
-      orderBy: { displayOrder: 'asc' },
-    });
+    let sections: any[] = [];
+    let changes: any[] = [];
+    let attachments: any[] = [];
 
-    const changes = await prisma.caisChange.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      sections = await prisma.documentSection.findMany({
+        include: {
+          subSections: { orderBy: { displayOrder: 'asc' } },
+        },
+        orderBy: { displayOrder: 'asc' },
+      });
+      changes = await prisma.caisChange.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      attachments = await prisma.documentAttachment.findMany({
+        orderBy: { uploadedAt: 'desc' },
+      });
+    } catch (dbErr) {
+      console.error('DB query failed in DOCX export, using fallbacks:', dbErr);
+    }
 
-    const attachments = await prisma.documentAttachment.findMany({
-      orderBy: { uploadedAt: 'desc' },
-    });
+    if (!sections || sections.length === 0) {
+      sections = MASTER_SECTIONS;
+    }
 
     const secMap: Record<string, any> = {};
     sections.forEach((s) => {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { MASTER_SECTIONS } from '@/lib/sectionsData';
 
 const prisma = new PrismaClient();
 
@@ -27,9 +28,12 @@ export async function GET() {
       orderBy: { displayOrder: 'asc' },
     });
 
-    return NextResponse.json({ sections });
+    if (sections && sections.length > 0) {
+      return NextResponse.json({ sections });
+    }
   } catch (error: any) {
-    console.error('Error fetching sections:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error fetching sections from DB, using fallback:', error?.message);
   }
+
+  return NextResponse.json({ sections: MASTER_SECTIONS });
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { MASTER_SECTIONS } from '@/lib/sectionsData';
 
 const prisma = new PrismaClient();
 
@@ -21,15 +22,24 @@ export async function POST(req: NextRequest) {
 
     const qLower = question.toLowerCase().trim();
 
-    // Fetch all document content and change register entries from SQLite database
-    const sections = await prisma.documentSection.findMany({
-      include: { subSections: { orderBy: { displayOrder: 'asc' } } },
-      orderBy: { displayOrder: 'asc' },
-    });
+    let sections: any[] = [];
+    let changes: any[] = [];
 
-    const changes = await prisma.caisChange.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      sections = await prisma.documentSection.findMany({
+        include: { subSections: { orderBy: { displayOrder: 'asc' } } },
+        orderBy: { displayOrder: 'asc' },
+      });
+      changes = await prisma.caisChange.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (dbErr) {
+      console.error('DB query failed in ask-hld, using fallbacks:', dbErr);
+    }
+
+    if (!sections || sections.length === 0) {
+      sections = MASTER_SECTIONS;
+    }
 
     // Helper to check if text includes any of the keywords
     const matchesAny = (text: string, terms: string[]) => {
