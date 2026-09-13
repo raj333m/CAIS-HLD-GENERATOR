@@ -119,16 +119,9 @@ export default function DashboardPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             CAIS Change Activity Dashboard
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Consolidated HLD Status: <span className="font-bold text-slate-700 dark:text-slate-200">{hldReviewProgress.approved}/14 Sections Approved</span>
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-900 text-white px-3.5 py-2 rounded-xl border border-slate-800 text-xs font-bold shadow-xs">
-            <span>HLD Status:</span>
-            <StatusBadge status={hldReviewProgress.status} />
-          </div>
           <Link
             href="/document"
             className="px-4 py-2 rounded-xl bg-[#C0272D] hover:bg-red-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all"
