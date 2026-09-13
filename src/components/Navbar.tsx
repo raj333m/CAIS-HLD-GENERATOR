@@ -78,7 +78,6 @@ export default function Navbar() {
                   CAIS HLD Generator
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-mono">Experian • Equifax • TransUnion</p>
             </div>
           </Link>
 

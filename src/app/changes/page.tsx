@@ -90,20 +90,9 @@ export default function ChangesRegisterPage() {
       {/* Header Banner */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-purple-700 dark:text-purple-300 px-2.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20">
-              SECTION 3
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1">
-              <History className="w-3.5 h-3.5" /> Immutable Append-Only Register
-            </span>
-          </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
             CAIS Change Register Audit Log
           </h1>
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Chronological audit register of all CAIS reporting updates across HSBC, First Direct & M&S Brands.
-          </p>
         </div>
       </div>
 

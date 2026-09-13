@@ -111,9 +111,6 @@ export default function DetailedChangeCard({
         className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/50 hover:bg-slate-100/60 dark:bg-slate-900/50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800/60"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-mono text-xs font-bold shrink-0 border border-blue-500/20">
-            {change.crReference.replace('CAIS-', '')}
-          </div>
           <div>
             <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
               <span className="font-mono text-blue-600 dark:text-blue-400">{change.crReference}</span>
