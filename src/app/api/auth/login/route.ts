@@ -18,11 +18,41 @@ export async function POST(req: NextRequest) {
       };
       const targetEmail = roleEmailMap[demoRole] || 'ba@cais.com';
       user = await db.user.findUnique({ where: { email: targetEmail } });
+      
+      if (!user) {
+        // Auto-provision demo user on demand if db is unseeded
+        const passwordHash = bcrypt.hashSync('password123', 10);
+        user = await db.user.create({
+          data: {
+            email: targetEmail,
+            name: demoRole === 'BA' ? 'Business Analyst (Author)' : demoRole === 'REVIEWER' ? 'Reviewer / Lead' : 'System Administrator',
+            role: demoRole,
+            passwordHash,
+            isActive: true,
+          },
+        });
+      }
     } else {
       if (!email || !password) {
         return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
       }
       user = await db.user.findUnique({ where: { email: email.toLowerCase() } });
+      
+      // Auto-provision demo user for standard email input if unseeded
+      if (!user && (email.toLowerCase() === 'ba@cais.com' || email.toLowerCase() === 'reviewer@cais.com' || email.toLowerCase() === 'admin@cais.com')) {
+        const role = email.toLowerCase().includes('admin') ? 'ADMIN' : email.toLowerCase().includes('reviewer') ? 'REVIEWER' : 'BA';
+        const passwordHash = bcrypt.hashSync('password123', 10);
+        user = await db.user.create({
+          data: {
+            email: email.toLowerCase(),
+            name: role === 'BA' ? 'Business Analyst (Author)' : role === 'REVIEWER' ? 'Reviewer / Lead' : 'System Administrator',
+            role,
+            passwordHash,
+            isActive: true,
+          },
+        });
+      }
+
       if (!user) {
         return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
       }
