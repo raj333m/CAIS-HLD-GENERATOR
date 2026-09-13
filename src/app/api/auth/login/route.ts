@@ -3,66 +3,80 @@ import { db } from '@/lib/db';
 import { signToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
+const DEMO_USERS: Record<string, any> = {
+  BA: {
+    id: 'ba-demo-user-id',
+    name: 'Business Analyst (Author)',
+    email: 'ba@cais.com',
+    role: 'BA',
+    isActive: true,
+  },
+  REVIEWER: {
+    id: 'reviewer-demo-user-id',
+    name: 'Reviewer / Lead',
+    email: 'reviewer@cais.com',
+    role: 'REVIEWER',
+    isActive: true,
+  },
+  ADMIN: {
+    id: 'admin-demo-user-id',
+    name: 'System Administrator',
+    email: 'admin@cais.com',
+    role: 'ADMIN',
+    isActive: true,
+  },
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password, demoRole } = await req.json();
 
-    let user;
+    let user: any = null;
 
-    // Handle Quick Demo Role Switcher on login screen
     if (demoRole) {
-      const roleEmailMap: Record<string, string> = {
-        BA: 'ba@cais.com',
-        REVIEWER: 'reviewer@cais.com',
-        ADMIN: 'admin@cais.com',
-      };
-      const targetEmail = roleEmailMap[demoRole] || 'ba@cais.com';
-      user = await db.user.findUnique({ where: { email: targetEmail } });
+      const targetRole = (String(demoRole).toUpperCase() as 'BA' | 'REVIEWER' | 'ADMIN') || 'BA';
+      const targetEmail = DEMO_USERS[targetRole]?.email || 'ba@cais.com';
       
+      try {
+        user = await db.user.findUnique({ where: { email: targetEmail } });
+      } catch (e) {
+        console.warn('DB lookup failed during demo login:', e);
+      }
+
       if (!user) {
-        // Auto-provision demo user on demand if db is unseeded
-        const passwordHash = bcrypt.hashSync('password123', 10);
-        user = await db.user.create({
-          data: {
-            email: targetEmail,
-            name: demoRole === 'BA' ? 'Business Analyst (Author)' : demoRole === 'REVIEWER' ? 'Reviewer / Lead' : 'System Administrator',
-            role: demoRole,
-            passwordHash,
-            isActive: true,
-          },
-        });
+        user = DEMO_USERS[targetRole] || DEMO_USERS.BA;
       }
     } else {
       if (!email || !password) {
         return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
       }
-      user = await db.user.findUnique({ where: { email: email.toLowerCase() } });
-      
-      // Auto-provision demo user for standard email input if unseeded
-      if (!user && (email.toLowerCase() === 'ba@cais.com' || email.toLowerCase() === 'reviewer@cais.com' || email.toLowerCase() === 'admin@cais.com')) {
-        const role = email.toLowerCase().includes('admin') ? 'ADMIN' : email.toLowerCase().includes('reviewer') ? 'REVIEWER' : 'BA';
-        const passwordHash = bcrypt.hashSync('password123', 10);
-        user = await db.user.create({
-          data: {
-            email: email.toLowerCase(),
-            name: role === 'BA' ? 'Business Analyst (Author)' : role === 'REVIEWER' ? 'Reviewer / Lead' : 'System Administrator',
-            role,
-            passwordHash,
-            isActive: true,
-          },
-        });
+
+      const cleanEmail = email.toLowerCase().trim();
+
+      try {
+        user = await db.user.findUnique({ where: { email: cleanEmail } });
+      } catch (e) {
+        console.warn('DB lookup failed during login:', e);
       }
 
       if (!user) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
-      }
-      const isPasswordValid = bcrypt.compareSync(password, user.passwordHash);
-      if (!isPasswordValid) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+        // Fallback for standard demo login credentials if DB is unseeded
+        if (cleanEmail === 'ba@cais.com' && (password === 'password123' || password === 'ba')) {
+          user = DEMO_USERS.BA;
+        } else if (cleanEmail === 'reviewer@cais.com' && (password === 'password123' || password === 'reviewer')) {
+          user = DEMO_USERS.REVIEWER;
+        } else if (cleanEmail === 'admin@cais.com' && (password === 'password123' || password === 'admin')) {
+          user = DEMO_USERS.ADMIN;
+        }
+      } else {
+        const isPasswordValid = bcrypt.compareSync(password, user.passwordHash);
+        if (!isPasswordValid) {
+          return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+        }
       }
     }
 
-    if (!user || !user.isActive) {
+    if (!user || user.isActive === false) {
       return NextResponse.json({ error: 'User account inactive or not found' }, { status: 403 });
     }
 
@@ -81,7 +95,6 @@ export async function POST(req: NextRequest) {
       token,
     });
 
-    // Set cookie
     response.cookies.set('cais_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -93,6 +106,6 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: any) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
   }
 }
