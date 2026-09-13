@@ -1,0 +1,261 @@
+// Prisma schema file for CAIS HLD Generator (SQLite compatible)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         String       @default("BA") // "BA" | "REVIEWER" | "ADMIN"
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  createdHlds  HldDocument[] @relation("CreatedHlds")
+  reviewedHlds HldDocument[] @relation("ReviewedHlds")
+  comments     HldComment[]
+  editedVersions HldVersion[]
+  sectionEdits DocumentSection[] @relation("UserSectionEdits")
+  subSectionEdits SubSection[] @relation("UserSubSectionEdits")
+  versionEdits SectionVersion[] @relation("UserSectionVersions")
+  createdChanges CaisChange[] @relation("CreatedChanges")
+  reviewedChanges CaisChange[] @relation("ReviewedChanges")
+}
+
+model DocumentSection {
+  id             String          @id @default(uuid())
+  sectionNumber  String          @unique // e.g. "1.1", "1.2", "1.3", "1.4", "1.5", "2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "APPENDIX"
+  title          String
+  displayOrder   Int             @default(0)
+  lastUpdatedById String?
+  lastUpdatedBy  User?           @relation("UserSectionEdits", fields: [lastUpdatedById], references: [id])
+  updatedAt      DateTime        @updatedAt
+
+  subSections    SubSection[]
+}
+
+model SubSection {
+  id                String          @id @default(uuid())
+  documentSectionId String
+  documentSection   DocumentSection @relation(fields: [documentSectionId], references: [id], onDelete: Cascade)
+  heading           String?         // Nullable: section can open with un-headed intro paragraphs
+  displayOrder      Int             @default(0)
+  contentBlocks     String          // JSON array of blocks: [{type: 'paragraph'|'bullets'|'table'|'diagram_placeholder', payload: ...}]
+  lastUpdatedById   String?
+  lastUpdatedBy     User?           @relation("UserSubSectionEdits", fields: [lastUpdatedById], references: [id])
+  updatedAt         DateTime        @updatedAt
+
+  versions          SectionVersion[]
+}
+
+model SectionVersion {
+  id              String          @id @default(uuid())
+  subSectionId    String
+  subSection      SubSection      @relation(fields: [subSectionId], references: [id], onDelete: Cascade)
+  versionNumber   Int
+  contentSnapshot String          // JSON snapshot of content_blocks + heading
+  editedById      String
+  editedBy        User            @relation("UserSectionVersions", fields: [editedById], references: [id])
+  changeId        String?
+  change          CaisChange?     @relation(fields: [changeId], references: [id], onDelete: SetNull)
+  createdAt       DateTime        @default(now())
+}
+
+model CaisChange {
+  id                String            @id @default(uuid())
+  crReference       String            @unique // e.g. "CAIS-2026-001"
+  title             String
+  status            String            @default("DRAFT") // "DRAFT" | "IN_REVIEW" | "APPROVED" | "SENT_BACK"
+  changeType        String            // Comma-separated categories
+  businessDriver    String            // Regulatory or business driver
+  description       String            // Change description
+  beforeText        String?           // Pre-change logic description
+  afterText         String?           // Post-change logic description
+  sectionsUpdated   String            // Comma-separated section numbers (e.g. "1.3 - HSBC Cards, 2.5 - Variable 19")
+  impactedBureaus   String            // Experian, Equifax, TransUnion
+  impactedDataItems String?           // CAIS Variables/Fields affected
+  targetMonth       String            // e.g. "November 2026"
+  
+  createdById       String
+  createdBy         User              @relation("CreatedChanges", fields: [createdById], references: [id])
+  reviewedById      String?
+  reviewedBy        User?             @relation("ReviewedChanges", fields: [reviewedById], references: [id])
+  reviewComments    String?
+  
+  createdAt         DateTime          @default(now())
+  approvedAt        DateTime?
+  updatedAt         DateTime          @updatedAt
+
+  sectionVersions   SectionVersion[]
+  risks             ChangeRisk[]
+}
+
+model ChangeRisk {
+  id          String      @id @default(uuid())
+  changeId    String
+  change      CaisChange  @relation(fields: [changeId], references: [id], onDelete: Cascade)
+  risk        String
+  impact      String
+  mitigation  String
+}
+
+model CaisDataItem {
+  id                String       @id @default(uuid())
+  itemCode          String       @unique
+  itemName          String
+  category          String       // e.g. Account Identification, Balance & Limit, Status & Arrears, Default & Recovery, Special Flags
+  description       String
+  currentDefinition String
+  positionInLayout  Int          @default(0)
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  impacts           HldDataItemImpact[]
+}
+
+model Bureau {
+  id                String       @id @default(uuid())
+  name              String       @unique // Experian, Equifax, TransUnion
+  submissionChannel String
+  fileFormat        String
+  cutoffDate        String
+  fileSpecVersion   String
+  notes             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  hldNotes          HldBureauNote[]
+}
+
+model HldDocument {
+  id                   String              @id @default(uuid())
+  title                String
+  changeReference      String              @unique
+  status               String              @default("DRAFT") // "DRAFT" | "IN_REVIEW" | "APPROVED"
+  targetMonth          String              // e.g. "2026-10" or "October 2026"
+  regulatoryDriver     String              // e.g. CAIS data standard update, FCA requirement, etc.
+  description          String              // Plain language what and why
+  requestedBy          String              // Business owner / requester name
+  changeTypes          String              // Comma-separated or JSON string of change types
+  
+  sourceToBureauFlow   String?
+  dataQualityChecks    String?
+  errorHandling        String?
+  auditTrail           String?
+  dataProtection       String?
+  consumerImpact       String?
+  uatApproach          String?
+  rollbackApproach     String?
+  implementationDate   String?
+  
+  assumptions          String?
+  constraints          String?
+  dependencies         String?
+
+  createdById          String
+  createdBy            User                @relation("CreatedHlds", fields: [createdById], references: [id])
+  
+  reviewedById         String?
+  reviewedBy           User?               @relation("ReviewedHlds", fields: [reviewedById], references: [id])
+  reviewComments       String?
+  
+  version              Int                 @default(1)
+  content              String              // JSON text storing structured editable sections
+  
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  dataItemImpacts      HldDataItemImpact[]
+  bureauNotes          HldBureauNote[]
+  risks                HldRisk[]
+  stakeholders         HldStakeholder[]
+  comments             HldComment[]
+  versions             HldVersion[]
+}
+
+model HldDataItemImpact {
+  id                 String       @id @default(uuid())
+  hldId              String
+  hld                HldDocument  @relation(fields: [hldId], references: [id], onDelete: Cascade)
+  dataItemId         String?
+  dataItem           CaisDataItem? @relation(fields: [dataItemId], references: [id])
+  customItemName     String?      // In case BA added inline item
+  currentDefinition  String
+  newDefinition      String
+  sourceSystem       String
+  mappingNotes       String?
+  appliesToExperian  Boolean      @default(true)
+  appliesToEquifax   Boolean      @default(true)
+  appliesToTransunion Boolean     @default(true)
+}
+
+model HldBureauNote {
+  id          String      @id @default(uuid())
+  hldId       String
+  hld         HldDocument @relation(fields: [hldId], references: [id], onDelete: Cascade)
+  bureauId    String
+  bureau      Bureau      @relation(fields: [bureauId], references: [id])
+  applies     Boolean     @default(true)
+  targetDate  String?
+  notes       String?
+}
+
+model HldRisk {
+  id          String      @id @default(uuid())
+  hldId       String
+  hld         HldDocument @relation(fields: [hldId], references: [id], onDelete: Cascade)
+  risk        String
+  impact      String
+  mitigation  String
+}
+
+model HldStakeholder {
+  id          String      @id @default(uuid())
+  hldId       String
+  hld         HldDocument @relation(fields: [hldId], references: [id], onDelete: Cascade)
+  name        String
+  team        String
+  role        String
+}
+
+model HldComment {
+  id          String      @id @default(uuid())
+  hldId       String
+  hld         HldDocument @relation(fields: [hldId], references: [id], onDelete: Cascade)
+  sectionId   String?
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  text        String
+  createdAt   DateTime    @default(now())
+}
+
+model HldVersion {
+  id              String      @id @default(uuid())
+  hldId           String
+  hld             HldDocument @relation(fields: [hldId], references: [id], onDelete: Cascade)
+  versionNumber   Int
+  snapshotContent String
+  editedById      String
+  editedBy        User        @relation(fields: [editedById], references: [id])
+  editedAt        DateTime    @default(now())
+}
+
+model DocumentAttachment {
+  id          String   @id @default(uuid())
+  fileName    String
+  fileType    String   // "csv" | "xls" | "xlsx" | "doc" | "docx" | "pdf"
+  fileSize    Int
+  fileDataUrl String?  // Data URL for client download / preview
+  sectionId   String?  @default("GENERAL") // e.g. "1.1", "2.4", "GENERAL"
+  uploadedBy  String   @default("System User")
+  uploadedAt  DateTime @default(now())
+}

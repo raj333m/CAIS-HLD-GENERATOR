@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --app-bg: #030712;
+  --app-panel-bg: rgba(15, 23, 42, 0.85);
+  --app-card-bg: rgba(30, 41, 59, 0.7);
+  --app-card-inner: #090d16;
+  --app-text-main: #ffffff;
+  --app-text-muted: #cbd5e1;
+  --app-border: rgba(255, 255, 255, 0.12);
+}
+
+/* Hide Next.js dev overlay indicator badge */
+[data-nextjs-toast],
+nextjs-portal,
+.nextjs-toast-errors-parent,
+#nextjs-dev-indicator {
+  display: none !important;
+}
+
+html.light {
+  --app-bg: #f8fafc;
+  --app-panel-bg: rgba(255, 255, 255, 0.95);
+  --app-card-bg: #ffffff;
+  --app-card-inner: #f1f5f9;
+  --app-text-main: #0f172a;
+  --app-text-muted: #475569;
+  --app-border: #cbd5e1;
+}
+
+@layer base {
+  html.dark body, html:not(.light) body {
+    background-color: var(--app-bg);
+    color: #f8fafc;
+  }
+
+  html.light body {
+    background-color: var(--app-bg);
+    color: #0f172a;
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.dark ::-webkit-scrollbar-track, html:not(.light) ::-webkit-scrollbar-track {
+  background: #0b1329;
+}
+html.light ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+html.dark ::-webkit-scrollbar-thumb, html:not(.light) ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+/* Centralized Glass Panels & Cards */
+.glass-panel {
+  background-color: var(--app-panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--app-border);
+}
+
+.glass-card {
+  background-color: var(--app-card-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--app-border);
+}
+
+html.light .glass-panel {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-card:hover {
+  border-color: #3b82f6;
+}
+
+/* Utility Theme Helper Classes */
+.theme-text-main {
+  color: var(--app-text-main);
+}
+
+.theme-text-muted {
+  color: var(--app-text-muted);
+}
+
+.theme-card-inner {
+  background-color: var(--app-card-inner);
+  border: 1px solid var(--app-border);
+}
+
+/* Explicit Form Inputs for Light and Dark Modes */
+html.light input, html.light select, html.light textarea {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+html.dark input, html.dark select, html.dark textarea,
+html:not(.light) input, html:not(.light) select, html:not(.light) textarea {
+  background-color: #020617;
+  border-color: #334155;
+  color: #ffffff;
+}
+
+html.light input::placeholder, html.light textarea::placeholder {
+  color: #94a3b8;
+}
+
+html.dark input::placeholder, html.dark textarea::placeholder,
+html:not(.light) input::placeholder, html:not(.light) textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Fail-safe Dark Mode Contrast Overrides:
+   Ensures section sub-headings and card titles are high-contrast while preserving document H1 red accent (#C0272D) */
+html:not(.light) h2, html:not(.light) h3, html:not(.light) h4,
+html.dark h2, html.dark h3, html.dark h4 {
+  color: #ffffff;
+}
+
+html.light h2, html.light h3, html.light h4 {
+  color: #0f172a;
+}
+

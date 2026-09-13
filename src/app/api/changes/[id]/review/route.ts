@@ -1,0 +1,97 @@
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+// PUT /api/changes/[id]/review - Reviewer Approval or Send Back action
+export async function PUT(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const body = await request.json();
+    const { status, reviewComments, reviewerId, updatedSectionContent } = body;
+
+    const existingChange = await prisma.caisChange.findUnique({
+      where: { id },
+    });
+
+    if (!existingChange) {
+      return NextResponse.json({ error: 'Change entry not found' }, { status: 404 });
+    }
+
+    const defaultReviewer = await prisma.user.findFirst({ where: { role: 'REVIEWER' } });
+    const activeReviewerId = reviewerId || defaultReviewer?.id;
+
+    // Update Change entry status
+    const updatedChange = await prisma.caisChange.update({
+      where: { id },
+      data: {
+        status, // "APPROVED" | "SENT_BACK" | "IN_REVIEW"
+        reviewComments: reviewComments || existingChange.reviewComments,
+        reviewedById: activeReviewerId || existingChange.reviewedById,
+        approvedAt: status === 'APPROVED' ? new Date() : existingChange.approvedAt,
+      },
+      include: {
+        createdBy: true,
+        reviewedBy: true,
+      },
+    });
+
+    // On Approval: Update living sub-sections & record section version snapshots
+    if (status === 'APPROVED' && updatedSectionContent && typeof updatedSectionContent === 'object') {
+      for (const [secNum, newContent] of Object.entries(updatedSectionContent)) {
+        const targetSec = await prisma.documentSection.findUnique({
+          where: { sectionNumber: secNum },
+          include: { subSections: { orderBy: { displayOrder: 'asc' }, take: 1 } },
+        });
+
+        if (targetSec && targetSec.subSections.length > 0 && typeof newContent === 'string') {
+          const targetSub = targetSec.subSections[0];
+
+          const existingSub = await prisma.subSection.findUnique({
+            where: { id: targetSub.id },
+            include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } },
+          });
+
+          if (existingSub) {
+            const nextVersionNum = (existingSub.versions[0]?.versionNumber || 1) + 1;
+            const updatedBlocks = [
+              {
+                type: 'paragraph',
+                payload: { text: `[APPROVED via ${updatedChange.crReference} - ${updatedChange.title}]\n${newContent}` },
+              },
+            ];
+
+            await prisma.subSection.update({
+              where: { id: targetSub.id },
+              data: {
+                contentBlocks: JSON.stringify(updatedBlocks),
+                lastUpdatedById: updatedChange.createdById,
+              },
+            });
+
+            await prisma.sectionVersion.create({
+              data: {
+                subSectionId: targetSub.id,
+                versionNumber: nextVersionNum,
+                contentSnapshot: JSON.stringify({
+                  heading: targetSub.heading,
+                  blocks: updatedBlocks,
+                }),
+                editedById: updatedChange.createdById,
+                changeId: updatedChange.id,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({ change: updatedChange });
+  } catch (error: any) {
+    console.error('Error reviewing change:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
