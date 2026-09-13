@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { PREPOPULATED_CHANGES } from '../route';
 
 const prisma = new PrismaClient();
 
@@ -10,14 +11,26 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const change = await prisma.caisChange.findUnique({
-      where: { id },
-      include: {
-        createdBy: { select: { id: true, name: true, email: true, role: true } },
-        reviewedBy: { select: { id: true, name: true, email: true, role: true } },
-        risks: true,
-      },
-    });
+    let change: any = null;
+
+    try {
+      change = await prisma.caisChange.findUnique({
+        where: { id },
+        include: {
+          createdBy: { select: { id: true, name: true, email: true, role: true } },
+          reviewedBy: { select: { id: true, name: true, email: true, role: true } },
+          risks: true,
+        },
+      });
+    } catch (e) {
+      console.warn('DB lookup failed in GET /api/changes/[id]:', e);
+    }
+
+    if (!change) {
+      change = PREPOPULATED_CHANGES.find(
+        (c) => c.id === id || c.crReference === id || c.crReference.toLowerCase() === id.toLowerCase()
+      );
+    }
 
     if (!change) {
       return NextResponse.json({ error: 'Change entry not found' }, { status: 404 });
