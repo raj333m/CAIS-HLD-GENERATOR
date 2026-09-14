@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MASTER_SECTIONS, BLANK_SECTIONS } from '@/lib/sectionsData';
-import { getCloudProjects, saveCloudProject } from '@/lib/cloudStore';
+import { getCloudProjects, saveCloudProject, deleteCloudProject } from '@/lib/cloudStore';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
     const brandList = Array.isArray(targetBrands) && targetBrands.length > 0 ? targetBrands : (targetBrand ? [targetBrand] : ['HSBC Cards (51)']);
     const productList = Array.isArray(targetProducts) && targetProducts.length > 0 ? targetProducts : ['05 — Credit Card'];
 
-    const newId = `proj-${Date.now()}`;
+    const newId = `proj-${crypto.randomUUID()}`;
     const newProject: HldProject = {
       id: newId,
       projectName: projectName.trim(),
@@ -283,6 +283,30 @@ export async function PUT(req: NextRequest) {
       reviewedBy: reviewedBy || current.reviewedBy,
     };
     return NextResponse.json({ success: true, metadata: projectMetadataStore[projectId] });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const projectId = searchParams.get('projectId') || searchParams.get('id');
+    if (!projectId) {
+      return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
+    }
+    if (projectId === 'proj-alpha') {
+      return NextResponse.json({ error: 'Cannot delete baseline project proj-alpha' }, { status: 400 });
+    }
+
+    hldProjectsStore = hldProjectsStore.filter((p) => p.id !== projectId);
+    delete projectSectionsStore[projectId];
+    delete projectReviewsStore[projectId];
+    delete projectMetadataStore[projectId];
+
+    await deleteCloudProject(projectId);
+
+    return NextResponse.json({ success: true, deletedId: projectId });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

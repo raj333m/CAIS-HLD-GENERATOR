@@ -223,3 +223,14 @@ export async function saveCloudProject(project: any, sections?: any[], metadata?
   await persistStore(store);
 }
 
+export async function deleteCloudProject(projectId: string): Promise<void> {
+  if (!projectId || projectId === 'proj-alpha') return;
+  const store: any = await fetchMasterStore();
+  const currentProjects = Array.isArray(store._projectsStore) ? store._projectsStore : [];
+  store._projectsStore = currentProjects.filter((p: any) => p.id !== projectId);
+  if (store._projectSectionsStore) delete store._projectSectionsStore[projectId];
+  if (store._projectMetadataStore) delete store._projectMetadataStore[projectId];
+  await persistStore(store);
+}
+
+

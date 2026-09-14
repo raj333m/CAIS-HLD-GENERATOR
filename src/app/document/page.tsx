@@ -956,40 +956,16 @@ export default function LivingDocumentPage() {
         }),
       });
 
-      if (activeCId) {
-        try {
-          const putRes = await fetch(`/api/changes/${encodeURIComponent(activeCId)}/review`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              status: 'SENT_BACK',
-              reviewComments: overallSendBackReason,
-              reviewerId: user?.id,
-            }),
-          });
-          if (putRes.ok) {
-            const updatedData = await putRes.json();
-            const returnedChange = updatedData.change || updatedData.updatedChange;
-            if (returnedChange) {
-              setTargetChange(returnedChange);
-            } else {
-              setTargetChange((prev: any) => ({
-                ...prev,
-                status: 'SENT_BACK',
-                versionNumber: (prev?.versionNumber || 1) + 1,
-              }));
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to sync change status on send back:', e);
-        }
-      }
-
       const data = await res.json();
       if (data.success) {
-        setSectionReviews(data.allReviews);
-        setCurrentFeedbackRound(data.currentFeedbackRound);
-        setFeedbackRoundsHistory(data.feedbackRoundsHistory);
+        setSectionReviews(data.allReviews || {});
+        if (data.currentFeedbackRound) setCurrentFeedbackRound(data.currentFeedbackRound);
+        if (data.feedbackRoundsHistory) setFeedbackRoundsHistory(data.feedbackRoundsHistory);
+        setTargetChange((prev: any) => ({
+          ...prev,
+          status: 'SENT_BACK',
+          versionNumber: (prev?.versionNumber || 1) + 1,
+        }));
         setShowSendBackModal(false);
         setOverallSendBackReason('');
         setDraftSavedNotice('Document sent back to BA with feedback round recorded. Status: Draft (Revision Requested).');
@@ -1745,13 +1721,8 @@ export default function LivingDocumentPage() {
 
     if (typeof window !== 'undefined') {
       try {
-        const localDeleted = JSON.parse(localStorage.getItem('cais_user_deleted_ids') || '[]');
-        const updatedDel = [...localDeleted, targetId, crReference].filter(Boolean);
-        localStorage.setItem('cais_user_deleted_ids', JSON.stringify(updatedDel));
-
-        const localSaved = JSON.parse(localStorage.getItem('cais_user_created_changes') || '[]');
-        const cleanedSaved = localSaved.filter((c: any) => c.id !== targetId && c.crReference !== targetId && c.crReference !== crReference);
-        localStorage.setItem('cais_user_created_changes', JSON.stringify(cleanedSaved));
+        localStorage.removeItem('cais_user_deleted_ids');
+        localStorage.removeItem('cais_user_created_changes');
       } catch (e) {}
     }
 
@@ -1786,13 +1757,8 @@ export default function LivingDocumentPage() {
         let list = data.changes || [];
         if (typeof window !== 'undefined') {
           try {
-            const localSaved = JSON.parse(localStorage.getItem('cais_user_created_changes') || '[]');
-            const localDeleted = JSON.parse(localStorage.getItem('cais_user_deleted_ids') || '[]');
-            const delSet = new Set(localDeleted);
-
-            const existingRefs = new Set(list.map((c: any) => c.crReference));
-            const newLocal = localSaved.filter((c: any) => !existingRefs.has(c.crReference) && !delSet.has(c.id) && !delSet.has(c.crReference));
-            list = [...newLocal, ...list].filter((c: any) => !delSet.has(c.id) && !delSet.has(c.crReference));
+            localStorage.removeItem('cais_user_created_changes');
+            localStorage.removeItem('cais_user_deleted_ids');
           } catch (e) {}
         }
         if (targetId && targetId !== 'proj-alpha') {
@@ -3714,7 +3680,9 @@ export default function LivingDocumentPage() {
               </p>
               <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-500/20 flex-wrap gap-2">
                 <span className="font-semibold text-amber-800 dark:text-amber-300 font-mono">
-                  {feedbackSharedCount} remarks across {feedbackSharedCount} sections
+                  {feedbackSharedCount > 0
+                    ? `${feedbackSharedCount} remark(s) across ${feedbackSharedCount} section(s)`
+                    : `Overall Governance Revision Requested (${currentFeedbackRound?.sectionRemarks?.length || 0} section item flags)`}
                 </span>
                 {reviewableSectionNums.find(num => sectionReviews[num]?.status === 'FEEDBACK_SHARED') && (
                   <button

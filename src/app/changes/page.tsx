@@ -50,17 +50,11 @@ export default function ChangesRegisterPage() {
       const res = await fetch(`/api/changes?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        // Filter submitted changes only for Reviewer Audit Logs (IN_REVIEW, SENT_BACK / REVISION_REQUESTED, APPROVED)
         let rawChanges = data.changes || [];
         if (typeof window !== 'undefined') {
           try {
-            const localSaved = JSON.parse(localStorage.getItem('cais_user_created_changes') || '[]');
-            const localDeleted = JSON.parse(localStorage.getItem('cais_user_deleted_ids') || '[]');
-            const delSet = new Set(localDeleted);
-
-            const existingRefs = new Set(rawChanges.map((c: any) => c.crReference));
-            const newLocal = localSaved.filter((c: any) => !existingRefs.has(c.crReference) && !delSet.has(c.id) && !delSet.has(c.crReference));
-            rawChanges = [...newLocal, ...rawChanges].filter((c: any) => !delSet.has(c.id) && !delSet.has(c.crReference));
+            localStorage.removeItem('cais_user_created_changes');
+            localStorage.removeItem('cais_user_deleted_ids');
           } catch (e) {}
         }
         const submittedOnly = rawChanges.filter((c: any) => c.status !== 'DRAFT');
