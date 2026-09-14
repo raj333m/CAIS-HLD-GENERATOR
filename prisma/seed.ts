@@ -28,7 +28,7 @@ async function main() {
 
   const baUser = await prisma.user.create({
     data: {
-      name: '[Name]',
+      name: 'Aishwarya Raj Singh',
       email: 'ba@cais.com',
       passwordHash,
       role: 'BA',
@@ -38,7 +38,7 @@ async function main() {
 
   const reviewerUser = await prisma.user.create({
     data: {
-      name: '[Name]',
+      name: 'Stuart H Lindsay',
       email: 'reviewer@cais.com',
       passwordHash,
       role: 'REVIEWER',
@@ -48,7 +48,7 @@ async function main() {
 
   const adminUser = await prisma.user.create({
     data: {
-      name: '[Name]',
+      name: 'Manash R Chanda',
       email: 'admin@cais.com',
       passwordHash,
       role: 'ADMIN',
@@ -1039,7 +1039,7 @@ async function main() {
                 [
                   "Gap in brand-specific exclusion rules",
                   "Mis-reporting of accounts leading to consumer detriment or regulatory audit query",
-                  "Section 1.4 validation and volume reconciliation controls. Owner: Lead BA ([Name])"
+                  "Section 1.4 validation and volume reconciliation controls. Owner: Lead BA (Aishwarya Raj Singh)"
                 ],
                 [
                   "Regulatory deadline missed due to slippage",

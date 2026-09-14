@@ -100,9 +100,11 @@ export default function NewHldWizardPage() {
     { risk: 'Upstream deployment delay reduces UAT window', impact: 'Medium', mitigation: 'Build transformation rules against simulated staging schema.' },
   ]);
   const [stakeholders, setStakeholders] = useState<any[]>([
-    { name: '[Name]', team: 'Credit Risk Analysis', role: 'Lead Business Analyst' },
-    { name: '[Name]', team: 'Data Warehouse', role: 'ETL Engineering Lead' },
-    { name: '[Name]', team: 'Bureau Management', role: 'CRA Liaison Manager' },
+    { name: 'Manash R Chanda', team: 'UKBI POD', role: 'UKBI POD Lead' },
+    { name: 'Swapnil Kalidas Sankpal', team: 'Technology', role: 'Tech Lead' },
+    { name: 'Vishnu Vardhan', team: 'Development', role: 'Senior Developer' },
+    { name: 'Aishwarya Raj Singh', team: 'Business Analysis', role: 'Business Analyst' },
+    { name: 'Narsimha Chary', team: 'IT Program Management', role: 'UKBI ITPM' },
   ]);
 
   // Optional As-Is

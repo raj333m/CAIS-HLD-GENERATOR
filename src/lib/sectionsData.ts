@@ -10,7 +10,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -31,7 +31,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -52,7 +52,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -73,7 +73,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -88,7 +88,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -109,7 +109,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -130,7 +130,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -151,7 +151,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -166,7 +166,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -187,7 +187,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -208,7 +208,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -229,7 +229,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -250,7 +250,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -271,7 +271,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -292,7 +292,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -313,7 +313,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -334,7 +334,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -355,7 +355,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -376,7 +376,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -391,7 +391,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -412,7 +412,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -427,7 +427,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -448,7 +448,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -458,18 +458,18 @@ export const MASTER_SECTIONS: any[] = [
         "documentSectionId": "sec-1-5",
         "heading": "Risks",
         "displayOrder": 2,
-        "contentBlocks": "[{\"type\":\"table\",\"payload\":{\"headers\":[\"Risk Description\",\"Business Impact\",\"Mitigation & Owner\"],\"rows\":[[\"Bureau implementing a change on a different timeline\",\"Inconsistent reporting across Experian, Equifax, and TransUnion\",\"Track bureau-specific target dates per Change Register entry and execute phased rollouts. Owner: Bureau Relationship Lead\"],[\"Gap in brand-specific exclusion rules\",\"Mis-reporting of accounts leading to consumer detriment or regulatory audit query\",\"Section 1.4 validation and volume reconciliation controls. Owner: Lead BA ([Name])\"],[\"Regulatory deadline missed due to slippage\",\"Non-compliance with CAIS guidelines and CRA reporting penalties\",\"Track Target Implementation Month per change and escalate via Operational Support. Owner: Product Owner Risk CRA\"]]}}]",
+        "contentBlocks": "[{\"type\":\"table\",\"payload\":{\"headers\":[\"Risk Description\",\"Business Impact\",\"Mitigation & Owner\"],\"rows\":[[\"Bureau implementing a change on a different timeline\",\"Inconsistent reporting across Experian, Equifax, and TransUnion\",\"Track bureau-specific target dates per Change Register entry and execute phased rollouts. Owner: Bureau Relationship Lead\"],[\"Gap in brand-specific exclusion rules\",\"Mis-reporting of accounts leading to consumer detriment or regulatory audit query\",\"Section 1.4 validation and volume reconciliation controls. Owner: Lead BA (Aishwarya Raj Singh)\"],[\"Regulatory deadline missed due to slippage\",\"Non-compliance with CAIS guidelines and CRA reporting penalties\",\"Track Target Implementation Month per change and escalate via Operational Support. Owner: Product Owner Risk CRA\"]]}}]",
         "lastUpdatedById": "user-ba",
         "versions": [
           {
             "id": "ver-sub-1-5-2-1",
             "subSectionId": "sub-1-5-2",
             "versionNumber": 1,
-            "contentSnapshot": "{\"heading\":\"Risks\",\"blocks\":[{\"type\":\"table\",\"payload\":{\"headers\":[\"Risk Description\",\"Business Impact\",\"Mitigation & Owner\"],\"rows\":[[\"Bureau implementing a change on a different timeline\",\"Inconsistent reporting across Experian, Equifax, and TransUnion\",\"Track bureau-specific target dates per Change Register entry and execute phased rollouts. Owner: Bureau Relationship Lead\"],[\"Gap in brand-specific exclusion rules\",\"Mis-reporting of accounts leading to consumer detriment or regulatory audit query\",\"Section 1.4 validation and volume reconciliation controls. Owner: Lead BA ([Name])\"],[\"Regulatory deadline missed due to slippage\",\"Non-compliance with CAIS guidelines and CRA reporting penalties\",\"Track Target Implementation Month per change and escalate via Operational Support. Owner: Product Owner Risk CRA\"]]}}]}",
+            "contentSnapshot": "{\"heading\":\"Risks\",\"blocks\":[{\"type\":\"table\",\"payload\":{\"headers\":[\"Risk Description\",\"Business Impact\",\"Mitigation & Owner\"],\"rows\":[[\"Bureau implementing a change on a different timeline\",\"Inconsistent reporting across Experian, Equifax, and TransUnion\",\"Track bureau-specific target dates per Change Register entry and execute phased rollouts. Owner: Bureau Relationship Lead\"],[\"Gap in brand-specific exclusion rules\",\"Mis-reporting of accounts leading to consumer detriment or regulatory audit query\",\"Section 1.4 validation and volume reconciliation controls. Owner: Lead BA (Aishwarya Raj Singh)\"],[\"Regulatory deadline missed due to slippage\",\"Non-compliance with CAIS guidelines and CRA reporting penalties\",\"Track Target Implementation Month per change and escalate via Operational Support. Owner: Product Owner Risk CRA\"]]}}]}",
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -484,7 +484,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -505,7 +505,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -526,7 +526,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -547,7 +547,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -568,7 +568,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -583,7 +583,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -604,7 +604,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -625,7 +625,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -646,7 +646,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -667,7 +667,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -682,7 +682,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -703,7 +703,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -724,7 +724,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -745,7 +745,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -760,7 +760,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -781,7 +781,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -796,7 +796,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -817,7 +817,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -838,7 +838,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -859,7 +859,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -874,7 +874,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -895,7 +895,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -916,7 +916,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -937,7 +937,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -958,7 +958,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -973,7 +973,7 @@ export const MASTER_SECTIONS: any[] = [
     "lastUpdatedById": "user-ba",
     "lastUpdatedBy": {
       "id": "user-ba",
-      "name": "[Name]",
+      "name": "Aishwarya Raj Singh",
       "email": "ba@cais.com",
       "role": "BA"
     },
@@ -994,7 +994,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
@@ -1015,7 +1015,7 @@ export const MASTER_SECTIONS: any[] = [
             "editedById": "user-ba",
             "editedBy": {
               "id": "user-ba",
-              "name": "[Name]"
+              "name": "Aishwarya Raj Singh"
             }
           }
         ]
