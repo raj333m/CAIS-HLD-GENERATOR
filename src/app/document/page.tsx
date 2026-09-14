@@ -818,20 +818,27 @@ export default function LivingDocumentPage() {
 
   useEffect(() => {
     if (activeSectionNum && activeSectionNum !== 'doc-info') {
-      const timer = setTimeout(() => {
-        const element = document.getElementById(`sec-${activeSectionNum.replace(/\./g, '-')}`);
+      const scrollTarget = () => {
+        const targetId = `sec-${activeSectionNum.replace(/\./g, '-')}`;
+        const element = document.getElementById(targetId);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const yOffset = -90;
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
         }
-      }, 350);
-      return () => clearTimeout(timer);
+      };
+      scrollTarget();
+      const t1 = setTimeout(scrollTarget, 300);
+      const t2 = setTimeout(scrollTarget, 800);
+      const t3 = setTimeout(scrollTarget, 1500);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
-  }, [activeSectionNum]);
+  }, [activeSectionNum, targetChange, sections]);
 
   const isAllowedReviewer = user?.role === 'REVIEWER' || user?.realRole === 'REVIEWER' || user?.role === 'ADMIN' || user?.realRole === 'ADMIN';
 
   const checkLockedReviewModeForBa = (actionName: string): boolean => {
-    const isReviewView = isReviewerMode || Boolean(targetChange) || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'review');
+    const isReviewView = isReviewerMode || Boolean(targetChange) || (typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('mode') === 'review' || Boolean(new URLSearchParams(window.location.search).get('changeId'))));
     if (isReviewView && !isAllowedReviewer) {
       setDraftSavedNotice(`Preview Mode: ${actionName} is disabled for BA role during review mode. Log in as Reviewer or edit in draft mode.`);
       setTimeout(() => setDraftSavedNotice(null), 3500);
@@ -1429,7 +1436,7 @@ export default function LivingDocumentPage() {
   };
 
   const isBaOrAdmin = user?.role === 'BA' || user?.role === 'ADMIN';
-  const isReviewView = isReviewerMode || Boolean(targetChange) || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'review');
+  const isReviewView = isReviewerMode || Boolean(targetChange) || (typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('mode') === 'review' || Boolean(new URLSearchParams(window.location.search).get('changeId'))));
   const isLockedReviewViewForBa = isReviewView && !isAllowedReviewer;
   const canEditDocStructure = isBaOrAdmin && !isLockedReviewViewForBa;
 
@@ -3765,7 +3772,7 @@ export default function LivingDocumentPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => setShowSubmitModal(true)}
+                          onClick={handleOpenSubmitModal}
                           className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
                         >
                           <Plus className="w-3.5 h-3.5 text-blue-400" /> Log Single Change
@@ -4344,7 +4351,7 @@ export default function LivingDocumentPage() {
               {/* Primary Filled: Submit HLD */}
               <button
                 type="button"
-                onClick={() => setShowSubmitModal(true)}
+                onClick={handleOpenSubmitModal}
                 className="px-5 py-2 rounded-xl bg-[#C0272D] hover:bg-[#a01f24] text-white text-xs font-bold shadow-lg shadow-red-500/20 flex items-center gap-1.5 transition-all transform hover:scale-[1.02] cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />

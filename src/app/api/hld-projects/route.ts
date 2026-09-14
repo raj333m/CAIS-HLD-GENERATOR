@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MASTER_SECTIONS, BLANK_SECTIONS } from '@/lib/sectionsData';
+import { getCloudProjects, saveCloudProject } from '@/lib/cloudStore';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -107,6 +108,20 @@ let projectMetadataStore: Record<string, {
 };
 
 export async function GET(req: NextRequest) {
+  try {
+    const cloud = await getCloudProjects();
+    if (cloud && cloud.projects && cloud.projects.length > 0) {
+      const existingIds = new Set(hldProjectsStore.map((p) => p.id));
+      cloud.projects.forEach((cp: any) => {
+        if (!existingIds.has(cp.id)) {
+          hldProjectsStore.push(cp);
+        }
+      });
+      if (cloud.projectSections) Object.assign(projectSectionsStore, cloud.projectSections);
+      if (cloud.projectMetadata) Object.assign(projectMetadataStore, cloud.projectMetadata);
+    }
+  } catch (e) {}
+
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get('projectId');
 
@@ -242,6 +257,8 @@ export async function POST(req: NextRequest) {
     projectSectionsStore[newId] = newSections;
     projectReviewsStore[newId] = {};
     projectMetadataStore[newId] = newMetadata;
+
+    await saveCloudProject(newProject, newSections, newMetadata);
 
     return NextResponse.json({ success: true, project: newProject, sections: newSections, metadata: newMetadata });
   } catch (error: any) {

@@ -1,10 +1,56 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getCloudChangeState, deletedIds } from '@/lib/cloudStore';
+import { getCloudChangeState, deletedIds, saveCreatedChange, getCreatedChanges } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
-export const PREPOPULATED_CHANGES: any[] = [];
+export const PREPOPULATED_CHANGES: any[] = [
+  {
+    id: '37eda0d7-1c69-40f4-94ff-452c6141b56a',
+    crReference: 'CAIS-2026-001',
+    title: 'Consumer Duty Payment Holiday & Forbearance Indicator Update',
+    status: 'APPROVED',
+    changeType: 'Existing data item amended, Business rule change, Bureau variation',
+    businessDriver: 'Accurately flag temporary forbearance/payment holidays in support of Consumer Duty.',
+    description: 'Enhance monthly reporting to flag temporary forbearance payment holidays accurately across all 3 bureaus, preventing erroneous arrears scoring for impacted customers.',
+    sectionsUpdated: '1.3, 2.5',
+    impactedBureaus: 'Experian, Equifax, TransUnion',
+    impactedDataItems: '19. Special Instruction Indicator, 05. Account Status',
+    targetMonth: 'October 2026',
+    author: 'Aishwarya Raj Singh',
+    createdAt: '2026-09-10T14:30:00.000Z',
+  },
+  {
+    id: 'b82df910-449e-4e63-8a3e-721fb653ab12',
+    crReference: 'CAIS-2026-002',
+    title: 'Buy-Now-Pay-Later (BNPL) Product Scope Expansion to CAIS',
+    status: 'IN_REVIEW',
+    changeType: 'New product type, New data item added, Technical schema change',
+    businessDriver: 'Bring the new BNPL instalment product into scope in line with expanding regulatory expectations on BNPL data sharing.',
+    description: 'Incorporate new BNPL installment product line into monthly CAIS reporting files submitted to Experian, Equifax, and TransUnion.',
+    sectionsUpdated: '1.3, 2.5',
+    impactedBureaus: 'Experian, Equifax, TransUnion',
+    impactedDataItems: '02. Account Type, 09. Credit Limit / Total Loan Amount',
+    targetMonth: 'November 2026',
+    author: 'Aishwarya Raj Singh',
+    createdAt: '2026-09-12T10:15:00.000Z',
+  },
+  {
+    id: 'f9411d38-2e02-4740-9a29-158a1834279b',
+    crReference: 'CAIS-2026-003',
+    title: 'Default Balance Reconciliation & Account Closure Date Alignment',
+    status: 'DRAFT',
+    changeType: 'Existing data item amended, Business rule change',
+    businessDriver: 'Internal data quality remediation — align Original Default Balance and Default Satisfaction Date fields for accounts sold to debt collection agencies so default balances remain accurate post-sale.',
+    description: 'Align the Original Default Balance and Default Satisfaction Date fields for accounts sold to debt collection agencies to ensure default balances are correctly reflected once an account is transferred.',
+    sectionsUpdated: '1.3, 2.5',
+    impactedBureaus: 'Experian, Equifax, TransUnion',
+    impactedDataItems: '17. Original Default Balance, 42. Default Satisfaction Date',
+    targetMonth: 'December 2026',
+    author: 'Aishwarya Raj Singh',
+    createdAt: '2026-09-13T09:00:00.000Z',
+  },
+];
 
 // GET /api/changes - List Section 3 Change Register entries (newest first)
 export async function GET(request: Request) {
@@ -68,6 +114,16 @@ export async function GET(request: Request) {
       }
       changes = filtered;
     }
+
+    // Merge cloud persisted created changes
+    try {
+      const cloudCreated = await getCreatedChanges();
+      if (cloudCreated.length > 0) {
+        const existingRefs = new Set(changes.map((c: any) => c.crReference));
+        const newItems = cloudCreated.filter((c: any) => !existingRefs.has(c.crReference));
+        changes = [...newItems, ...changes];
+      }
+    } catch (e) {}
 
     // Enrich changes with CloudStore persisted state & filter deleted changes
     const enrichedChanges = await Promise.all(
@@ -220,6 +276,7 @@ export async function POST(request: Request) {
           risks: true,
         },
       });
+      await saveCreatedChange(newChange);
       return NextResponse.json({ change: newChange }, { status: 201 });
     } catch (dbErr) {
       const mockChange = {
@@ -237,6 +294,7 @@ export async function POST(request: Request) {
         targetMonth: targetMonth || 'November 2026',
         createdAt: new Date().toISOString(),
       };
+      await saveCreatedChange(mockChange);
       return NextResponse.json({ change: mockChange }, { status: 201 });
     }
   } catch (error: any) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { PREPOPULATED_CHANGES } from '../route';
-import { saveCloudChangeState, deletedIds } from '@/lib/cloudStore';
+import { saveCloudChangeState, deletedIds, deleteCreatedChange } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -192,7 +192,8 @@ export async function DELETE(
     await saveCloudChangeState(crRef, deleteUpdate);
     await saveCloudChangeState(crRef.toUpperCase(), deleteUpdate);
     await saveCloudChangeState(crRef.toLowerCase(), deleteUpdate);
-    await saveCloudChangeState(cleanRef, deleteUpdate);
+    await deleteCreatedChange(dbId, crRef);
+    await deleteCreatedChange(id, crRef);
 
     try {
       if (existingChange) {
