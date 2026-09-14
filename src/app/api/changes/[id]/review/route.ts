@@ -27,21 +27,39 @@ export async function PUT(
     const reviewerNameStr = defaultReviewer?.name || 'Reviewer / Lead';
 
     // Update Change entry status
+    const isSentBack = status === 'SENT_BACK' || status === 'DRAFT';
     const updatedChange = await prisma.caisChange.update({
       where: { id },
       data: {
-        status, // "APPROVED" | "SENT_BACK" | "IN_REVIEW"
+        status: status === 'SENT_BACK' ? 'SENT_BACK' : status, // "APPROVED" | "SENT_BACK" | "IN_REVIEW"
         reviewComments: reviewComments || existingChange.reviewComments,
         reviewedById: activeReviewerId || existingChange.reviewedById,
         reviewedByName: reviewerNameStr,
         approvalDate: status === 'APPROVED' ? todayStr : existingChange.approvalDate,
         approvedAt: status === 'APPROVED' ? new Date() : existingChange.approvedAt,
+        versionNumber: isSentBack ? (existingChange.versionNumber || 1) + 1 : existingChange.versionNumber,
       },
       include: {
         createdBy: true,
         reviewedBy: true,
       },
     });
+
+    if (existingChange.hldDocumentId) {
+      try {
+        await prisma.hldDocument.update({
+          where: { id: existingChange.hldDocumentId },
+          data: {
+            status: status === 'APPROVED' ? 'APPROVED' : isSentBack ? 'DRAFT' : 'IN_REVIEW',
+            reviewComments: reviewComments || existingChange.reviewComments,
+            reviewedById: activeReviewerId || undefined,
+            updatedAt: new Date(),
+          },
+        });
+      } catch (err) {
+        console.warn('Failed to update linked HldDocument status:', err);
+      }
+    }
 
     // On Approval: Update living sub-sections & record section version snapshots
     if (status === 'APPROVED' && updatedSectionContent && typeof updatedSectionContent === 'object') {

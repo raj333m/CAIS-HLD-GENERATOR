@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export interface SectionReviewData {
   sectionNum: string;
@@ -19,17 +21,58 @@ export interface FeedbackRound {
   sectionRemarks: Array<{ sectionNum: string; remarkText: string; isAddressed?: boolean }>;
 }
 
-let sectionReviewsStore: Record<string, SectionReviewData> = {};
-let activeFeedbackRoundStore: FeedbackRound | null = null;
-let feedbackRoundsHistoryStore: FeedbackRound[] = [];
-let addressedRemarksStore: Record<string, boolean> = {};
+function getStoreFilePath() {
+  try {
+    const dir = path.join(process.cwd(), 'prisma');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return path.join(dir, 'section_reviews_store.json');
+  } catch (e) {
+    return path.join('/tmp', 'section_reviews_store.json');
+  }
+}
+
+function loadReviewsState() {
+  try {
+    const filePath = getStoreFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      return {
+        reviews: parsed.reviews || {},
+        currentFeedbackRound: parsed.currentFeedbackRound || null,
+        feedbackRoundsHistory: parsed.feedbackRoundsHistory || [],
+        addressedRemarks: parsed.addressedRemarks || {},
+      };
+    }
+  } catch (err) {
+    console.error('Failed to load reviews state from disk:', err);
+  }
+  return {
+    reviews: {},
+    currentFeedbackRound: null,
+    feedbackRoundsHistory: [],
+    addressedRemarks: {},
+  };
+}
+
+function saveReviewsState(state: any) {
+  try {
+    const filePath = getStoreFilePath();
+    fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed to save reviews state to disk:', err);
+  }
+}
 
 export async function GET(req: NextRequest) {
+  const state = loadReviewsState();
   return NextResponse.json({
-    reviews: sectionReviewsStore,
-    currentFeedbackRound: activeFeedbackRoundStore,
-    feedbackRoundsHistory: feedbackRoundsHistoryStore,
-    addressedRemarks: addressedRemarksStore,
+    reviews: state.reviews,
+    currentFeedbackRound: state.currentFeedbackRound,
+    feedbackRoundsHistory: state.feedbackRoundsHistory,
+    addressedRemarks: state.addressedRemarks,
   });
 }
 
@@ -38,13 +81,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { sectionNum, action, feedback, reviewerName, reviewerRole, overallReason, sectionRemarks } = body;
 
+    const state = loadReviewsState();
+    let { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks } = state;
+
     const timestamp = new Date().toLocaleString([], {
       dateStyle: 'medium',
       timeStyle: 'short',
     });
 
     if (action === 'SEND_BACK_ROUND') {
-      const nextRoundNum = feedbackRoundsHistoryStore.length + 1;
+      const nextRoundNum = (feedbackRoundsHistory || []).length + 1;
       const formattedRemarks = (sectionRemarks || []).map((sr: any) => ({
         sectionNum: sr.sectionNum,
         remarkText: sr.remarkText,
@@ -60,13 +106,13 @@ export async function POST(req: NextRequest) {
         sectionRemarks: formattedRemarks,
       };
 
-      activeFeedbackRoundStore = newRound;
-      feedbackRoundsHistoryStore.push(newRound);
-      addressedRemarksStore = {};
+      currentFeedbackRound = newRound;
+      feedbackRoundsHistory = [...(feedbackRoundsHistory || []), newRound];
+      addressedRemarks = {};
 
       // Mark sections as FEEDBACK_SHARED
       formattedRemarks.forEach((sr: any) => {
-        sectionReviewsStore[sr.sectionNum] = {
+        reviews[sr.sectionNum] = {
           sectionNum: sr.sectionNum,
           status: 'FEEDBACK_SHARED',
           feedback: sr.remarkText,
@@ -76,50 +122,58 @@ export async function POST(req: NextRequest) {
         };
       });
 
+      const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
+      saveReviewsState(newState);
+
       return NextResponse.json({
         success: true,
-        currentFeedbackRound: activeFeedbackRoundStore,
-        feedbackRoundsHistory: feedbackRoundsHistoryStore,
-        allReviews: sectionReviewsStore,
+        currentFeedbackRound,
+        feedbackRoundsHistory,
+        allReviews: reviews,
       });
     }
 
     if (action === 'TOGGLE_ADDRESSED') {
       if (sectionNum) {
-        addressedRemarksStore[sectionNum] = !addressedRemarksStore[sectionNum];
-        if (sectionReviewsStore[sectionNum]) {
-          sectionReviewsStore[sectionNum].isAddressed = addressedRemarksStore[sectionNum];
+        addressedRemarks[sectionNum] = !addressedRemarks[sectionNum];
+        if (reviews[sectionNum]) {
+          reviews[sectionNum].isAddressed = addressedRemarks[sectionNum];
         }
       }
+      const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
+      saveReviewsState(newState);
+
       return NextResponse.json({
         success: true,
-        addressedRemarks: addressedRemarksStore,
-        allReviews: sectionReviewsStore,
+        addressedRemarks,
+        allReviews: reviews,
       });
     }
 
     if (action === 'RESET_ALL') {
       // Reset all section approvals back to PENDING on BA resubmission
-      Object.keys(sectionReviewsStore).forEach((num) => {
-        sectionReviewsStore[num] = {
+      Object.keys(reviews).forEach((num) => {
+        reviews[num] = {
           sectionNum: num,
           status: 'PENDING',
         };
       });
 
-      if (activeFeedbackRoundStore) {
-        // Archive active round into history if not already present
-        const exists = feedbackRoundsHistoryStore.some(r => r.roundNumber === activeFeedbackRoundStore?.roundNumber);
+      if (currentFeedbackRound) {
+        const exists = (feedbackRoundsHistory || []).some((r: any) => r.roundNumber === currentFeedbackRound?.roundNumber);
         if (!exists) {
-          feedbackRoundsHistoryStore.push(activeFeedbackRoundStore);
+          feedbackRoundsHistory = [...(feedbackRoundsHistory || []), currentFeedbackRound];
         }
       }
 
+      const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
+      saveReviewsState(newState);
+
       return NextResponse.json({
         success: true,
-        allReviews: sectionReviewsStore,
-        currentFeedbackRound: activeFeedbackRoundStore,
-        feedbackRoundsHistory: feedbackRoundsHistoryStore,
+        allReviews: reviews,
+        currentFeedbackRound,
+        feedbackRoundsHistory,
       });
     }
 
@@ -129,7 +183,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'APPROVE') {
       const approvalDateStr = new Date().toISOString().split('T')[0];
-      sectionReviewsStore[sectionNum] = {
+      reviews[sectionNum] = {
         sectionNum,
         status: 'APPROVED',
         feedback: undefined,
@@ -138,7 +192,7 @@ export async function POST(req: NextRequest) {
         approvalDate: approvalDateStr,
       };
     } else if (action === 'SHARE_FEEDBACK') {
-      sectionReviewsStore[sectionNum] = {
+      reviews[sectionNum] = {
         sectionNum,
         status: 'FEEDBACK_SHARED',
         feedback: feedback || 'Please review and update this section as per technical standards.',
@@ -146,18 +200,21 @@ export async function POST(req: NextRequest) {
         timestamp,
       };
     } else if (action === 'RESET') {
-      sectionReviewsStore[sectionNum] = {
+      reviews[sectionNum] = {
         sectionNum,
         status: 'PENDING',
       };
     }
 
+    const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
+    saveReviewsState(newState);
+
     return NextResponse.json({
       success: true,
-      review: sectionReviewsStore[sectionNum],
-      allReviews: sectionReviewsStore,
-      currentFeedbackRound: activeFeedbackRoundStore,
-      feedbackRoundsHistory: feedbackRoundsHistoryStore,
+      review: reviews[sectionNum],
+      allReviews: reviews,
+      currentFeedbackRound,
+      feedbackRoundsHistory,
     });
   } catch (error: any) {
     console.error('Section reviews API error:', error);

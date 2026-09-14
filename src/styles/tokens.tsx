@@ -156,7 +156,9 @@ export const RULE_CATEGORY_CONFIG: Record<
 export function StatusBadge({ status, date }: { status: string; date?: string }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
   const IconComponent = config.icon;
-  const labelText = status === 'APPROVED' && date ? `✓ Approved — ${date}` : config.label;
+  const labelText = status === 'APPROVED'
+    ? `Approved (${date || '2026-09-14'})`
+    : config.label;
 
   return (
     <span

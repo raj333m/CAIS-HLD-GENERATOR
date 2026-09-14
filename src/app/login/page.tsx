@@ -80,7 +80,7 @@ export default function LoginPage() {
                 Human Verification Step
               </h2>
               <p className="text-xs text-slate-400">
-                Logged in as <span className="font-bold text-blue-300">{selectedRole}</span>. Please answer this quick question to proceed to the Dashboard.
+                Logged in as <span className="font-bold text-blue-300">{selectedRole}</span>. Please answer this quick question to proceed to the {selectedRole === 'BA' ? 'Consolidated HLD' : 'Dashboard'}.
               </p>
             </div>
 

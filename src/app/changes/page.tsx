@@ -243,7 +243,7 @@ export default function ChangesRegisterPage() {
                       </td>
                       <td className="p-3 text-center">
                         <Link
-                          href={`/changes/${c.id}/review`}
+                          href={`/document?changeId=${c.id}&mode=review`}
                           className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1 transition-all shadow-2xs"
                         >
                           <Eye className="w-3.5 h-3.5" /> View in Detail

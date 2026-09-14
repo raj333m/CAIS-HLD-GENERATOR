@@ -268,7 +268,7 @@ export default function DashboardPage() {
                   return (
                     <tr
                       key={change.id}
-                      onClick={() => router.push(`/changes/${change.id}/review`)}
+                      onClick={() => router.push(`/document?changeId=${change.id}&mode=review`)}
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">

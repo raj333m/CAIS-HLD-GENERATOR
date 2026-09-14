@@ -31,11 +31,10 @@ export default function PendingApprovalPage() {
       const res = await fetch('/api/changes');
       if (res.ok) {
         const data = await res.json();
-        // Filter changes authored by this BA that are NOT Approved (i.e. IN_REVIEW or DRAFT/SENT_BACK)
+        // Filter changes authored by this BA that are awaiting approval (IN_REVIEW) or requiring revision resubmission (SENT_BACK)
         const pending = (data.changes || []).filter((c: any) => {
-          const isNotApproved = c.status !== 'APPROVED';
-          // If in production multi-user, filter by createdById if available
-          return isNotApproved;
+          const isAwaitingOrRevision = c.status === 'IN_REVIEW' || c.status === 'SENT_BACK';
+          return isAwaitingOrRevision;
         });
         setChanges(pending);
       }
@@ -168,7 +167,7 @@ export default function PendingApprovalPage() {
                       </td>
                       <td className="p-3.5 text-right whitespace-nowrap">
                         <Link
-                          href={`/changes/${c.id}/review`}
+                          href={`/document?changeId=${c.id}&mode=review`}
                           className="px-3.5 py-1.5 rounded-xl bg-[#C0272D] hover:bg-red-700 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-all"
                         >
                           <Eye className="w-3.5 h-3.5" /> View in Detail
