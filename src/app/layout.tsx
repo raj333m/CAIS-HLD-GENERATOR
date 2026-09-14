@@ -25,7 +25,7 @@ export default function RootLayout({
           <AuthProvider>
             <div className="min-h-screen flex flex-col transition-colors duration-200">
               <Navbar />
-              <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+              <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-24 sm:pb-28">
                 {children}
               </main>
               <AskHldAssistant />

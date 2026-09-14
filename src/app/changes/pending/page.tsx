@@ -66,11 +66,6 @@ export default function PendingApprovalPage() {
       {/* Header Banner */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" /> Pending for Approval Queue
-            </span>
-          </div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Pending for Approval
           </h1>

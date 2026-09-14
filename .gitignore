@@ -39,3 +39,6 @@ prisma/dev.db-journal
 
 # Scratch directory
 /scratch
+
+.vercel
+.env*
