@@ -91,34 +91,38 @@ export async function GET(req: NextRequest) {
 
   if (changeId) {
     try {
+      // 1. Read from SQLite DB (authoritative change record)
+      const change = await findCaisChange(changeId);
+      if (change && change.reviewComments) {
+        try {
+          const parsed = JSON.parse(change.reviewComments);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.reviews && typeof parsed.reviews === 'object') {
+              state.reviews = { ...state.reviews, ...parsed.reviews };
+            }
+            if (parsed.currentFeedbackRound) {
+              state.currentFeedbackRound = parsed.currentFeedbackRound;
+            }
+            if (parsed.feedbackRoundsHistory && Array.isArray(parsed.feedbackRoundsHistory)) {
+              state.feedbackRoundsHistory = parsed.feedbackRoundsHistory;
+            }
+          }
+        } catch (e) {
+          // Plain text comment fallback
+        }
+      }
+
+      // 2. Read from CloudStore (cross-Lambda state) and merge
       const cloudState = await getCloudChangeState(changeId);
-      if (cloudState && cloudState.reviews) {
-        state.reviews = cloudState.reviews;
+      if (cloudState) {
+        if (cloudState.reviews && Object.keys(cloudState.reviews).length > 0) {
+          state.reviews = { ...state.reviews, ...cloudState.reviews };
+        }
         if (cloudState.currentFeedbackRound) {
           state.currentFeedbackRound = cloudState.currentFeedbackRound;
         }
-        if (cloudState.feedbackRoundsHistory) {
+        if (cloudState.feedbackRoundsHistory && cloudState.feedbackRoundsHistory.length > 0) {
           state.feedbackRoundsHistory = cloudState.feedbackRoundsHistory;
-        }
-      } else {
-        const change = await findCaisChange(changeId);
-        if (change && change.reviewComments) {
-          try {
-            const parsed = JSON.parse(change.reviewComments);
-            if (parsed && typeof parsed === 'object') {
-              if (parsed.reviews) {
-                state.reviews = parsed.reviews;
-              }
-              if (parsed.currentFeedbackRound) {
-                state.currentFeedbackRound = parsed.currentFeedbackRound;
-              }
-              if (parsed.feedbackRoundsHistory) {
-                state.feedbackRoundsHistory = parsed.feedbackRoundsHistory;
-              }
-            }
-          } catch (e) {
-            // Plain text comment
-          }
         }
       }
     } catch (dbErr) {
@@ -185,6 +189,13 @@ export async function POST(req: NextRequest) {
 
       // Sync to cloudStore & SQLite DB
       if (changeId) {
+        const payloadJson = JSON.stringify({
+          overallReason: overallReason || newRound.overallReason,
+          reviews,
+          currentFeedbackRound: newRound,
+          feedbackRoundsHistory,
+        });
+
         try {
           await saveCloudChangeState(changeId, {
             status: 'SENT_BACK',
@@ -192,7 +203,7 @@ export async function POST(req: NextRequest) {
             currentFeedbackRound: newRound,
             feedbackRoundsHistory,
             reviewedByName: reviewerName || 'Reviewer / Lead',
-            reviewComments: overallReason || newRound.overallReason,
+            reviewComments: payloadJson,
           });
 
           const change = await findCaisChange(changeId);
@@ -201,12 +212,7 @@ export async function POST(req: NextRequest) {
               where: { id: change.id },
               data: {
                 status: 'SENT_BACK',
-                reviewComments: JSON.stringify({
-                  overallReason: overallReason || newRound.overallReason,
-                  reviews,
-                  currentFeedbackRound: newRound,
-                  feedbackRoundsHistory,
-                }),
+                reviewComments: payloadJson,
                 reviewedByName: reviewerName || 'Reviewer / Lead',
                 versionNumber: (change.versionNumber || 1) + 1,
               },
@@ -302,31 +308,28 @@ export async function POST(req: NextRequest) {
 
     // Sync to cloudStore & SQLite DB via Prisma
     if (changeId) {
+      const payloadJson = JSON.stringify({
+        reviews,
+        currentFeedbackRound,
+        feedbackRoundsHistory,
+      });
+
       try {
         await saveCloudChangeState(changeId, {
           reviews,
           currentFeedbackRound,
           feedbackRoundsHistory,
           reviewedByName: reviewerName || 'Reviewer / Lead',
+          reviewComments: payloadJson,
         });
 
         const change = await findCaisChange(changeId);
         if (change) {
-          let existingObj: any = {};
-          try {
-            if (change.reviewComments) existingObj = JSON.parse(change.reviewComments);
-          } catch (e) {}
-
           await prisma.caisChange.update({
             where: { id: change.id },
             data: {
               status: change.status === 'DRAFT' ? 'IN_REVIEW' : change.status,
-              reviewComments: JSON.stringify({
-                ...existingObj,
-                reviews,
-                currentFeedbackRound,
-                feedbackRoundsHistory,
-              }),
+              reviewComments: payloadJson,
               reviewedByName: reviewerName || change.reviewedByName || 'Reviewer / Lead',
             },
           });
