@@ -49,14 +49,22 @@ const CLIENT_STATIC_REVIEWED_BY = [
 ];
 
 function sanitizeParties(parties: any[]) {
-  if (!Array.isArray(parties) || parties.length === 0 || parties.some((p: any) => p.Name === '[Name]' || p.Role === 'Lead Business Analyst' || p.Role === 'ETL Engineering Lead')) {
+  if (
+    !Array.isArray(parties) ||
+    parties.length === 0 ||
+    parties.some((p: any) => p.Name === '[Name]' || (p.Name && p.Name.includes('[')) || p.Role === 'Lead Business Analyst' || p.Role === 'ETL Engineering Lead' || p['Business Unit'])
+  ) {
     return JSON.parse(JSON.stringify(CLIENT_STATIC_INVOLVED_PARTIES));
   }
   return parties;
 }
 
 function sanitizeReviewedBy(reviewed: any[]) {
-  if (!Array.isArray(reviewed) || reviewed.length === 0 || reviewed.some((r: any) => r.Reviewer === '[Name]' || r['Role or Business Unit'] === 'Lead BA Reviewer' || r['Role or Business Unit'] === 'Enterprise Architect')) {
+  if (
+    !Array.isArray(reviewed) ||
+    reviewed.length === 0 ||
+    reviewed.some((r: any) => r.Reviewer === '[Name]' || (r.Reviewer && r.Reviewer.includes('[')) || r['Role or Business Unit'] === 'Lead BA Reviewer' || r['Role or Business Unit'] === 'Enterprise Architect')
+  ) {
     return JSON.parse(JSON.stringify(CLIENT_STATIC_REVIEWED_BY));
   }
   return reviewed;
