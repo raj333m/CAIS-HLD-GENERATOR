@@ -22,13 +22,22 @@ export const deletedIds = new Set<string>();
 let masterCache: Record<string, any> = {};
 let lastFetchTime = 0;
 
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json',
+};
+
 async function fetchMasterStore(): Promise<Record<string, any>> {
   const now = Date.now();
   if (now - lastFetchTime < 100 && Object.keys(masterCache).length > 0) {
     return masterCache;
   }
   try {
-    const res = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, { cache: 'no-store' });
+    const res = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, {
+      headers: HEADERS,
+      cache: 'no-store',
+    });
     if (res.ok) {
       const item = await res.json();
       if (item && item.data && typeof item.data === 'object') {
@@ -56,7 +65,7 @@ async function provisionFreshStore(dataToSave?: any): Promise<void> {
   try {
     const createRes = await fetch('https://api.restful-api.dev/objects', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: HEADERS,
       body: JSON.stringify({
         name: 'cais_hld_master_store_production_v59',
         data: payload
@@ -80,7 +89,7 @@ async function persistStore(storeData: any): Promise<void> {
   try {
     const putRes = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: HEADERS,
       body: JSON.stringify({
         name: 'cais_hld_master_store_production_v59',
         data: storeData,
