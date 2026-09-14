@@ -2021,7 +2021,7 @@ export default function LivingDocumentPage() {
                           <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Debt sale files &amp; delete markers applied for sold accounts.</p>
                           <div className="pt-1">
                             <span className="inline-block bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-sky-300 dark:border-sky-800">
-                              [Name] (Debt Sale Specialist)
+                              Narsimha Chary (UKBI ITPM)
                             </span>
                           </div>
                         </div>
@@ -2068,9 +2068,9 @@ export default function LivingDocumentPage() {
                               </span>
                             ) : (
                               <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded border border-emerald-200 dark:border-emerald-900 space-y-0.5 text-emerald-900 dark:text-emerald-200 text-[9px]">
-                                <div>Primary - [Name] (Fraud Investigator)</div>
-                                <div>CWO - [Name] | RCS - [Name]</div>
-                                <div>HSBC Cards / Retail - [Name]</div>
+                                <div>Primary - Swapnil Kalidas Sankpal (Tech Lead)</div>
+                                <div>CWO - Vishnu Vardhan | RCS - Manash R Chanda</div>
+                                <div>HSBC Cards / Retail - Aishwarya Raj Singh (Business Analyst)</div>
                               </div>
                             )}
                           </div>
@@ -2340,7 +2340,7 @@ export default function LivingDocumentPage() {
 
                       <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
                         <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">Debt Sale Files</div>
-                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name]</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Narsimha Chary (UKBI ITPM)</div>
                       </div>
                       <div className="flex justify-center text-slate-400 text-xs">↓</div>
 
@@ -2352,7 +2352,7 @@ export default function LivingDocumentPage() {
 
                       <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
                         <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">Basic Data Validation</div>
-                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Aishwarya Raj Singh &amp; Swapnil Kalidas Sankpal</div>
                       </div>
                       <div className="flex justify-center text-slate-400 text-xs">↓</div>
 
@@ -2402,7 +2402,7 @@ export default function LivingDocumentPage() {
 
                       <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-purple-200 dark:border-purple-900/60 shadow-xs">
                         <div className="font-bold text-[10px] uppercase text-purple-700 dark:text-purple-400">Basic Data Validation</div>
-                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Aishwarya Raj Singh &amp; Swapnil Kalidas Sankpal</div>
                       </div>
                       <div className="flex justify-center text-slate-400 text-xs">↓</div>
 
@@ -2434,13 +2434,13 @@ export default function LivingDocumentPage() {
 
                       <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
                         <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Exclusion Files</div>
-                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Aishwarya Raj Singh &amp; Swapnil Kalidas Sankpal</div>
                       </div>
                       <div className="flex justify-center text-slate-400 text-xs">↓</div>
 
                       <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
                         <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Debt Sale Files</div>
-                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name]</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Narsimha Chary</div>
                       </div>
                       <div className="flex justify-center text-slate-400 text-xs">↓</div>
 
@@ -2452,7 +2452,7 @@ export default function LivingDocumentPage() {
 
                       <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
                         <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Basic Data Validation</div>
-                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Aishwarya Raj Singh &amp; Swapnil Kalidas Sankpal</div>
                       </div>
                       <div className="flex justify-center text-slate-400 text-xs">↓</div>
 
