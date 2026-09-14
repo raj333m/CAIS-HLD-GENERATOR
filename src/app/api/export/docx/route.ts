@@ -506,11 +506,11 @@ export async function GET() {
       makeCustomTable(
         ['Name', 'Role'],
         [
-          ['[Name]', 'Design Manager / POD Lead'],
-          ['[Name]', 'Technical Lead'],
-          ['[Name]', 'Senior Developer'],
-          ['[Name]', 'IT Project Manager'],
-          ['[Name]', 'Business Analyst'],
+          ['Manash R Chanda', 'UKBI POD Lead'],
+          ['Swapnil Kalidas Sankpal', 'Tech Lead'],
+          ['Vishnu Vardhan', 'Senior Developer'],
+          ['Aishwarya Raj Singh', 'Business Analyst'],
+          ['Narsimha Chary', 'UKBI ITPM'],
         ]
       )
     );
@@ -524,7 +524,7 @@ export async function GET() {
       makeCustomTable(
         ['Version', 'Date', 'Updated By', 'Reason for Issue'],
         [
-          ['0.1', '[Date]', '[Name]', 'Initial consolidated HLD created'],
+          ['1.0', '14/09/2026', 'Aishwarya Raj Singh', 'Initial consolidated HLD created'],
           [' ', ' ', ' ', ' '],
         ]
       )
@@ -536,10 +536,9 @@ export async function GET() {
       makeCustomTable(
         ['Reviewer', 'Role or Business Unit', 'Date'],
         [
-          ['[Name]', 'Product Owner — Risk CRA', '[Date]'],
-          ['[Name]', 'CBM Lead UK', '[Date]'],
-          ['[Name]', 'Technical Lead', '[Date]'],
-          ['[Name]', 'Senior Developer', '[Date]'],
+          ['Stuart H Lindsay', 'Product Owner UK Bureau', '14/09/2026'],
+          ['Suranjita Saha', 'CU Team Lead', '14/09/2026'],
+          ['Manash R Chanda', 'UKBI Design Manager', '14/09/2026'],
         ]
       )
     );

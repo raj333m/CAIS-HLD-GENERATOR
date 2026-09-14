@@ -505,6 +505,7 @@ export default function LivingDocumentPage() {
         setActiveProjectId(data.project.id);
         setSections(data.sections);
         setSectionReviews({});
+        setCaisChanges([]);
         if (data.metadata) {
           if (data.metadata.coverDetails) setCoverDetails(data.metadata.coverDetails);
           if (data.metadata.interestedParties) setInvolvedParties(data.metadata.interestedParties);
@@ -1023,11 +1024,11 @@ export default function LivingDocumentPage() {
   // Interactive Document Information Tables State & Dynamic Column Handlers
   const [partyCols, setPartyCols] = useState(['Name', 'Role']);
   const [involvedParties, setInvolvedParties] = useState<any[]>([
-    { id: '1', Name: '[Name]', Role: 'Design Manager / POD Lead' },
-    { id: '2', Name: '[Name]', Role: 'Technical Lead' },
-    { id: '3', Name: '[Name]', Role: 'Senior Developer' },
-    { id: '4', Name: '[Name]', Role: 'IT Project Manager' },
-    { id: '5', Name: '[Name]', Role: 'Business Analyst' },
+    { id: '1', Name: 'Manash R Chanda', Role: 'UKBI POD Lead' },
+    { id: '2', Name: 'Swapnil Kalidas Sankpal', Role: 'Tech Lead' },
+    { id: '3', Name: 'Vishnu Vardhan', Role: 'Senior Developer' },
+    { id: '4', Name: 'Aishwarya Raj Singh', Role: 'Business Analyst' },
+    { id: '5', Name: 'Narsimha Chary', Role: 'UKBI ITPM' },
   ]);
   const [editingPartyId, setEditingPartyId] = useState<string | null>(null);
 
@@ -1047,9 +1048,9 @@ export default function LivingDocumentPage() {
 
   const [reviewerCols, setReviewerCols] = useState(['Reviewer', 'Role or Business Unit', 'Date']);
   const [reviewedBy, setReviewedBy] = useState<any[]>([
-    { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Product Owner — Risk CRA', Date: '[Date]' },
-    { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'CBM Lead UK', Date: '[Date]' },
-    { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
+    { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau', Date: getTodayFormatted() },
+    { id: '2', Reviewer: 'Suranjita Saha', 'Role or Business Unit': 'CU Team Lead', Date: getTodayFormatted() },
+    { id: '3', Reviewer: 'Manash R Chanda', 'Role or Business Unit': 'UKBI Design Manager', Date: getTodayFormatted() },
   ]);
   const [editingReviewerId, setEditingReviewerId] = useState<string | null>(null);
 

@@ -362,11 +362,11 @@ export async function GET() {
         <tr><th>Name</th><th>Role</th></tr>
       </thead>
       <tbody>
-        <tr><td>[Name]</td><td>Design Manager / POD Lead</td></tr>
-        <tr class="alt-row"><td>[Name]</td><td>Technical Lead</td></tr>
-        <tr><td>[Name]</td><td>Senior Developer</td></tr>
-        <tr class="alt-row"><td>[Name]</td><td>IT Project Manager</td></tr>
-        <tr><td>[Name]</td><td>Business Analyst</td></tr>
+        <tr><td>Manash R Chanda</td><td>UKBI POD Lead</td></tr>
+        <tr class="alt-row"><td>Swapnil Kalidas Sankpal</td><td>Tech Lead</td></tr>
+        <tr><td>Vishnu Vardhan</td><td>Senior Developer</td></tr>
+        <tr class="alt-row"><td>Aishwarya Raj Singh</td><td>Business Analyst</td></tr>
+        <tr><td>Narsimha Chary</td><td>UKBI ITPM</td></tr>
       </tbody>
     </table>
   </div>
@@ -379,7 +379,7 @@ export async function GET() {
         <tr><th>Version</th><th>Date</th><th>Updated By</th><th>Reason for Issue</th></tr>
       </thead>
       <tbody>
-        <tr><td>0.1</td><td>[Date]</td><td>[Name]</td><td>Initial consolidated HLD created</td></tr>
+        <tr><td>1.0</td><td>14/09/2026</td><td>Aishwarya Raj Singh</td><td>Initial consolidated HLD created</td></tr>
       </tbody>
     </table>
   </div>
@@ -391,10 +391,9 @@ export async function GET() {
         <tr><th>Reviewer</th><th>Role or Business Unit</th><th>Date</th></tr>
       </thead>
       <tbody>
-        <tr><td>[Name]</td><td>Product Owner — Risk CRA</td><td>[Date]</td></tr>
-        <tr class="alt-row"><td>[Name]</td><td>CBM Lead UK</td><td>[Date]</td></tr>
-        <tr><td>[Name]</td><td>Technical Lead</td><td>[Date]</td></tr>
-        <tr class="alt-row"><td>[Name]</td><td>Senior Developer</td><td>[Date]</td></tr>
+        <tr><td>Stuart H Lindsay</td><td>Product Owner UK Bureau</td><td>14/09/2026</td></tr>
+        <tr class="alt-row"><td>Suranjita Saha</td><td>CU Team Lead</td><td>14/09/2026</td></tr>
+        <tr><td>Manash R Chanda</td><td>UKBI Design Manager</td><td>14/09/2026</td></tr>
       </tbody>
     </table>
   </div>

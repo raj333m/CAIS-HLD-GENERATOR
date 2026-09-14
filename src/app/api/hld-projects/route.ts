@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MASTER_SECTIONS } from '@/lib/sectionsData';
+import { MASTER_SECTIONS, BLANK_SECTIONS } from '@/lib/sectionsData';
 
 export interface HldProject {
   id: string;
@@ -22,6 +22,20 @@ function getTodayFormatted() {
 
 const initialDate = getTodayFormatted();
 
+export const STATIC_INVOLVED_PARTIES = [
+  { id: '1', Name: 'Manash R Chanda', Role: 'UKBI POD Lead' },
+  { id: '2', Name: 'Swapnil Kalidas Sankpal', Role: 'Tech Lead' },
+  { id: '3', Name: 'Vishnu Vardhan', Role: 'Senior Developer' },
+  { id: '4', Name: 'Aishwarya Raj Singh', Role: 'Business Analyst' },
+  { id: '5', Name: 'Narsimha Chary', Role: 'UKBI ITPM' },
+];
+
+export const STATIC_REVIEWED_BY = [
+  { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau', Date: initialDate },
+  { id: '2', Reviewer: 'Suranjita Saha', 'Role or Business Unit': 'CU Team Lead', Date: initialDate },
+  { id: '3', Reviewer: 'Manash R Chanda', 'Role or Business Unit': 'UKBI Design Manager', Date: initialDate },
+];
+
 let hldProjectsStore: HldProject[] = [
   {
     id: 'proj-alpha',
@@ -34,9 +48,9 @@ let hldProjectsStore: HldProject[] = [
   },
 ];
 
-// In-memory sections store per project ID
+// In-memory sections store per project ID (starts BLANK until Create New HLD is run with consent)
 let projectSectionsStore: Record<string, any[]> = {
-  'proj-alpha': JSON.parse(JSON.stringify(MASTER_SECTIONS)),
+  'proj-alpha': JSON.parse(JSON.stringify(BLANK_SECTIONS)),
 };
 
 // In-memory section reviews per project ID
@@ -59,19 +73,11 @@ let projectMetadataStore: Record<string, {
       date: initialDate,
       version: '1.0',
     },
-    interestedParties: [
-      { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
-      { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
-      { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
-    ],
+    interestedParties: JSON.parse(JSON.stringify(STATIC_INVOLVED_PARTIES)),
     revisionHistory: [
       { id: '1', Version: '1.0', Date: initialDate, 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
     ],
-    reviewedBy: [
-      { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
-      { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
-      { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
-    ],
+    reviewedBy: JSON.parse(JSON.stringify(STATIC_REVIEWED_BY)),
   },
 };
 
@@ -81,7 +87,7 @@ export async function GET(req: NextRequest) {
 
   if (projectId) {
     const proj = hldProjectsStore.find((p) => p.id === projectId);
-    const sections = projectSectionsStore[projectId] || JSON.parse(JSON.stringify(MASTER_SECTIONS));
+    const sections = projectSectionsStore[projectId] || JSON.parse(JSON.stringify(BLANK_SECTIONS));
     const reviews = projectReviewsStore[projectId] || {};
     const todayStr = getTodayFormatted();
     const metadata = projectMetadataStore[projectId] || {
@@ -92,19 +98,11 @@ export async function GET(req: NextRequest) {
         date: todayStr,
         version: '1.0',
       },
-      interestedParties: [
-        { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
-        { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
-        { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
-      ],
+      interestedParties: JSON.parse(JSON.stringify(STATIC_INVOLVED_PARTIES)),
       revisionHistory: [
         { id: '1', Version: '1.0', Date: todayStr, 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
       ],
-      reviewedBy: [
-        { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
-        { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
-        { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
-      ],
+      reviewedBy: JSON.parse(JSON.stringify(STATIC_REVIEWED_BY)),
     };
     return NextResponse.json({ project: proj, sections, reviews, metadata });
   }
@@ -138,15 +136,17 @@ export async function POST(req: NextRequest) {
     hldProjectsStore.push(newProject);
 
     // Populate sections according to strategy
-    const sourceSections = projectSectionsStore[sourceProjectId || 'proj-alpha'] || MASTER_SECTIONS;
+    // If user selected COPY_ALL (Pre-populated baseline with user consent), use MASTER_SECTIONS
+    const baselineSections = MASTER_SECTIONS;
+    const blankShellSections = BLANK_SECTIONS;
 
     let newSections: any[] = [];
 
     if (strategy === 'COPY_ALL') {
-      newSections = JSON.parse(JSON.stringify(sourceSections));
+      newSections = JSON.parse(JSON.stringify(baselineSections));
     } else if (strategy === 'CHOOSE_SECTIONS') {
       const allowedNums: string[] = selectedSectionNums || [];
-      newSections = sourceSections.map((sec: any) => {
+      newSections = baselineSections.map((sec: any) => {
         if (allowedNums.includes(sec.sectionNumber)) {
           return JSON.parse(JSON.stringify(sec));
         } else {
@@ -164,16 +164,7 @@ export async function POST(req: NextRequest) {
       });
     } else {
       // START_BLANK
-      newSections = sourceSections.map((sec: any) => ({
-        ...JSON.parse(JSON.stringify(sec)),
-        subSections: [
-          {
-            id: `sub-blank-${sec.sectionNumber}`,
-            heading: 'Section Overview',
-            contentBlocks: JSON.stringify([{ type: 'paragraph', payload: { text: '[New project section shell - add sub-headings and text]' } }]),
-          },
-        ],
-      }));
+      newSections = JSON.parse(JSON.stringify(blankShellSections));
     }
 
     const todayStr = getTodayFormatted();
@@ -181,19 +172,11 @@ export async function POST(req: NextRequest) {
 
     const carryOverParties = Array.isArray(sourceInvolvedParties) && sourceInvolvedParties.length > 0
       ? sourceInvolvedParties
-      : (sourceMeta?.interestedParties || [
-          { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
-          { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
-          { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
-        ]);
+      : (sourceMeta?.interestedParties || STATIC_INVOLVED_PARTIES);
 
     const carryOverReviewedBy = Array.isArray(sourceReviewedBy) && sourceReviewedBy.length > 0
       ? sourceReviewedBy
-      : (sourceMeta?.reviewedBy || [
-          { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
-          { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
-          { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
-        ]);
+      : (sourceMeta?.reviewedBy || STATIC_REVIEWED_BY);
 
     const newMetadata = {
       coverDetails: {
