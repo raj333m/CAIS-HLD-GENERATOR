@@ -387,6 +387,8 @@ function renderBlocksToDocx(blocksJsonStr: string): (Paragraph | Table)[] {
 }
 
 import { MASTER_SECTIONS } from '@/lib/sectionsData';
+import { PREPOPULATED_CHANGES } from '@/app/api/changes/route';
+import { getCloudChangeState, deletedIds, getCreatedChanges } from '@/lib/cloudStore';
 
 export async function GET() {
   try {
@@ -410,6 +412,47 @@ export async function GET() {
     } catch (dbErr) {
       console.error('DB query failed in DOCX export, using fallbacks:', dbErr);
     }
+
+    if (!changes || changes.length === 0) {
+      changes = PREPOPULATED_CHANGES;
+    }
+
+    // Merge cloud-created changes
+    try {
+      const cloudCreated = await getCreatedChanges();
+      if (cloudCreated.length > 0) {
+        const existingRefs = new Set(changes.map((c: any) => c.crReference));
+        const newItems = cloudCreated.filter((c: any) => !existingRefs.has(c.crReference));
+        changes = [...newItems, ...changes];
+      }
+    } catch (e) {}
+
+    // Enrich with CloudStore state (status, review comments, approval date)
+    const enrichedChanges = await Promise.all(
+      changes.map(async (c: any) => {
+        try {
+          const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
+          const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
+          const isDeleted = (cloudStateByRef && cloudStateByRef.deleted) || (cloudStateById && cloudStateById.deleted) || deletedIds.has(c.id) || deletedIds.has(c.crReference);
+          if (isDeleted) return null;
+
+          const cloudState = cloudStateByRef || cloudStateById;
+          if (cloudState) {
+            return {
+              ...c,
+              status: cloudState.status || c.status,
+              versionNumber: cloudState.versionNumber || c.versionNumber,
+              reviewComments: cloudState.reviewComments || c.reviewComments,
+              reviewedByName: cloudState.reviewedByName || c.reviewedByName,
+              approvalDate: cloudState.approvalDate || c.approvalDate,
+            };
+          }
+        } catch (e) {}
+        return c;
+      })
+    );
+
+    changes = enrichedChanges.filter(Boolean);
 
     if (!sections || sections.length === 0) {
       sections = MASTER_SECTIONS;
