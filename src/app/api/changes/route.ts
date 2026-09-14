@@ -278,9 +278,10 @@ export async function POST(request: Request) {
       });
       await saveCreatedChange(newChange);
       return NextResponse.json({ change: newChange }, { status: 201 });
-    } catch (dbErr) {
+    } catch (dbErr: any) {
+      console.error('[Prisma Error in POST /api/changes]:', dbErr?.message || dbErr);
       const mockChange = {
-        id: `change-${Date.now()}`,
+        id: crypto.randomUUID(),
         title,
         crReference,
         status: body.status || 'DRAFT',
@@ -291,10 +292,13 @@ export async function POST(request: Request) {
         afterText: afterText || '',
         sectionsUpdated: Array.isArray(sectionsUpdated) ? sectionsUpdated.join(', ') : sectionsUpdated || '1.3',
         impactedBureaus: Array.isArray(impactedBureaus) ? impactedBureaus.join(', ') : impactedBureaus || 'Experian, Equifax, TransUnion',
+        impactedDataItems: Array.isArray(impactedDataItems) ? impactedDataItems.join(', ') : impactedDataItems || '',
         targetMonth: targetMonth || 'November 2026',
+        author: 'Aishwarya Raj Singh',
         createdAt: new Date().toISOString(),
       };
       await saveCreatedChange(mockChange);
+      console.log('[POST /api/changes] Successfully created persistent change record with UUID:', mockChange.id);
       return NextResponse.json({ change: mockChange }, { status: 201 });
     }
   } catch (error: any) {

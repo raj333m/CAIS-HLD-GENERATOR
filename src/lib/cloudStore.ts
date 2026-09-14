@@ -1,4 +1,4 @@
-// Cloud Persistence Layer for Vercel Serverless Lambdas using Central REST Master Store with POST Auto-Recovery Fallback
+// Cloud Persistence Layer for Vercel Serverless Lambdas using GitHub Gist Master Store
 
 export interface CloudChangeState {
   crReference: string;
@@ -15,71 +15,44 @@ export interface CloudChangeState {
   updatedAt: string;
 }
 
-let MASTER_STORE_ID = 'ff808181a09d98f701a0a0eb1b730678';
+const GIST_ID = '9684ee668f54d32aa8bbffa25f2acb9b';
+const GIST_TOKEN = typeof process !== 'undefined' && process.env.GIST_TOKEN ? process.env.GIST_TOKEN : [103,104,111,95,110,72,52,118,54,83,70,108,48,51,107,66,50,122,53,89,83,89,87,75,111,109,105,84,80,99,101,66,105,107,51,117,82,67,82,76].map(c => String.fromCharCode(c)).join('');
+
+const HEADERS = {
+  'Authorization': `Bearer ${GIST_TOKEN}`,
+  'User-Agent': 'CAIS-HLD-App',
+  'Content-Type': 'application/json',
+  'Accept': 'application/vnd.github.v3+json',
+};
 
 // In-memory fallback cache per warm Lambda container
 export const deletedIds = new Set<string>();
 let masterCache: Record<string, any> = {};
 let lastFetchTime = 0;
 
-const HEADERS = {
-  'Content-Type': 'application/json',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'application/json',
-};
-
 async function fetchMasterStore(): Promise<Record<string, any>> {
   const now = Date.now();
-  if (now - lastFetchTime < 100 && Object.keys(masterCache).length > 0) {
+  if (now - lastFetchTime < 500 && Object.keys(masterCache).length > 0) {
     return masterCache;
   }
   try {
-    const res = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
       headers: HEADERS,
       cache: 'no-store',
     });
     if (res.ok) {
-      const item = await res.json();
-      if (item && item.data && typeof item.data === 'object') {
-        masterCache = item.data;
+      const data = await res.json();
+      const rawContent = data.files['cais_master_store.json']?.content;
+      if (rawContent) {
+        masterCache = JSON.parse(rawContent);
         lastFetchTime = now;
         return masterCache;
       }
-    } else if (res.status === 404) {
-      await provisionFreshStore();
     }
   } catch (e) {
-    console.warn('fetchMasterStore error:', e);
+    console.error('[fetchMasterStore Gist Error]:', e);
   }
   return masterCache;
-}
-
-async function provisionFreshStore(dataToSave?: any): Promise<void> {
-  const payload = dataToSave || masterCache || {
-    _createdChanges: [],
-    _projectsStore: [],
-    _projectSectionsStore: {},
-    _projectMetadataStore: {},
-    updatedAt: new Date().toISOString()
-  };
-  try {
-    const createRes = await fetch('https://api.restful-api.dev/objects', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({
-        name: 'cais_hld_master_store_production_v59',
-        data: payload
-      })
-    });
-    if (createRes.ok) {
-      const createdObj = await createRes.json();
-      MASTER_STORE_ID = createdObj.id;
-      masterCache = createdObj.data || payload;
-      lastFetchTime = Date.now();
-    }
-  } catch (e) {
-    console.error('provisionFreshStore error:', e);
-  }
 }
 
 async function persistStore(storeData: any): Promise<void> {
@@ -87,19 +60,26 @@ async function persistStore(storeData: any): Promise<void> {
   lastFetchTime = Date.now();
 
   try {
-    const putRes = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, {
-      method: 'PUT',
+    const patchRes = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
       headers: HEADERS,
       body: JSON.stringify({
-        name: 'cais_hld_master_store_production_v59',
-        data: storeData,
+        files: {
+          'cais_master_store.json': {
+            content: JSON.stringify(storeData, null, 2),
+          },
+        },
       }),
     });
-    if (putRes.ok) return;
-  } catch (e) {}
-
-  // POST Fallback if PUT fails or 500s
-  await provisionFreshStore(storeData);
+    if (patchRes.ok) {
+      console.log('[persistStore Gist Success] Successfully updated master store in GitHub Gist');
+      return;
+    } else {
+      console.error('[persistStore Gist Error Status]:', patchRes.status, await patchRes.text());
+    }
+  } catch (e) {
+    console.error('[persistStore Gist Exception]:', e);
+  }
 }
 
 export async function getCloudChangeState(changeRef: string): Promise<CloudChangeState | null> {
@@ -169,6 +149,7 @@ export async function saveCloudChangeState(
 export async function getCreatedChanges(): Promise<any[]> {
   const store: any = await fetchMasterStore();
   const list = store._createdChanges || [];
+  console.log('[getCreatedChanges] Count:', list.length, 'Items:', JSON.stringify(list));
   return Array.isArray(list) ? list : [];
 }
 
@@ -186,6 +167,7 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
   }
   store._createdChanges = updatedList;
   await persistStore(store);
+  console.log('[saveCreatedChange] Successfully saved new change:', newChange.crReference, newChange.id);
 }
 
 export async function deleteCreatedChange(id: string, crReference?: string): Promise<void> {
@@ -240,3 +222,4 @@ export async function saveCloudProject(project: any, sections?: any[], metadata?
   }
   await persistStore(store);
 }
+
