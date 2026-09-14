@@ -575,6 +575,12 @@ export default function LivingDocumentPage() {
   const [overallSendBackReason, setOverallSendBackReason] = useState('');
   const [showRevisionHistoryModal, setShowRevisionHistoryModal] = useState(false);
   const [expandedRemarks, setExpandedRemarks] = useState<Record<string, boolean>>({});
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    targetId: string;
+    crReference: string;
+    titleText: string;
+  } | null>(null);
 
   const fetchSectionReviews = async (overrideChangeId?: string) => {
     try {
@@ -1474,25 +1480,37 @@ export default function LivingDocumentPage() {
     }
   };
 
-  const handleDeleteChange = async (id: string) => {
+  const handleDeleteChange = (id: string) => {
     const c = caisChanges.find((item) => item.id === id || item.crReference === id);
     const ref = c ? c.crReference : id;
     const titleText = c ? ` (${c.title})` : '';
 
-    if (!window.confirm(`Are you sure you want to delete change reference ${ref}${titleText} from the CAIS Change Register?\n\nThis will remove both the Master Change Log summary row and its Detailed Change Specification.`)) {
-      return;
-    }
+    setDeleteConfirmModal({
+      isOpen: true,
+      targetId: c?.id || c?.crReference || id,
+      crReference: ref,
+      titleText,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmModal) return;
+
+    const { targetId, crReference } = deleteConfirmModal;
+    setDeleteConfirmModal(null);
 
     try {
       // Optimistically remove from state immediately
-      setCaisChanges((prev) => prev.filter((item) => item.id !== id && item.crReference !== id && item.crReference !== ref));
+      setCaisChanges((prev) =>
+        prev.filter((item) => item.id !== targetId && item.crReference !== targetId && item.crReference !== crReference)
+      );
 
-      const res = await fetch(`/api/changes/${encodeURIComponent(id)}`, {
+      const res = await fetch(`/api/changes/${encodeURIComponent(targetId)}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
-        setDraftSavedNotice(`Change entry ${ref} deleted successfully.`);
+        setDraftSavedNotice(`Change entry ${crReference} deleted successfully.`);
         fetchChanges();
         setTimeout(() => setDraftSavedNotice(null), 4000);
       } else {
@@ -4146,6 +4164,63 @@ export default function LivingDocumentPage() {
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Confirm Send Back for Revision</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IN-APP MASTER CHANGE LOG DELETE CONFIRMATION MODAL */}
+      {deleteConfirmModal?.isOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl max-w-lg w-full flex flex-col space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Delete Change Entry
+                  </h3>
+                  <p className="text-xs text-rose-600 dark:text-rose-400 font-mono font-medium">
+                    Reference: {deleteConfirmModal.crReference}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 space-y-2 text-xs text-slate-700 dark:text-slate-300">
+              <p className="font-semibold text-slate-900 dark:text-white">
+                Are you sure you want to delete change reference <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">{deleteConfirmModal.crReference}{deleteConfirmModal.titleText}</span> from the CAIS Change Register?
+              </p>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                This will remove both the <span className="font-semibold text-slate-900 dark:text-slate-200">Master Change Log summary row</span> and its linked <span className="font-semibold text-slate-900 dark:text-slate-200">Detailed Change Specification</span>. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmModal(null)}
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete</span>
               </button>
             </div>
           </div>

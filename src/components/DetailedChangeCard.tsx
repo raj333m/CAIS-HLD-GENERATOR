@@ -261,12 +261,12 @@ export default function DetailedChangeCard({
                   <Edit3 className="w-3.5 h-3.5" /> Modify / Edit Entry
                 </button>
               )}
-              {onDelete && change.id && (
+              {onDelete && (change.id || change.crReference) && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(change.id!);
+                    onDelete((change.id || change.crReference)!);
                   }}
                   className="px-3 py-1.5 rounded-xl bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
                 >
