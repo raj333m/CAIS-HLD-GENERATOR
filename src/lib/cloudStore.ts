@@ -11,6 +11,7 @@ export interface CloudChangeState {
   currentFeedbackRound?: any;
   feedbackRoundsHistory?: any[];
   addressedRemarks?: Record<string, boolean>;
+  deleted?: boolean;
   updatedAt: string;
 }
 

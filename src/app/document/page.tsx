@@ -495,6 +495,8 @@ export default function LivingDocumentPage() {
           ...newProjectForm,
           targetBrand: newProjectForm.targetBrands.join(', '),
           sourceProjectId: activeProjectId,
+          sourceInvolvedParties: involvedParties,
+          sourceReviewedBy: reviewedBy,
         }),
       });
       const data = await res.json();
@@ -1473,14 +1475,19 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteChange = async (id: string) => {
-    const c = caisChanges.find((item) => item.id === id);
-    const ref = c ? c.crReference : 'this change entry';
-    if (!window.confirm(`Are you sure you want to delete ${ref} from the CAIS Change Register?`)) {
+    const c = caisChanges.find((item) => item.id === id || item.crReference === id);
+    const ref = c ? c.crReference : id;
+    const titleText = c ? ` (${c.title})` : '';
+
+    if (!window.confirm(`Are you sure you want to delete change reference ${ref}${titleText} from the CAIS Change Register?\n\nThis will remove both the Master Change Log summary row and its Detailed Change Specification.`)) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/changes/${id}`, {
+      // Optimistically remove from state immediately
+      setCaisChanges((prev) => prev.filter((item) => item.id !== id && item.crReference !== id && item.crReference !== ref));
+
+      const res = await fetch(`/api/changes/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
 
@@ -1488,9 +1495,12 @@ export default function LivingDocumentPage() {
         setDraftSavedNotice(`Change entry ${ref} deleted successfully.`);
         fetchChanges();
         setTimeout(() => setDraftSavedNotice(null), 4000);
+      } else {
+        fetchChanges();
       }
     } catch (err) {
       console.error('Failed to delete change entry:', err);
+      fetchChanges();
     }
   };
 

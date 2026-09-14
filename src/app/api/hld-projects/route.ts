@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { projectName, targetBrand, targetBrands, targetProducts, targetDate, strategy, selectedSectionNums, sourceProjectId } = body;
+    const { projectName, targetBrand, targetBrands, targetProducts, targetDate, strategy, selectedSectionNums, sourceProjectId, sourceInvolvedParties, sourceReviewedBy } = body;
 
     if (!projectName || !projectName.trim()) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
@@ -177,6 +177,23 @@ export async function POST(req: NextRequest) {
     }
 
     const todayStr = getTodayFormatted();
+    const sourceMeta = projectMetadataStore[sourceProjectId || 'proj-alpha'];
+
+    const carryOverParties = Array.isArray(sourceInvolvedParties) && sourceInvolvedParties.length > 0
+      ? sourceInvolvedParties
+      : (sourceMeta?.interestedParties || [
+          { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
+          { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
+          { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
+        ]);
+
+    const carryOverReviewedBy = Array.isArray(sourceReviewedBy) && sourceReviewedBy.length > 0
+      ? sourceReviewedBy
+      : (sourceMeta?.reviewedBy || [
+          { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
+          { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
+          { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
+        ]);
 
     const newMetadata = {
       coverDetails: {
@@ -186,11 +203,7 @@ export async function POST(req: NextRequest) {
         date: todayStr,
         version: '1.0',
       },
-      interestedParties: [
-        { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
-        { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
-        { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
-      ],
+      interestedParties: JSON.parse(JSON.stringify(carryOverParties)),
       revisionHistory: [
         {
           id: '1',
@@ -200,11 +213,7 @@ export async function POST(req: NextRequest) {
           'Reason for Issue': 'Initial consolidated HLD created',
         },
       ],
-      reviewedBy: [
-        { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
-        { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
-        { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
-      ],
+      reviewedBy: JSON.parse(JSON.stringify(carryOverReviewedBy)),
     };
 
     projectSectionsStore[newId] = newSections;

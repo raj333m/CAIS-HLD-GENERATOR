@@ -42,23 +42,75 @@ export default function NewChangeIntakePage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [autoSaveStatus, setAutoSaveStatus] = useState('Draft unsaved');
+  const [createdDraftId, setCreatedDraftId] = useState<string | null>(null);
 
-  // Mandatory Validation check
   const isFormValid =
     title.trim().length > 0 &&
     crReference.trim().length > 0 &&
     businessDriver.trim().length > 0 &&
     selectedBureaus.length > 0;
 
+  const autoSaveDraftToBackend = async () => {
+    if (!title.trim() && !crReference.trim()) return;
+    try {
+      const payload = {
+        title: title.trim() || 'Draft CAIS Change Intake',
+        crReference: crReference.trim() || 'CAIS-2026-DRAFT',
+        status: 'DRAFT',
+        changeType,
+        businessDriver: businessDriver || 'Draft change requirement',
+        description: description || '',
+        beforeText: beforeText || '',
+        afterText: afterText || '',
+        sectionsUpdated: sectionsUpdated || '1.3',
+        impactedBureaus: selectedBureaus,
+        targetMonth: targetMonth || 'November 2026',
+        userId: user?.id,
+        risks: [
+          {
+            risk: riskText,
+            impact: 'Medium',
+            mitigation: mitigationText,
+          },
+        ],
+      };
+
+      if (createdDraftId) {
+        await fetch(`/api/changes/${encodeURIComponent(createdDraftId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        setAutoSaveStatus('Draft auto-saved to Change Register');
+      } else {
+        const res = await fetch('/api/changes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const newId = data.change?.id || (data.changes && data.changes[0]?.id);
+          if (newId) {
+            setCreatedDraftId(newId);
+          }
+          setAutoSaveStatus('Draft auto-saved to Change Register');
+        }
+      }
+    } catch (e) {
+      console.error('Auto save error:', e);
+    }
+  };
+
   // Auto-save draft effect
   useEffect(() => {
-    if (title || businessDriver) {
+    if (title.trim() || crReference.trim()) {
       const timer = setTimeout(() => {
-        setAutoSaveStatus('Draft auto-saved locally');
-      }, 1200);
+        autoSaveDraftToBackend();
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [title, crReference, businessDriver, description, beforeText, afterText]);
+  }, [title, crReference, changeType, businessDriver, description, beforeText, afterText, selectedBureaus, sectionsUpdated, targetMonth]);
 
   const handleToggleBureau = (bureau: string) => {
     if (selectedBureaus.includes(bureau)) {
@@ -79,12 +131,15 @@ export default function NewChangeIntakePage() {
     setErrorMsg('');
 
     try {
-      const res = await fetch('/api/changes', {
-        method: 'POST',
+      const url = createdDraftId ? `/api/changes/${encodeURIComponent(createdDraftId)}` : '/api/changes';
+      const method = createdDraftId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
           crReference,
+          status: 'IN_REVIEW',
           changeType,
           businessDriver,
           description,
@@ -106,7 +161,8 @@ export default function NewChangeIntakePage() {
 
       if (res.ok) {
         const data = await res.json();
-        router.push(`/changes/${data.change.id}/review`);
+        const finalId = data.change?.id || createdDraftId;
+        router.push(`/changes/${finalId}/review`);
       } else {
         const err = await res.json();
         setErrorMsg(err.error || 'Failed to submit change intake');

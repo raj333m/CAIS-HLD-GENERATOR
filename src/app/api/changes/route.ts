@@ -152,12 +152,13 @@ export async function GET(request: Request) {
       changes = filtered;
     }
 
-    // Enrich changes with CloudStore persisted state across Vercel Lambdas
-    changes = await Promise.all(
+    // Enrich changes with CloudStore persisted state & filter deleted changes
+    const enrichedChanges = await Promise.all(
       changes.map(async (c: any) => {
         try {
           const cloudState = await getCloudChangeState(c.crReference || c.id);
           if (cloudState) {
+            if (cloudState.deleted) return null;
             return {
               ...c,
               status: cloudState.status || c.status,
@@ -171,6 +172,8 @@ export async function GET(request: Request) {
         return c;
       })
     );
+
+    changes = enrichedChanges.filter(Boolean);
 
     if (status) {
       changes = changes.filter((c: any) => c.status === status);
