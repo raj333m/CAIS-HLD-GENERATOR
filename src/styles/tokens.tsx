@@ -84,6 +84,20 @@ export const STATUS_CONFIG: Record<
     label: 'Draft (Revision Requested)',
     icon: AlertCircle,
   },
+  SENT_BACK: {
+    bg: 'bg-rose-500/15 dark:bg-rose-950/60',
+    text: 'text-rose-800 dark:text-rose-300',
+    border: 'border-rose-300 dark:border-rose-700/60',
+    label: 'Draft (Revision Requested)',
+    icon: AlertCircle,
+  },
+  DRAFT_REVISION_REQUESTED: {
+    bg: 'bg-rose-500/15 dark:bg-rose-950/60',
+    text: 'text-rose-800 dark:text-rose-300',
+    border: 'border-rose-300 dark:border-rose-700/60',
+    label: 'Draft (Revision Requested)',
+    icon: AlertCircle,
+  },
   PENDING: {
     bg: 'bg-slate-500/10 dark:bg-slate-800/60',
     text: 'text-slate-600 dark:text-slate-400',

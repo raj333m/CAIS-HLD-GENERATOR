@@ -43,11 +43,22 @@ export async function PUT(
     const currentVersion = existingChange?.versionNumber || 1;
     const nextVersion = isSentBack ? currentVersion + 1 : currentVersion;
 
+    let newReviewCommentsStr = reviewComments || existingChange?.reviewComments;
+    if (existingChange?.reviewComments) {
+      try {
+        const parsed = JSON.parse(existingChange.reviewComments);
+        if (parsed && typeof parsed === 'object') {
+          parsed.overallReason = reviewComments || parsed.overallReason || parsed.reviewComments;
+          newReviewCommentsStr = JSON.stringify(parsed);
+        }
+      } catch (e) {}
+    }
+
     // Always update CloudStore so all Vercel Serverless Lambdas share the state
     const cloudState = await saveCloudChangeState(id, {
       status: finalStatus,
       versionNumber: nextVersion,
-      reviewComments: reviewComments || existingChange?.reviewComments || undefined,
+      reviewComments: newReviewCommentsStr,
       reviewedByName: reviewerNameStr,
       approvalDate: status === 'APPROVED' ? todayStr : existingChange?.approvalDate || undefined,
     });
@@ -60,7 +71,7 @@ export async function PUT(
           where: { id: existingChange.id },
           data: {
             status: finalStatus,
-            reviewComments: reviewComments || existingChange.reviewComments,
+            reviewComments: newReviewCommentsStr,
             reviewedById: activeReviewerId || existingChange.reviewedById,
             reviewedByName: reviewerNameStr,
             approvalDate: status === 'APPROVED' ? todayStr : existingChange.approvalDate,

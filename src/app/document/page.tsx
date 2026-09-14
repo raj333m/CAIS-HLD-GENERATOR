@@ -883,12 +883,12 @@ export default function LivingDocumentPage() {
   const approvedSectionCount = reviewableSectionNums.filter((num) => sectionReviews[num]?.status === 'APPROVED').length;
   const feedbackSharedCount = reviewableSectionNums.filter((num) => sectionReviews[num]?.status === 'FEEDBACK_SHARED').length;
 
-  let computedHldStatus = 'DRAFT';
-  if (approvedSectionCount === reviewableSectionNums.length) {
-    computedHldStatus = 'APPROVED';
-  } else if (currentFeedbackRound || feedbackSharedCount > 0) {
+  let computedHldStatus = targetChange?.status || 'DRAFT';
+  if (targetChange?.status === 'SENT_BACK' || targetChange?.status === 'REVISION_REQUESTED' || targetChange?.status === 'DRAFT_REVISION_REQUESTED' || currentFeedbackRound || feedbackSharedCount > 0) {
     computedHldStatus = 'DRAFT_REVISION_REQUESTED';
-  } else if (approvedSectionCount > 0) {
+  } else if (targetChange?.status === 'APPROVED' || approvedSectionCount === reviewableSectionNums.length) {
+    computedHldStatus = 'APPROVED';
+  } else if (approvedSectionCount > 0 || targetChange?.status === 'IN_REVIEW') {
     computedHldStatus = 'UNDER_REVIEW';
   }
 

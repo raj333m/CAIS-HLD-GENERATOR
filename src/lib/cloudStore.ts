@@ -67,9 +67,17 @@ export async function saveCloudChangeState(
     updatedAt: new Date().toISOString(),
   };
 
+  // Clean undefined keys so spreading updates doesn't wipe out existing properties
+  const cleanedUpdates: Record<string, any> = {};
+  for (const [k, v] of Object.entries(updates)) {
+    if (v !== undefined) {
+      cleanedUpdates[k] = v;
+    }
+  }
+
   const newState: CloudChangeState = {
     ...existing,
-    ...updates,
+    ...cleanedUpdates,
     reviews: {
       ...existing.reviews,
       ...(updates.reviews || {}),
@@ -78,6 +86,8 @@ export async function saveCloudChangeState(
       ...existing.addressedRemarks,
       ...(updates.addressedRemarks || {}),
     },
+    currentFeedbackRound: updates.currentFeedbackRound !== undefined ? updates.currentFeedbackRound : existing.currentFeedbackRound,
+    feedbackRoundsHistory: updates.feedbackRoundsHistory !== undefined ? updates.feedbackRoundsHistory : existing.feedbackRoundsHistory,
     updatedAt: new Date().toISOString(),
   };
 
