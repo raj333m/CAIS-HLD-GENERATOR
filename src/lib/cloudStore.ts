@@ -1,4 +1,4 @@
-// Cloud Persistence Layer for Vercel Serverless Lambdas
+// Cloud Persistence Layer for Vercel Serverless Lambdas using Central REST Master Store
 
 export interface CloudChangeState {
   crReference: string;
@@ -10,85 +10,60 @@ export interface CloudChangeState {
   reviews: Record<string, any>;
   currentFeedbackRound?: any;
   feedbackRoundsHistory?: any[];
+  addressedRemarks?: Record<string, boolean>;
   updatedAt: string;
 }
 
-// In-memory fallback cache per Lambda lifecycle
-const memoryStore: Record<string, CloudChangeState> = {};
-const objectIdMap: Record<string, string> = {};
+const MASTER_STORE_ID = 'ff808181a09d98f701a09f462af602c3';
+const REST_API_BASE = `https://api.restful-api.dev/objects/${MASTER_STORE_ID}`;
 
-const REST_API_BASE = 'https://api.restful-api.dev/objects';
+// In-memory fallback cache per warm Lambda container
+let masterCache: Record<string, CloudChangeState> = {};
+let lastFetchTime = 0;
+
+async function fetchMasterStore(): Promise<Record<string, CloudChangeState>> {
+  const now = Date.now();
+  if (now - lastFetchTime < 1000 && Object.keys(masterCache).length > 0) {
+    return masterCache;
+  }
+  try {
+    const res = await fetch(REST_API_BASE, { cache: 'no-store' });
+    if (res.ok) {
+      const item = await res.json();
+      if (item && item.data && typeof item.data === 'object') {
+        masterCache = item.data;
+        lastFetchTime = now;
+        return masterCache;
+      }
+    }
+  } catch (e) {
+    console.warn('fetchMasterStore error:', e);
+  }
+  return masterCache;
+}
 
 export async function getCloudChangeState(changeRef: string): Promise<CloudChangeState | null> {
   if (!changeRef) return null;
   const cleanRef = changeRef.replace(/^change-/, '').toUpperCase();
-
-  // Return memory store if available in warm container
-  if (memoryStore[cleanRef]) {
-    try {
-      // Background async re-sync with cloud
-      syncFromCloud(cleanRef);
-    } catch (e) {}
-    return memoryStore[cleanRef];
-  }
-
-  return await fetchFromCloud(cleanRef);
-}
-
-async function fetchFromCloud(cleanRef: string): Promise<CloudChangeState | null> {
-  try {
-    const objectId = objectIdMap[cleanRef];
-    if (objectId) {
-      const res = await fetch(`${REST_API_BASE}/${objectId}`, { cache: 'no-store' });
-      if (res.ok) {
-        const item = await res.json();
-        if (item && item.data) {
-          memoryStore[cleanRef] = item.data;
-          return item.data;
-        }
-      }
-    }
-
-    // Query objects list
-    const listRes = await fetch(REST_API_BASE, { cache: 'no-store' });
-    if (listRes.ok) {
-      const items = await listRes.json();
-      if (Array.isArray(items)) {
-        const targetName = `cais_change_${cleanRef}`;
-        const found = items.find((item: any) => item.name === targetName);
-        if (found && found.data) {
-          objectIdMap[cleanRef] = found.id;
-          memoryStore[cleanRef] = found.data;
-          return found.data;
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('getCloudChangeState failed:', e);
-  }
-
-  return memoryStore[cleanRef] || null;
-}
-
-async function syncFromCloud(cleanRef: string) {
-  fetchFromCloud(cleanRef).catch(() => {});
+  const store = await fetchMasterStore();
+  return store[cleanRef] || null;
 }
 
 export async function saveCloudChangeState(
   changeRef: string,
   updates: Partial<CloudChangeState>
 ): Promise<CloudChangeState> {
-  if (!changeRef) {
-    throw new Error('changeRef is required');
-  }
-
+  if (!changeRef) throw new Error('changeRef is required');
   const cleanRef = changeRef.replace(/^change-/, '').toUpperCase();
-  const existing = (await getCloudChangeState(cleanRef)) || {
+
+  const currentStore = await fetchMasterStore();
+  const existing = currentStore[cleanRef] || {
     crReference: cleanRef,
     status: 'IN_REVIEW',
     versionNumber: 1,
     reviews: {},
     feedbackRoundsHistory: [],
+    addressedRemarks: {},
     updatedAt: new Date().toISOString(),
   };
 
@@ -99,53 +74,29 @@ export async function saveCloudChangeState(
       ...existing.reviews,
       ...(updates.reviews || {}),
     },
+    addressedRemarks: {
+      ...existing.addressedRemarks,
+      ...(updates.addressedRemarks || {}),
+    },
     updatedAt: new Date().toISOString(),
   };
 
-  memoryStore[cleanRef] = newState;
+  currentStore[cleanRef] = newState;
+  masterCache = currentStore;
+  lastFetchTime = Date.now();
 
   try {
-    const objectId = objectIdMap[cleanRef];
-    if (objectId) {
-      const putRes = await fetch(`${REST_API_BASE}/${objectId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `cais_change_${cleanRef}`,
-          data: newState,
-        }),
-      });
-      if (!putRes.ok) {
-        // Fallback create if object was deleted
-        await createNewCloudObject(cleanRef, newState);
-      }
-    } else {
-      await createNewCloudObject(cleanRef, newState);
-    }
+    await fetch(REST_API_BASE, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'cais_hld_master_store_v1',
+        data: currentStore,
+      }),
+    });
   } catch (e) {
-    console.warn('saveCloudChangeState network update failed:', e);
+    console.warn('saveCloudChangeState PUT failed:', e);
   }
 
   return newState;
-}
-
-async function createNewCloudObject(cleanRef: string, state: CloudChangeState) {
-  try {
-    const postRes = await fetch(REST_API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: `cais_change_${cleanRef}`,
-        data: state,
-      }),
-    });
-    if (postRes.ok) {
-      const created = await postRes.json();
-      if (created && created.id) {
-        objectIdMap[cleanRef] = created.id;
-      }
-    }
-  } catch (e) {
-    console.warn('createNewCloudObject failed:', e);
-  }
 }
