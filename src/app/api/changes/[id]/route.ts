@@ -74,6 +74,10 @@ export async function PUT(
       reviewComments,
     } = body;
 
+    const isResubmission = status === 'IN_REVIEW' && (existingChange.status === 'SENT_BACK' || existingChange.status === 'DRAFT' || existingChange.status === 'REVISION_REQUESTED');
+    const nextVersion = isResubmission ? (existingChange.versionNumber || 1) + 1 : existingChange.versionNumber;
+    const todayStr = new Date().toISOString().split('T')[0];
+
     const updatedChange = await prisma.caisChange.update({
       where: { id },
       data: {
@@ -91,7 +95,8 @@ export async function PUT(
         ...(targetMonth !== undefined && { targetMonth }),
         ...(reviewedById !== undefined && { reviewedById }),
         ...(reviewComments !== undefined && { reviewComments }),
-        ...(status === 'APPROVED' && !existingChange.approvedAt && { approvedAt: new Date() }),
+        ...(isResubmission && { versionNumber: nextVersion, submissionDate: todayStr }),
+        ...(status === 'APPROVED' && { approvalDate: todayStr, approvedAt: new Date() }),
       },
       include: {
         createdBy: true,

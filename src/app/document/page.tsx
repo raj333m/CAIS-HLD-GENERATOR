@@ -31,6 +31,7 @@ import {
   GripVertical,
 } from 'lucide-react';
 import { RuleCategoryChip, StatusBadge, RULE_CATEGORY_CONFIG, TOKENS } from '@/styles/tokens';
+import AiVoiceFieldWrapper from '@/components/AiVoiceFieldWrapper';
 
 function RuleTableBlock({
   rows,
@@ -426,6 +427,70 @@ export default function LivingDocumentPage() {
   const [activeSectionNum, setActiveSectionNum] = useState('1.1');
   const [selectedRuleCategory, setSelectedRuleCategory] = useState<string>('ALL');
 
+  // Multi-Project HLD State
+  const [hldProjects, setHldProjects] = useState<any[]>([
+    { id: 'proj-alpha', projectName: 'CRA Project Alpha — CAIS 2026', targetBrand: 'HSBC Cards', targetDate: 'December 2026' }
+  ]);
+  const [activeProjectId, setActiveProjectId] = useState<string>('proj-alpha');
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [newProjectForm, setNewProjectForm] = useState({
+    projectName: '',
+    targetBrand: 'HSBC Cards',
+    targetDate: 'December 2026',
+    strategy: 'COPY_ALL',
+    selectedSectionNums: ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '3.0', '4.0'],
+  });
+
+  const fetchHldProjects = async () => {
+    try {
+      const res = await fetch('/api/hld-projects');
+      const data = await res.json();
+      if (data.projects && data.projects.length > 0) {
+        setHldProjects(data.projects);
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects:', err);
+    }
+  };
+
+  const handleCreateNewProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectForm.projectName.trim()) return;
+    setCreatingProject(true);
+    try {
+      const res = await fetch('/api/hld-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newProjectForm,
+          sourceProjectId: activeProjectId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchHldProjects();
+        setActiveProjectId(data.project.id);
+        setSections(data.sections);
+        setSectionReviews({});
+        setShowCreateProjectModal(false);
+        setNewProjectForm({
+          projectName: '',
+          targetBrand: 'HSBC Cards',
+          targetDate: 'December 2026',
+          strategy: 'COPY_ALL',
+          selectedSectionNums: ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '3.0', '4.0'],
+        });
+        setDraftSavedNotice(`New HLD Project created: "${data.project.projectName}"`);
+        setTimeout(() => setDraftSavedNotice(null), 4000);
+      }
+    } catch (err) {
+      console.error('Create project error:', err);
+    } finally {
+      setCreatingProject(false);
+    }
+  };
+
   // Attachments State & Upload Receipts
   const [attachments, setAttachments] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -451,6 +516,7 @@ export default function LivingDocumentPage() {
     feedback?: string;
     reviewerName?: string;
     timestamp?: string;
+    approvalDate?: string;
     isAddressed?: boolean;
   }>>({});
   const [isReviewerMode, setIsReviewerMode] = useState(false);
@@ -1214,13 +1280,20 @@ export default function LivingDocumentPage() {
     }
   };
 
-  const fetchSections = async () => {
+  const fetchSections = async (projId = activeProjectId) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/sections');
+      const res = await fetch(`/api/hld-projects?projectId=${projId}`);
       if (res.ok) {
         const data = await res.json();
-        setSections(data.sections || []);
+        if (data.sections) setSections(data.sections);
+        if (data.reviews) setSectionReviews(data.reviews);
+      } else {
+        const fallbackRes = await fetch('/api/sections');
+        if (fallbackRes.ok) {
+          const data = await fallbackRes.json();
+          setSections(data.sections || []);
+        }
       }
       await fetchChanges();
     } catch (e) {
@@ -1231,7 +1304,8 @@ export default function LivingDocumentPage() {
   };
 
   useEffect(() => {
-    fetchSections();
+    fetchHldProjects();
+    fetchSections(activeProjectId);
   }, []);
 
   const handleTocClick = (sectionNum: string) => {
@@ -1640,6 +1714,39 @@ export default function LivingDocumentPage() {
             <Download className="w-3.5 h-3.5 text-rose-400" /> Export PDF (.pdf)
           </a>
         </div>
+      </div>
+
+      {/* PROJECT SWITCHER TOOLBAR */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <BookOpen className="w-4 h-4 text-[#C0272D]" />
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Active CRA HLD Project:</span>
+          <select
+            value={activeProjectId}
+            onChange={(e) => {
+              const selectedId = e.target.value;
+              setActiveProjectId(selectedId);
+              fetchSections(selectedId);
+            }}
+            className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white shadow-2xs focus:ring-2 focus:ring-[#C0272D] focus:outline-none"
+          >
+            {hldProjects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.projectName} ({p.targetBrand})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {isBaOrAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowCreateProjectModal(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-[#C0272D] hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Create New HLD
+          </button>
+        )}
       </div>
 
       {/* OVERALL HLD GOVERNANCE STATUS BANNER */}
@@ -2794,7 +2901,13 @@ export default function LivingDocumentPage() {
                     <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white">
                       {item.title}
                     </h2>
-                    <StatusBadge status={sectionReview?.status || 'PENDING'} />
+                    <StatusBadge
+                      status={sectionReview?.status || 'PENDING'}
+                      date={
+                        sectionReview?.approvalDate ||
+                        (sectionReview?.status === 'APPROVED' ? sectionReview?.timestamp?.split(',')[0] || new Date().toISOString().split('T')[0] : undefined)
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
@@ -3100,15 +3213,16 @@ export default function LivingDocumentPage() {
                     </div>
                   </div>
 
-                  <textarea
-                    rows={4}
+                  <AiVoiceFieldWrapper
                     value={sub.blocksText}
-                    onChange={(e) => {
+                    onChange={(val) => {
                       const list = [...editingSubSections];
-                      list[index].blocksText = e.target.value;
+                      list[index].blocksText = val;
                       setEditingSubSections(list);
                     }}
-                    className="w-full p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    multiline
+                    rows={4}
+                    placeholder="Enter paragraph text or bullet items (or use Voice Dictation / Write using AI)..."
                   />
                 </div>
               ))}
@@ -3846,6 +3960,216 @@ export default function LivingDocumentPage() {
                 Submit Feedback to BA
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOTTOM CREATE NEW HLD ACTION CARD FOR BA & ADMIN */}
+      {isBaOrAdmin && (
+        <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Plus className="w-4 h-4 text-[#C0272D]" /> Need an HLD for Another CRA Project?
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Spin up a separate Consolidated HLD document with baseline copying or blank templates.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreateProjectModal(true)}
+            className="px-4 py-2 rounded-xl bg-[#C0272D] hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Create New HLD
+          </button>
+        </div>
+      )}
+
+      {/* CREATE NEW HLD PROJECT MODAL */}
+      {showCreateProjectModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl p-6 space-y-5 font-sans text-slate-900 dark:text-white max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-[#C0272D]" /> Create New Consolidated HLD Project
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Spin up a brand-new, separate Consolidated HLD document for a different CRA project.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateProjectModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewProject} className="space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">
+                  New CRA Project Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. CRA Project Beta — Mortgages CAIS 2026"
+                  value={newProjectForm.projectName}
+                  onChange={(e) => setNewProjectForm({ ...newProjectForm, projectName: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-[#C0272D]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700 dark:text-slate-300">
+                    Target Brand *
+                  </label>
+                  <select
+                    value={newProjectForm.targetBrand}
+                    onChange={(e) => setNewProjectForm({ ...newProjectForm, targetBrand: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-[#C0272D]"
+                  >
+                    <option value="HSBC Cards">HSBC Cards</option>
+                    <option value="First Direct">First Direct</option>
+                    <option value="M&S Bank">M&S Bank</option>
+                    <option value="HSBC Personal Banking">HSBC Personal Banking</option>
+                    <option value="Wealth & Private Banking">Wealth & Private Banking</option>
+                    <option value="Global Banking">Global Banking</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-700 dark:text-slate-300">
+                    Target Implementation Date *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. December 2026"
+                    value={newProjectForm.targetDate}
+                    onChange={(e) => setNewProjectForm({ ...newProjectForm, targetDate: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#C0272D]"
+                  />
+                </div>
+              </div>
+
+              {/* Strategy choices */}
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">
+                  Content Strategy (Section Reuse Choice) *
+                </label>
+
+                <div className="space-y-2">
+                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    newProjectForm.strategy === 'COPY_ALL'
+                      ? 'bg-red-500/10 border-[#C0272D] text-slate-900 dark:text-white font-bold'
+                      : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy"
+                      value="COPY_ALL"
+                      checked={newProjectForm.strategy === 'COPY_ALL'}
+                      onChange={() => setNewProjectForm({ ...newProjectForm, strategy: 'COPY_ALL' })}
+                      className="mt-0.5 accent-[#C0272D]"
+                    />
+                    <div>
+                      <span className="font-bold block text-xs">Choice A: Copy all sections from current HLD as baseline</span>
+                      <span className="text-[11px] text-slate-500 block font-normal">Pre-populates all 14 document sections using the active HLD as a starting baseline.</span>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    newProjectForm.strategy === 'CHOOSE_SECTIONS'
+                      ? 'bg-red-500/10 border-[#C0272D] text-slate-900 dark:text-white font-bold'
+                      : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy"
+                      value="CHOOSE_SECTIONS"
+                      checked={newProjectForm.strategy === 'CHOOSE_SECTIONS'}
+                      onChange={() => setNewProjectForm({ ...newProjectForm, strategy: 'CHOOSE_SECTIONS' })}
+                      className="mt-0.5 accent-[#C0272D]"
+                    />
+                    <div>
+                      <span className="font-bold block text-xs">Choice B: Select specific sections to copy over</span>
+                      <span className="text-[11px] text-slate-500 block font-normal">Pick and choose which specific sections to reuse from the current document.</span>
+                    </div>
+                  </label>
+
+                  {newProjectForm.strategy === 'CHOOSE_SECTIONS' && (
+                    <div className="pl-6 pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '3.0', '4.0'].map((secNum) => {
+                        const checked = newProjectForm.selectedSectionNums.includes(secNum);
+                        return (
+                          <label key={secNum} className="flex items-center gap-2 text-xs font-mono cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewProjectForm({
+                                    ...newProjectForm,
+                                    selectedSectionNums: [...newProjectForm.selectedSectionNums, secNum],
+                                  });
+                                } else {
+                                  setNewProjectForm({
+                                    ...newProjectForm,
+                                    selectedSectionNums: newProjectForm.selectedSectionNums.filter((s) => s !== secNum),
+                                  });
+                                }
+                              }}
+                              className="accent-[#C0272D]"
+                            />
+                            <span>Section {secNum}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    newProjectForm.strategy === 'START_BLANK'
+                      ? 'bg-red-500/10 border-[#C0272D] text-slate-900 dark:text-white font-bold'
+                      : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="strategy"
+                      value="START_BLANK"
+                      checked={newProjectForm.strategy === 'START_BLANK'}
+                      onChange={() => setNewProjectForm({ ...newProjectForm, strategy: 'START_BLANK' })}
+                      className="mt-0.5 accent-[#C0272D]"
+                    />
+                    <div>
+                      <span className="font-bold block text-xs">Choice C: Start completely blank</span>
+                      <span className="text-[11px] text-slate-500 block font-normal">Creates a blank HLD document with empty section shells to draft from scratch.</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateProjectModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingProject}
+                  className="px-6 py-2 rounded-xl bg-[#C0272D] hover:bg-red-700 text-white font-bold shadow-lg"
+                >
+                  {creatingProject ? 'Creating HLD Project...' : 'Create HLD Project'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

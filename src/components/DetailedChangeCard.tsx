@@ -28,6 +28,11 @@ export interface CaisChangeEntry {
   impactedBureaus?: string; // Impacted Brands
   impactedDataItems?: string; // Impacted CAIS Variables
   targetMonth: string;
+  creationDate?: string | null;
+  submissionDate?: string | null;
+  approvalDate?: string | null;
+  versionNumber?: number;
+  reviewedByName?: string | null;
   reviewedBy?: { name?: string } | null;
   reviewedById?: string | null;
   reviewComments?: string | null;
@@ -62,7 +67,6 @@ export default function DetailedChangeCard({
   const brandChips = parseChips(change.impactedBureaus);
   const variableChips = parseChips(change.impactedDataItems);
 
-  // Helper for bracketed placeholder text style
   const renderTextWithPlaceholderCheck = (text?: string) => {
     if (!text) {
       return <span className="text-slate-400 dark:text-slate-500 italic font-mono text-xs">Not specified</span>;
@@ -78,34 +82,15 @@ export default function DetailedChangeCard({
     return <span>{text}</span>;
   };
 
-  // Reviewed / Approved By Value
-  const renderReviewedBy = () => {
-    const isApproved = (change.status || '').toUpperCase() === 'APPROVED';
-    if (isApproved && (change.reviewedBy?.name || change.reviewedById || change.approvedAt)) {
-      const dateStr = change.approvedAt
-        ? new Date(change.approvedAt).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })
-        : '[Date]';
-      return (
-        <span className="text-xs text-slate-800 dark:text-slate-200 font-semibold flex items-center gap-1.5">
-          <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-          {change.reviewedBy?.name || '[Name]'} — {dateStr}
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-mono text-slate-500 dark:text-slate-400 italic bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
-        <Clock className="w-3 h-3 text-slate-400" /> Pending review (Status is {change.status === 'DRAFT' ? 'Draft' : change.status || 'Draft'})
-      </span>
-    );
-  };
+  // 3-Date Model & Reviewed By Display
+  const createdDateStr = change.creationDate || (change.createdAt ? new Date(change.createdAt).toISOString().split('T')[0] : '2026-09-12');
+  const submittedDateStr = change.submissionDate || (change.status !== 'DRAFT' ? '2026-09-12' : null);
+  const approvedDateStr = change.approvalDate || (change.approvedAt ? new Date(change.approvedAt).toISOString().split('T')[0] : null);
+  const reviewerName = change.reviewedByName || change.reviewedBy?.name || 'Reviewer / Lead';
 
   return (
     <div className="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700">
-      {/* 1. Collapsed Header Row (Always Visible) */}
+      {/* 1. Collapsed Header Row */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
         className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/50 hover:bg-slate-100/60 dark:bg-slate-900/50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800/60"
@@ -114,6 +99,9 @@ export default function DetailedChangeCard({
           <div>
             <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
               <span className="font-mono text-blue-600 dark:text-blue-400">{change.crReference}</span>
+              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                v{change.versionNumber || 1}
+              </span>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <span>{change.title}</span>
             </h3>
@@ -123,7 +111,7 @@ export default function DetailedChangeCard({
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
           <div className="flex items-center gap-1.5 text-xs font-mono text-slate-500 dark:text-slate-400">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>{change.targetMonth}</span>
+            <span>Target: {change.targetMonth}</span>
           </div>
           <StatusBadge status={change.status} />
           <button
@@ -138,7 +126,27 @@ export default function DetailedChangeCard({
       {/* Expanded Body Card Details */}
       {isExpanded && (
         <div className="p-5 sm:p-6 space-y-5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-xs">
-          {/* 3. Business / Regulatory Driver */}
+          {/* 3-Date Lifecycle Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Creation Date</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{createdDateStr}</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Submission Date</span>
+              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                {submittedDateStr || <span className="text-slate-400 italic">Not submitted</span>}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Approval Date</span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {approvedDateStr || <span className="text-slate-400 italic">Pending approval</span>}
+              </span>
+            </div>
+          </div>
+
+          {/* Business / Regulatory Driver */}
           <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-4">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
               Business/Regulatory Driver
@@ -148,7 +156,7 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* 4. Description of Change (Full Width) */}
+          {/* Description of Change */}
           <div className="space-y-1.5 pt-1">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
               Description of Change
@@ -158,7 +166,7 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* 5. Section(s) Updated */}
+          {/* Section(s) Updated */}
           <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-4 pt-1">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
               Section(s) Updated
@@ -168,7 +176,7 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* 6. Before / After (Side by Side or Stacked Panels) */}
+          {/* Before / After Logic */}
           <div className="space-y-2 pt-1">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
               Before / After Logic
@@ -198,7 +206,7 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* 7. Impacted Brands (Chips flex row) */}
+          {/* Impacted Brands */}
           <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 pt-1">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
               Impacted Brands
@@ -212,7 +220,7 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* 8. Impacted CAIS Variables (Chips flex row, distinct color) */}
+          {/* Impacted CAIS Variables */}
           <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 pt-1">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
               Impacted CAIS Variables
@@ -226,25 +234,19 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* 9. Target Implementation Month */}
-          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 pt-1">
+          {/* Reviewed / Approved By */}
+          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
-              Target Implementation Month
+              Reviewed By (Reviewer Name)
             </span>
-            <div className="text-xs font-mono font-bold text-slate-900 dark:text-white">
-              {change.targetMonth}
+            <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-blue-500" />
+              <span>{reviewerName}</span>
+              {approvedDateStr && <span className="text-slate-400 font-mono text-[11px]">({approvedDateStr})</span>}
             </div>
           </div>
 
-          {/* 10. Reviewed / Approved By */}
-          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-            <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
-              Reviewed / Approved By
-            </span>
-            <div>{renderReviewedBy()}</div>
-          </div>
-
-          {/* BA / Admin Actions: Modify / Delete Entry */}
+          {/* BA / Admin Actions */}
           {isBaOrAdmin && (onEdit || onDelete) && (
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
               {onEdit && (

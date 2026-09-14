@@ -21,8 +21,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Change entry not found' }, { status: 404 });
     }
 
+    const todayStr = new Date().toISOString().split('T')[0];
     const defaultReviewer = await prisma.user.findFirst({ where: { role: 'REVIEWER' } });
     const activeReviewerId = reviewerId || defaultReviewer?.id;
+    const reviewerNameStr = defaultReviewer?.name || 'Reviewer / Lead';
 
     // Update Change entry status
     const updatedChange = await prisma.caisChange.update({
@@ -31,6 +33,8 @@ export async function PUT(
         status, // "APPROVED" | "SENT_BACK" | "IN_REVIEW"
         reviewComments: reviewComments || existingChange.reviewComments,
         reviewedById: activeReviewerId || existingChange.reviewedById,
+        reviewedByName: reviewerNameStr,
+        approvalDate: status === 'APPROVED' ? todayStr : existingChange.approvalDate,
         approvedAt: status === 'APPROVED' ? new Date() : existingChange.approvedAt,
       },
       include: {

@@ -153,16 +153,17 @@ export const RULE_CATEGORY_CONFIG: Record<
   },
 };
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, date }: { status: string; date?: string }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
   const IconComponent = config.icon;
+  const labelText = status === 'APPROVED' && date ? `✓ Approved — ${date}` : config.label;
 
   return (
     <span
       className={`${TOKENS.geometry.chip} ${config.bg} ${config.text} ${config.border}`}
     >
       <IconComponent className="w-3 h-3 shrink-0" />
-      <span>{config.label}</span>
+      <span>{labelText}</span>
     </span>
   );
 }

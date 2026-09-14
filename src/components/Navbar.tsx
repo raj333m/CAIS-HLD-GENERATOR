@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   Eye,
   RotateCcw,
+  Clock,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -68,7 +69,7 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 glass-panel border-b border-slate-800/80 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand logo */}
-          <Link href="/dashboard" className="flex items-center gap-3 group">
+          <Link href={user.role === 'BA' ? '/document' : '/dashboard'} className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
               <FileText className="w-5 h-5 text-white" />
             </div>
@@ -81,22 +82,39 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Navigation links - 3 primary tabs: Dashboard, Consolidated HLD, & CAIS Changes Audit Logs */}
+          {/* Role-Specific Navigation Links (Parts A & H) */}
           <nav className="hidden md:flex items-center gap-1">
-            <Link href="/dashboard" className={navItemClass('/dashboard')}>
-              <LayoutDashboard className="w-4 h-4 text-emerald-400" />
-              <span>Dashboard</span>
-            </Link>
+            {/* 1. Dashboard (Reviewer & Admin ONLY - hidden for BA) */}
+            {user.role !== 'BA' && (
+              <Link href="/dashboard" className={navItemClass('/dashboard')}>
+                <LayoutDashboard className="w-4 h-4 text-emerald-400" />
+                <span>Dashboard</span>
+              </Link>
+            )}
 
-            <Link href="/document" className={navItemClass('/document')}>
-              <Layers className="w-4 h-4 text-blue-400" />
-              <span>Consolidated HLD</span>
-            </Link>
+            {/* 2. Consolidated HLD (BA & Admin ONLY - hidden for Reviewer) */}
+            {user.role !== 'REVIEWER' && (
+              <Link href="/document" className={navItemClass('/document')}>
+                <Layers className="w-4 h-4 text-blue-400" />
+                <span>Consolidated HLD</span>
+              </Link>
+            )}
 
-            <Link href="/changes" className={navItemClass('/changes')}>
-              <History className="w-4 h-4 text-purple-400" />
-              <span>CAIS Changes Audit Logs 2026</span>
-            </Link>
+            {/* 3. Pending for Approval (BA & Admin ONLY) */}
+            {user.role !== 'REVIEWER' && (
+              <Link href="/changes/pending" className={navItemClass('/changes/pending')}>
+                <Clock className="w-4 h-4 text-amber-400" />
+                <span>Pending for Approval</span>
+              </Link>
+            )}
+
+            {/* 4. CAIS Changes Audit Logs 2026 (Reviewer & Admin ONLY - hidden for BA) */}
+            {user.role !== 'BA' && (
+              <Link href="/changes" className={navItemClass('/changes')}>
+                <History className="w-4 h-4 text-purple-400" />
+                <span>CAIS Changes Audit Logs 2026</span>
+              </Link>
+            )}
           </nav>
 
           {/* Right side controls: Theme Toggle, Role Display / Admin Preview, Log Out */}

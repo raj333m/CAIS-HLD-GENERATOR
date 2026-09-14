@@ -88,8 +88,16 @@ model CaisChange {
   createdBy         User              @relation("CreatedChanges", fields: [createdById], references: [id])
   reviewedById      String?
   reviewedBy        User?             @relation("ReviewedChanges", fields: [reviewedById], references: [id])
+  reviewedByName    String?           // Person name / role title (e.g. "[Name]", "Reviewer / Lead")
   reviewComments    String?
   
+  creationDate      String            @default("2026-09-14") // Mandatory YYYY-MM-DD, set by BA
+  submissionDate    String?           // Auto-stamped YYYY-MM-DD on Submit HLD
+  approvalDate      String?           // Auto-stamped YYYY-MM-DD on Approve Change
+  versionNumber     Int               @default(1) // Auto-increments on resubmission
+  hldDocumentId     String?           // Project link for multi-project support
+  hldDocument       HldDocument?      @relation("HldChanges", fields: [hldDocumentId], references: [id], onDelete: SetNull)
+
   createdAt         DateTime          @default(now())
   approvedAt        DateTime?
   updatedAt         DateTime          @updatedAt
@@ -180,6 +188,7 @@ model HldDocument {
   stakeholders         HldStakeholder[]
   comments             HldComment[]
   versions             HldVersion[]
+  changes              CaisChange[]        @relation("HldChanges")
 }
 
 model HldDataItemImpact {

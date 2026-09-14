@@ -6,6 +6,7 @@ export interface SectionReviewData {
   feedback?: string;
   reviewerName?: string;
   timestamp?: string;
+  approvalDate?: string;
   isAddressed?: boolean;
 }
 
@@ -127,12 +128,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'APPROVE') {
+      const approvalDateStr = new Date().toISOString().split('T')[0];
       sectionReviewsStore[sectionNum] = {
         sectionNum,
         status: 'APPROVED',
         feedback: undefined,
         reviewerName: reviewerName || 'Reviewer / Lead',
         timestamp,
+        approvalDate: approvalDateStr,
       };
     } else if (action === 'SHARE_FEEDBACK') {
       sectionReviewsStore[sectionNum] = {

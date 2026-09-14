@@ -53,7 +53,8 @@ export default function LoginPage() {
 
     const val = parseInt(userAnswer.trim(), 10);
     if (val === mathQuestion.expected) {
-      router.push('/dashboard');
+      const target = selectedRole === 'BA' ? '/document' : '/dashboard';
+      router.push(target);
     } else {
       setVerifyError("That's not correct — try again");
       setUserAnswer('');
