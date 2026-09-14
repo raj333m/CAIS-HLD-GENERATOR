@@ -784,8 +784,9 @@ export default function LivingDocumentPage() {
           });
           if (putRes.ok) {
             const updatedData = await putRes.json();
-            if (updatedData.updatedChange) {
-              setTargetChange(updatedData.updatedChange);
+            const returnedChange = updatedData.change || updatedData.updatedChange;
+            if (returnedChange) {
+              setTargetChange(returnedChange);
             } else {
               setTargetChange((prev: any) => ({
                 ...prev,
@@ -836,8 +837,9 @@ export default function LivingDocumentPage() {
         });
         if (putRes.ok) {
           const updatedData = await putRes.json();
-          if (updatedData.updatedChange) {
-            setTargetChange(updatedData.updatedChange);
+          const returnedChange = updatedData.change || updatedData.updatedChange;
+          if (returnedChange) {
+            setTargetChange(returnedChange);
           } else {
             setTargetChange((prev: any) => ({ ...prev, status: 'APPROVED' }));
           }

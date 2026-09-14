@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getCloudChangeState } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -142,9 +143,6 @@ export async function GET(request: Request) {
         const s = search.toLowerCase();
         filtered = filtered.filter(c => c.title.toLowerCase().includes(s) || c.crReference.toLowerCase().includes(s) || c.description.toLowerCase().includes(s));
       }
-      if (status) {
-        filtered = filtered.filter(c => c.status === status);
-      }
       if (bureau) {
         filtered = filtered.filter(c => c.impactedBureaus.includes(bureau));
       }
@@ -152,6 +150,30 @@ export async function GET(request: Request) {
         filtered = filtered.filter(c => c.changeType.includes(changeType));
       }
       changes = filtered;
+    }
+
+    // Enrich changes with CloudStore persisted state across Vercel Lambdas
+    changes = await Promise.all(
+      changes.map(async (c: any) => {
+        try {
+          const cloudState = await getCloudChangeState(c.crReference || c.id);
+          if (cloudState) {
+            return {
+              ...c,
+              status: cloudState.status || c.status,
+              versionNumber: cloudState.versionNumber || c.versionNumber,
+              reviewComments: cloudState.reviewComments || c.reviewComments,
+              reviewedByName: cloudState.reviewedByName || c.reviewedByName,
+              approvalDate: cloudState.approvalDate || c.approvalDate,
+            };
+          }
+        } catch (e) {}
+        return c;
+      })
+    );
+
+    if (status) {
+      changes = changes.filter((c: any) => c.status === status);
     }
 
     return NextResponse.json({ changes });

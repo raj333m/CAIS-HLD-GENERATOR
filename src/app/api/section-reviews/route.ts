@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
+import { getCloudChangeState, saveCloudChangeState } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -90,27 +91,38 @@ export async function GET(req: NextRequest) {
 
   if (changeId) {
     try {
-      const change = await findCaisChange(changeId);
-      if (change && change.reviewComments) {
-        try {
-          const parsed = JSON.parse(change.reviewComments);
-          if (parsed && typeof parsed === 'object') {
-            if (parsed.reviews) {
-              state.reviews = parsed.reviews;
+      const cloudState = await getCloudChangeState(changeId);
+      if (cloudState && cloudState.reviews) {
+        state.reviews = cloudState.reviews;
+        if (cloudState.currentFeedbackRound) {
+          state.currentFeedbackRound = cloudState.currentFeedbackRound;
+        }
+        if (cloudState.feedbackRoundsHistory) {
+          state.feedbackRoundsHistory = cloudState.feedbackRoundsHistory;
+        }
+      } else {
+        const change = await findCaisChange(changeId);
+        if (change && change.reviewComments) {
+          try {
+            const parsed = JSON.parse(change.reviewComments);
+            if (parsed && typeof parsed === 'object') {
+              if (parsed.reviews) {
+                state.reviews = parsed.reviews;
+              }
+              if (parsed.currentFeedbackRound) {
+                state.currentFeedbackRound = parsed.currentFeedbackRound;
+              }
+              if (parsed.feedbackRoundsHistory) {
+                state.feedbackRoundsHistory = parsed.feedbackRoundsHistory;
+              }
             }
-            if (parsed.currentFeedbackRound) {
-              state.currentFeedbackRound = parsed.currentFeedbackRound;
-            }
-            if (parsed.feedbackRoundsHistory) {
-              state.feedbackRoundsHistory = parsed.feedbackRoundsHistory;
-            }
+          } catch (e) {
+            // Plain text comment
           }
-        } catch (e) {
-          // Plain text comment
         }
       }
     } catch (dbErr) {
-      console.warn('Prisma lookup failed in GET /api/section-reviews:', dbErr);
+      console.warn('Lookup failed in GET /api/section-reviews:', dbErr);
     }
   }
 
@@ -171,9 +183,18 @@ export async function POST(req: NextRequest) {
       const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
       saveReviewsState(newState);
 
-      // Sync to SQLite DB
+      // Sync to cloudStore & SQLite DB
       if (changeId) {
         try {
+          await saveCloudChangeState(changeId, {
+            status: 'SENT_BACK',
+            reviews,
+            currentFeedbackRound: newRound,
+            feedbackRoundsHistory,
+            reviewedByName: reviewerName || 'Reviewer / Lead',
+            reviewComments: overallReason || newRound.overallReason,
+          });
+
           const change = await findCaisChange(changeId);
           if (change) {
             await prisma.caisChange.update({
@@ -279,9 +300,16 @@ export async function POST(req: NextRequest) {
     const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
     saveReviewsState(newState);
 
-    // Sync to SQLite DB via Prisma
+    // Sync to cloudStore & SQLite DB via Prisma
     if (changeId) {
       try {
+        await saveCloudChangeState(changeId, {
+          reviews,
+          currentFeedbackRound,
+          feedbackRoundsHistory,
+          reviewedByName: reviewerName || 'Reviewer / Lead',
+        });
+
         const change = await findCaisChange(changeId);
         if (change) {
           let existingObj: any = {};
