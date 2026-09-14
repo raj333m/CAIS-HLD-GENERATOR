@@ -1736,6 +1736,22 @@ async function main() {
                 "Credit Balance indicator (Derived) distinguishes credit vs debit balance."
               ]
             }
+          },
+          {
+            "type": "pie-chart",
+            "payload": {
+              "title": "Data Variables Accountability (Final Data Mart)",
+              "caption": "Figure 2.5(a) — Data Variables Accountability: split of the 44 CAIS report fields between BI and CU Team ownership.",
+              "cuOwnedFields": [
+                "Current Balance (Derived)",
+                "Account Status (Derived)",
+                "Flag Settings (Derived)",
+                "Monthly Payment (Derived)",
+                "Repayment period (Derived)",
+                "Payment frequency (Derived)"
+              ],
+              "totalFields": 44
+            }
           }
         ]
       }

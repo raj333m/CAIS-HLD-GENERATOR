@@ -343,6 +343,41 @@ function renderBlocksToDocx(blocksJsonStr: string): (Paragraph | Table)[] {
             })
           );
         }
+      } else if (b.type === 'pie-chart') {
+        const total = b.payload?.totalFields || 44;
+        const cuCount = (b.payload?.cuOwnedFields || []).length || 6;
+        const biCount = total - cuCount;
+        const cuPct = Math.round((cuCount / total) * 100);
+        const biPct = 100 - cuPct;
+
+        elements.push(makeH3(b.payload?.title || 'Data Variables Accountability (Final Data Mart)'));
+        elements.push(
+          makeCustomTable(
+            ['Team / Scope', 'Field Count', 'Percentage of 44 Fields'],
+            [
+              ['BI Scope (Staging, Validation & File Generation)', String(biCount), `${biPct}%`],
+              ['CU Team Scope (Exclusions & Derived Variables)', String(cuCount), `${cuPct}%`],
+              ['Total CAIS Report Layout', String(total), '100%'],
+            ]
+          )
+        );
+        if (b.payload?.caption) {
+          elements.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 60, after: 240 },
+              children: [
+                new TextRun({
+                  text: cleanText(b.payload.caption),
+                  font: 'Calibri',
+                  size: 18,
+                  italics: true,
+                  color: COLOR_HEADER_GREY,
+                }),
+              ],
+            })
+          );
+        }
       }
     }
   } catch (e) {
@@ -694,6 +729,28 @@ export async function GET() {
     docChildren.push(
       makeP('Escalation path: Where an issue cannot be resolved at first line, or where a regulatory deadline is at risk, escalation should be raised to the Product Owner (Risk CRA) and the Transmission team in parallel.')
     );
+    docChildren.push(new Paragraph({ text: '' }));
+
+    docChildren.push(makeH2('4.3 Abbreviations'));
+    docChildren.push(makeP('Quick-lookup reference table for acronyms and short codes used across this document:'));
+    const abbrevHeaders = ['Term', 'Abbreviation'];
+    const abbrevRows = [
+      ['CAIS', 'Credit Account Information Sharing'],
+      ['CRA', 'Credit Reference Agencies'],
+      ['PLM', 'Product Ledger Management'],
+      ['BDRAS', 'Bad Debt Reporting and Accounting System'],
+      ['RMS', 'Risk Management System'],
+      ['PDS', 'Product Data/Detail Structure (Product Code)'],
+      ['DWH_PDS_STAG', 'CRA Staging Table for Retail Banking'],
+      ['DWH_CAIS_SMRY_SNAP', 'CRA Final Data Mart for Retail Banking'],
+      ['BCDU', 'Bank Cards Data Utility'],
+      ['CDU', 'Customer Data Utility'],
+      ['OHC', 'Cards Source File'],
+      ['FD', 'First Direct'],
+      ['M&S', 'Marks and Spencer'],
+      ['CU Team', 'Central Utility Team'],
+    ];
+    docChildren.push(makeCustomTable(abbrevHeaders, abbrevRows));
 
     // Assemble Document with single continuous section, header, and footer
     const doc = new Document({

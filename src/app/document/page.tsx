@@ -1840,6 +1840,81 @@ export default function LivingDocumentPage() {
             </div>
           );
         }
+        if (block.type === 'pie-chart') {
+          const total = block.payload?.totalFields || 44;
+          const cuFields = block.payload?.cuOwnedFields || [
+            "Current Balance (Derived)",
+            "Account Status (Derived)",
+            "Flag Settings (Derived)",
+            "Monthly Payment (Derived)",
+            "Repayment period (Derived)",
+            "Payment frequency (Derived)"
+          ];
+          const cuCount = cuFields.length;
+          const biCount = total - cuCount;
+          const cuPct = Math.round((cuCount / total) * 100);
+          const biPct = 100 - cuPct;
+          const biRad = (biCount / total) * 2 * Math.PI;
+
+          return (
+            <div key={idx} className="my-8 space-y-4 text-center">
+              <div className="bg-white dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-xl mx-auto space-y-5">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  {block.payload?.title || 'Data Variables Accountability (Final Data Mart)'}
+                </h4>
+
+                {/* Interactive / SVG Pie Chart */}
+                <div className="flex justify-center items-center">
+                  <svg width="240" height="240" viewBox="0 0 240 240" className="drop-shadow-md">
+                    {/* Slice 1: BI Scope (38, 86%) */}
+                    <path
+                      d={`M 120 120 L 120 30 A 90 90 0 1 1 ${120 + 90 * Math.sin(biRad)} ${120 - 90 * Math.cos(biRad)} Z`}
+                      fill="#2563EB"
+                      className="transition-all duration-300 hover:opacity-90 cursor-pointer"
+                    />
+                    {/* Slice 2: CU Team Scope (6, 14%) */}
+                    <path
+                      d={`M 120 120 L ${120 + 90 * Math.sin(biRad)} ${120 - 90 * Math.cos(biRad)} A 90 90 0 0 1 120 30 Z`}
+                      fill="#C0272D"
+                      className="transition-all duration-300 hover:opacity-90 cursor-pointer"
+                    />
+
+                    {/* Labels */}
+                    <text x="100" y="140" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">
+                      {biPct}%
+                    </text>
+                    <text x="155" y="75" fill="#FFFFFF" fontSize="11" fontWeight="bold" textAnchor="middle">
+                      {cuPct}%
+                    </text>
+                  </svg>
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap items-center justify-center gap-6 pt-1 text-xs font-bold">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full bg-blue-600 inline-block shadow-xs"></span>
+                    <span className="text-slate-800 dark:text-slate-200">
+                      BI Scope — {biCount}, {biPct}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#C0272D] inline-block shadow-xs"></span>
+                    <span className="text-slate-800 dark:text-slate-200">
+                      CU Team Scope — {cuCount}, {cuPct}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Caption */}
+              {block.payload?.caption && (
+                <p className="text-[9.5pt] italic text-slate-600 dark:text-slate-400 text-center max-w-3xl mx-auto font-sans">
+                  {block.payload.caption}
+                </p>
+              )}
+            </div>
+          );
+        }
         return null;
       });
     } catch (e) {
@@ -3105,6 +3180,81 @@ export default function LivingDocumentPage() {
                       <p className="text-slate-800 dark:text-slate-200 leading-relaxed pt-1">
                         Where an issue cannot be resolved at first line, or where a regulatory deadline is at risk (see Section 1.5, Analysis Risks and Assumptions), escalation should be raised to the Product Owner (Risk CRA) and, if a bureau-facing deadline is affected, to the Transmission team in parallel so that the bureau can be informed of any anticipated delay.
                       </p>
+                    </div>
+
+                    {/* A.3 Abbreviations */}
+                    <div className="space-y-3 pt-2">
+                      <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                        4.3 Abbreviations
+                      </h2>
+                      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
+                        <table className="w-full text-left border-collapse font-sans text-[11pt]">
+                          <thead className="bg-[#C0272D] text-white font-bold">
+                            <tr>
+                              <th className="p-3 border-b border-red-700 w-64 font-bold">Term</th>
+                              <th className="p-3 border-b border-red-700 font-bold">Abbreviation</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CAIS</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Account Information Sharing</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CRA</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Reference Agencies</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PLM</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Product Ledger Management</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BDRAS</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bad Debt Reporting and Accounting System</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">RMS</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Risk Management System</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PDS</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Product Data/Detail Structure (Product Code)</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_PDS_STAG</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Staging Table for Retail Banking</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_CAIS_SMRY_SNAP</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Final Data Mart for Retail Banking</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BCDU</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bank Cards Data Utility</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CDU</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Customer Data Utility</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">OHC</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Cards Source File</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">FD</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">First Direct</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">M&S</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Marks and Spencer</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CU Team</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Central Utility Team</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>

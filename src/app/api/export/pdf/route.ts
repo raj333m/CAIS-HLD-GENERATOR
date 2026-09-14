@@ -77,6 +77,36 @@ export async function GET() {
                 ${caption ? `<p class="caption">${caption}</p>` : ''}
               </div>`;
             }
+            if (b.type === 'pie-chart') {
+              const total = b.payload?.totalFields || 44;
+              const cuCount = (b.payload?.cuOwnedFields || []).length || 6;
+              const biCount = total - cuCount;
+              const cuPct = Math.round((cuCount / total) * 100);
+              const biPct = 100 - cuPct;
+              const biRad = (biCount / total) * 2 * Math.PI;
+              const caption = b.payload?.caption || 'Figure 2.5(a) — Data Variables Accountability';
+              const xEnd = 120 + 90 * Math.sin(biRad);
+              const yEnd = 120 - 90 * Math.cos(biRad);
+
+              return `<div class="diagram-container" style="margin: 24px 0;">
+                <div class="diagram-box" style="padding: 20px; text-align: center; border: 1px solid #E2E8F0; border-radius: 12px; background: #FFF; max-width: 500px; margin: 0 auto;">
+                  <h4 style="margin-top:0; font-size: 11pt; font-weight: bold; color: #1E293B; text-transform: uppercase;">${b.payload?.title || 'Data Variables Accountability (Final Data Mart)'}</h4>
+                  <div style="display: flex; justify-content: center; align-items: center; margin: 16px 0;">
+                    <svg width="200" height="200" viewBox="0 0 240 240">
+                      <path d="M 120 120 L 120 30 A 90 90 0 1 1 ${xEnd} ${yEnd} Z" fill="#2563EB" />
+                      <path d="M 120 120 L ${xEnd} ${yEnd} A 90 90 0 0 1 120 30 Z" fill="#C0272D" />
+                      <text x="100" y="140" fill="#FFFFFF" font-size="13" font-weight="bold" text-anchor="middle">${biPct}%</text>
+                      <text x="155" y="75" fill="#FFFFFF" font-size="11" font-weight="bold" text-anchor="middle">${cuPct}%</text>
+                    </svg>
+                  </div>
+                  <div style="font-size: 9.5pt; font-weight: bold; margin-top: 10px; display: flex; justify-content: center; gap: 15px;">
+                    <span style="color: #2563EB;">■ BI Scope — ${biCount}, ${biPct}%</span>
+                    <span style="color: #C0272D;">■ CU Team Scope — ${cuCount}, ${cuPct}%</span>
+                  </div>
+                </div>
+                ${caption ? `<p class="caption">${caption}</p>` : ''}
+              </div>`;
+            }
             return '';
           })
           .join('');
