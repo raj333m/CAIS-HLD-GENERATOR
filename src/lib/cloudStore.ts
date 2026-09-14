@@ -19,6 +19,7 @@ const MASTER_STORE_ID = 'ff808181a09d98f701a0a0a7ef8c05fd';
 const REST_API_BASE = `https://api.restful-api.dev/objects/${MASTER_STORE_ID}`;
 
 // In-memory fallback cache per warm Lambda container
+export const deletedIds = new Set<string>();
 let masterCache: Record<string, CloudChangeState> = {};
 let lastFetchTime = 0;
 

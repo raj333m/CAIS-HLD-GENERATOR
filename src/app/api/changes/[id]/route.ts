@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { PREPOPULATED_CHANGES } from '../route';
-import { saveCloudChangeState } from '@/lib/cloudStore';
+import { saveCloudChangeState, deletedIds } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
-
-export const deletedIds = new Set<string>();
 
 // GET /api/changes/[id] - Fetch a single CAIS change entry
 export async function GET(
@@ -188,7 +186,7 @@ export async function DELETE(
     deletedIds.add(cleanRef.toLowerCase());
     deletedIds.add(`change-${cleanRef.toLowerCase()}`);
 
-    const deleteUpdate = { deleted: true };
+    const deleteUpdate = { deleted: true, crReference: crRef };
     await saveCloudChangeState(dbId, deleteUpdate);
     await saveCloudChangeState(id, deleteUpdate);
     await saveCloudChangeState(crRef, deleteUpdate);

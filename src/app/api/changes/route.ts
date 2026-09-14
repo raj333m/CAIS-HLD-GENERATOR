@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getCloudChangeState } from '@/lib/cloudStore';
+import { getCloudChangeState, deletedIds } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -75,14 +75,12 @@ export async function GET(request: Request) {
         try {
           const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
           const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
-          const cloudState = (cloudStateByRef && cloudStateByRef.deleted)
-            ? cloudStateByRef
-            : (cloudStateById && cloudStateById.deleted)
-            ? cloudStateById
-            : (cloudStateByRef || cloudStateById);
+          const isDeleted = (cloudStateByRef && cloudStateByRef.deleted) || (cloudStateById && cloudStateById.deleted) || deletedIds.has(c.id) || deletedIds.has(c.crReference);
+          
+          if (isDeleted) return null;
 
+          const cloudState = cloudStateByRef || cloudStateById;
           if (cloudState) {
-            if (cloudState.deleted) return null;
             return {
               ...c,
               status: cloudState.status || c.status,

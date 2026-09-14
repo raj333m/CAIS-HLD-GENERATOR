@@ -816,6 +816,18 @@ export default function LivingDocumentPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (activeSectionNum && activeSectionNum !== 'doc-info') {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`sec-${activeSectionNum.replace(/\./g, '-')}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [activeSectionNum]);
+
   const isAllowedReviewer = user?.role === 'REVIEWER' || user?.realRole === 'REVIEWER' || user?.role === 'ADMIN' || user?.realRole === 'ADMIN';
 
   const checkLockedReviewModeForBa = (actionName: string): boolean => {
@@ -1143,9 +1155,9 @@ export default function LivingDocumentPage() {
   const [submitForm, setSubmitForm] = useState<{
     crReference: string;
     title: string;
-    impactedProducts: string[];
     changeType: string;
     impactedBrands: string[];
+    impactedProducts: string[];
     impactedVariables: string[];
     biImpactedChange: string[];
     targetMonth: string;
@@ -1154,16 +1166,16 @@ export default function LivingDocumentPage() {
     afterText: string;
   }>({
     crReference: 'CAIS-2026-004',
-    title: 'Updated CAIS Reporting Specifications & Exclusions',
-    impactedProducts: ['05 — Credit Card', '02 — Unsecured Loan'],
+    title: '',
     changeType: 'Existing data item amended',
     impactedBrands: ['HSBC Cards (51)'],
-    impactedVariables: ['17. Original Default Balance', '42. Default Satisfaction Date'],
-    biImpactedChange: ['Staging', 'Snap'],
+    impactedProducts: [],
+    impactedVariables: [],
+    biImpactedChange: [],
     targetMonth: 'December 2026',
-    description: 'Updated narrative specifications and exclusion logic across Retail and Cards staging streams.',
-    beforeText: '[Describe prior logic before change]',
-    afterText: '[Describe corrected logic once implemented]',
+    description: '',
+    beforeText: '',
+    afterText: '',
   });
 
   const handleOpenSubmitModal = () => {
@@ -1179,26 +1191,22 @@ export default function LivingDocumentPage() {
     });
     const nextCrRef = `CAIS-2026-${String(nextCrNum).padStart(3, '0')}`;
 
-    const defaultProducts = activeProj?.targetProducts && activeProj.targetProducts.length > 0
-      ? activeProj.targetProducts
-      : ['05 — Credit Card', '02 — Unsecured Loan'];
-
     const defaultBrandStr = activeProj?.targetBrand || 'HSBC Cards (51)';
     const defaultBrands = defaultBrandStr.split(/[,;]/).map((s: string) => s.trim()).filter(Boolean);
 
-    setSubmitForm((prev) => ({
-      ...prev,
-      crReference: prev.crReference || nextCrRef,
-      title: prev.title || (activeProj ? `${activeProj.projectName} — Change Package` : 'Updated CAIS Reporting Specifications'),
-      impactedProducts: prev.impactedProducts && prev.impactedProducts.length > 0 ? prev.impactedProducts : defaultProducts,
-      impactedBrands: prev.impactedBrands && prev.impactedBrands.length > 0 ? prev.impactedBrands : defaultBrands,
-      targetMonth: prev.targetMonth || activeProj?.targetDate || 'December 2026',
-      biImpactedChange: prev.biImpactedChange && prev.biImpactedChange.length > 0 ? prev.biImpactedChange : ['Staging', 'Snap'],
-      impactedVariables: prev.impactedVariables && prev.impactedVariables.length > 0 ? prev.impactedVariables : ['17. Original Default Balance', '42. Default Satisfaction Date'],
-      description: prev.description || 'Updated narrative specifications and exclusion logic across Retail and Cards staging streams.',
-      beforeText: prev.beforeText || '[Describe prior logic before change]',
-      afterText: prev.afterText || '[Describe corrected logic once implemented]',
-    }));
+    setSubmitForm({
+      crReference: nextCrRef,
+      title: '',
+      changeType: 'Existing data item amended',
+      impactedBrands: defaultBrands,
+      impactedProducts: [],
+      impactedVariables: [],
+      biImpactedChange: [],
+      targetMonth: activeProj?.targetDate || 'December 2026',
+      description: '',
+      beforeText: '',
+      afterText: '',
+    });
 
     setShowSubmitModal(true);
   };
@@ -1421,6 +1429,9 @@ export default function LivingDocumentPage() {
   };
 
   const isBaOrAdmin = user?.role === 'BA' || user?.role === 'ADMIN';
+  const isReviewView = isReviewerMode || Boolean(targetChange) || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'review');
+  const isLockedReviewViewForBa = isReviewView && !isAllowedReviewer;
+  const canEditDocStructure = isBaOrAdmin && !isLockedReviewViewForBa;
 
   // Handlers for Involved Parties
   const handleAddPartyRow = () => {
@@ -3021,7 +3032,7 @@ export default function LivingDocumentPage() {
             <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white">
               Involved Parties
             </h2>
-            {isBaOrAdmin && (
+            {canEditDocStructure && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleAddPartyRow}
@@ -3045,7 +3056,7 @@ export default function LivingDocumentPage() {
                   <th key={cIdx} className="p-3">
                     <div className="flex items-center justify-between gap-1">
                       <span>{col}</span>
-                      {isBaOrAdmin && partyCols.length > 1 && (
+                      {canEditDocStructure && partyCols.length > 1 && (
                         <button
                           onClick={() => handleDeletePartyCol(cIdx)}
                           className="p-1 rounded hover:bg-red-800 text-white hover:text-red-200 transition-colors"
@@ -3057,7 +3068,7 @@ export default function LivingDocumentPage() {
                     </div>
                   </th>
                 ))}
-                {isBaOrAdmin && <th className="p-3 w-2/12 text-right">Actions</th>}
+                {canEditDocStructure && <th className="p-3 w-2/12 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -3107,7 +3118,7 @@ export default function LivingDocumentPage() {
                         )}
                       </td>
                     ))}
-                    {isBaOrAdmin && (
+                    {canEditDocStructure && (
                       <td className="p-3 text-right">
                         {isEditing ? (
                           <button
@@ -3152,7 +3163,7 @@ export default function LivingDocumentPage() {
             <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white">
               Revision History
             </h2>
-            {isBaOrAdmin && (
+            {canEditDocStructure && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleAddRevisionRow}
@@ -3179,7 +3190,7 @@ export default function LivingDocumentPage() {
                   <th key={cIdx} className="p-3">
                     <div className="flex items-center justify-between gap-1">
                       <span>{col}</span>
-                      {isBaOrAdmin && revisionCols.length > 1 && (
+                      {canEditDocStructure && revisionCols.length > 1 && (
                         <button
                           onClick={() => handleDeleteRevisionCol(cIdx)}
                           className="p-1 rounded hover:bg-red-800 text-white hover:text-red-200 transition-colors"
@@ -3191,7 +3202,7 @@ export default function LivingDocumentPage() {
                     </div>
                   </th>
                 ))}
-                {isBaOrAdmin && <th className="p-3 w-24 text-right">Actions</th>}
+                {canEditDocStructure && <th className="p-3 w-24 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -3241,7 +3252,7 @@ export default function LivingDocumentPage() {
                         )}
                       </td>
                     ))}
-                    {isBaOrAdmin && (
+                    {canEditDocStructure && (
                       <td className="p-3 text-right">
                         {isEditing ? (
                           <button
@@ -3286,7 +3297,7 @@ export default function LivingDocumentPage() {
             <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white">
               Reviewed By
             </h2>
-            {isBaOrAdmin && (
+            {canEditDocStructure && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleAddReviewerRow}
@@ -3310,7 +3321,7 @@ export default function LivingDocumentPage() {
                   <th key={cIdx} className="p-3">
                     <div className="flex items-center justify-between gap-1">
                       <span>{col}</span>
-                      {isBaOrAdmin && reviewerCols.length > 1 && (
+                      {canEditDocStructure && reviewerCols.length > 1 && (
                         <button
                           onClick={() => handleDeleteReviewerCol(cIdx)}
                           className="p-1 rounded hover:bg-red-800 text-white hover:text-red-200 transition-colors"
@@ -3322,7 +3333,7 @@ export default function LivingDocumentPage() {
                     </div>
                   </th>
                 ))}
-                {isBaOrAdmin && <th className="p-3 w-2/12 text-right">Actions</th>}
+                {canEditDocStructure && <th className="p-3 w-2/12 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -3372,7 +3383,7 @@ export default function LivingDocumentPage() {
                         )}
                       </td>
                     ))}
-                    {isBaOrAdmin && (
+                    {canEditDocStructure && (
                       <td className="p-3 text-right">
                         {isEditing ? (
                           <button
@@ -3419,7 +3430,7 @@ export default function LivingDocumentPage() {
             Table of Contents
           </h1>
 
-          {isBaOrAdmin && (
+          {canEditDocStructure && (
             <button
               type="button"
               onClick={handleAddTocSection}
@@ -3434,7 +3445,7 @@ export default function LivingDocumentPage() {
           {tocItems.map((item, idx) => (
             <div
               key={item.num}
-              draggable={isBaOrAdmin}
+              draggable={canEditDocStructure}
               onDragStart={(e) => handleTocDragStart(e, idx)}
               onDragOver={(e) => handleTocDragOver(e, idx)}
               onDrop={(e) => handleTocDrop(e, idx)}
@@ -3443,7 +3454,7 @@ export default function LivingDocumentPage() {
               }`}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isBaOrAdmin && (
+                {canEditDocStructure && (
                   <span
                     className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800"
                     title="Drag to reorder category/section position"
@@ -3523,7 +3534,7 @@ export default function LivingDocumentPage() {
                         )}
                       </button>
                     )}
-                    {isBaOrAdmin && (
+                    {canEditDocStructure && (
                       <>
                         <button
                           type="button"
