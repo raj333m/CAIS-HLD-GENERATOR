@@ -460,7 +460,7 @@ export default function ReviewChangePage({ params }: { params: Promise<{ id: str
             </div>
 
             {/* Right: Tier 2 Action Buttons */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 pr-36 sm:pr-44">
               {/* Send Back for Revision: Always enabled during review */}
               <button
                 type="button"

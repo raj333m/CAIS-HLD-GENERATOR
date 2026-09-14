@@ -232,17 +232,17 @@ export default function AskHldAssistant() {
 
   return (
     <>
-      {/* Floating Action Button (FAB): Positioned in bottom corner with high z-index */}
+      {/* Floating Action Button (FAB): Integrated into bottom bar right slot with z-50 */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 px-4 py-3 rounded-full bg-gradient-to-r from-[#C0272D] to-rose-700 hover:from-[#a01f24] hover:to-rose-800 text-white font-bold text-xs shadow-2xl border border-red-500/40 flex items-center gap-2.5 transition-all transform hover:scale-105 group cursor-pointer"
+          className="fixed bottom-2.5 right-4 sm:bottom-2.5 sm:right-6 z-50 px-3.5 py-2 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-[#C0272D] to-rose-700 hover:from-[#a01f24] hover:to-rose-800 text-white font-bold text-xs shadow-2xl border border-red-500/40 flex items-center gap-2 transition-all transform hover:scale-105 group cursor-pointer"
           title="Open Ask the HLD Q&A Assistant"
         >
-          <div className="p-1 rounded-full bg-white/20 group-hover:rotate-12 transition-transform">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+          <div className="p-0.5 sm:p-1 rounded-full bg-white/20 group-hover:rotate-12 transition-transform">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
           </div>
-          <span className="tracking-wide">Ask the HLD</span>
+          <span className="tracking-wide text-xs">Ask the HLD</span>
         </button>
       )}
 

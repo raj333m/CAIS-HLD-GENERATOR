@@ -3074,7 +3074,7 @@ export default function LivingDocumentPage() {
               </div>
 
               {/* Right: Tier 2 Action Buttons (Send Back & Approve Change) */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 pr-36 sm:pr-44">
                 {/* Send Back for Revision: Always enabled during review */}
                 <button
                   type="button"
@@ -3122,7 +3122,7 @@ export default function LivingDocumentPage() {
             </>
           ) : (
             /* BA Mode: Save as Draft and Submit HLD side-by-side with clear spacing */
-            <div className="w-full flex items-center justify-end gap-4">
+            <div className="w-full flex items-center justify-end gap-4 pr-36 sm:pr-44">
               {/* Secondary Outline: Save as Draft */}
               <button
                 type="button"
