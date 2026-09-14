@@ -536,9 +536,11 @@ export default function LivingDocumentPage() {
   const [showRevisionHistoryModal, setShowRevisionHistoryModal] = useState(false);
   const [expandedRemarks, setExpandedRemarks] = useState<Record<string, boolean>>({});
 
-  const fetchSectionReviews = async () => {
+  const fetchSectionReviews = async (overrideChangeId?: string) => {
     try {
-      const res = await fetch('/api/section-reviews');
+      const cId = overrideChangeId || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('changeId') : null);
+      const url = cId ? `/api/section-reviews?changeId=${encodeURIComponent(cId)}` : '/api/section-reviews';
+      const res = await fetch(url);
       const data = await res.json();
       if (data.reviews) {
         setSectionReviews(data.reviews);
@@ -564,6 +566,31 @@ export default function LivingDocumentPage() {
 
   const [targetChange, setTargetChange] = useState<any>(null);
 
+  const getTargetSectionNumbers = (sectionsUpdatedStr?: string): string[] => {
+    if (!sectionsUpdatedStr) return [];
+    const items = sectionsUpdatedStr.split(/[,;]/).map((s) => s.trim());
+    const nums: string[] = [];
+    items.forEach((item) => {
+      const match = item.match(/(\d+\.\d+|\d+\.0|\d+)/);
+      if (match) {
+        nums.push(match[1]);
+      } else {
+        nums.push(item);
+      }
+    });
+    return Array.from(new Set(nums));
+  };
+
+  const targetSectionNums = targetChange ? getTargetSectionNumbers(targetChange.sectionsUpdated) : [];
+
+  const scopedSectionsList = targetChange && targetSectionNums.length > 0
+    ? targetSectionNums
+    : ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '3.1', '3.2', '4.0'];
+
+  const scopedTotalCount = scopedSectionsList.length;
+  const scopedApprovedCount = scopedSectionsList.filter((num) => sectionReviews[num]?.status === 'APPROVED').length;
+  const isAllScopedApproved = scopedTotalCount > 0 && scopedApprovedCount === scopedTotalCount;
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -582,6 +609,7 @@ export default function LivingDocumentPage() {
             if (found) {
               setTargetChange(found);
               setIsReviewerMode(true);
+              fetchSectionReviews(found.id);
             }
           })
           .catch((e) => console.error(e));
@@ -3031,6 +3059,7 @@ export default function LivingDocumentPage() {
             };
 
             const sectionReview = sectionReviews[item.num];
+            const isSectionInChangeScope = !targetChange || targetSectionNums.length === 0 || targetSectionNums.includes(item.num);
 
             return (
               <div
@@ -3053,8 +3082,8 @@ export default function LivingDocumentPage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    {/* Reviewer Governance Controls */}
-                    {isReviewerMode && (
+                    {/* Reviewer Governance Controls — Scoped strictly to sections in change scope */}
+                    {isReviewerMode && isSectionInChangeScope && (
                       <>
                         <button
                           type="button"
@@ -3081,6 +3110,12 @@ export default function LivingDocumentPage() {
                           <span>Share Feedback</span>
                         </button>
                       </>
+                    )}
+
+                    {isReviewerMode && !isSectionInChangeScope && targetChange && (
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700/80 italic">
+                        Reference Content (Outside Change Scope)
+                      </span>
                     )}
 
                     {isBaOrAdmin && (
@@ -3207,11 +3242,11 @@ export default function LivingDocumentPage() {
           {/* Reviewer Mode: Left-aligned Live Progress Readout & Right-aligned Action Buttons */}
           {isReviewerMode ? (
             <>
-              {/* Left: Progress Readout */}
+              {/* Left: Scoped Progress Readout */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-200 font-mono flex items-center gap-2 bg-slate-800/90 px-3.5 py-1.5 rounded-xl border border-slate-700/80 shadow-xs">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>{approvedSectionCount} of 14 sections approved</span>
+                  <span>{scopedApprovedCount} of {scopedTotalCount} {targetChange ? 'change section(s)' : 'sections'} approved</span>
                 </span>
               </div>
 
@@ -3234,26 +3269,26 @@ export default function LivingDocumentPage() {
                   <span>Send Back for Revision</span>
                 </button>
 
-                {/* Approve Change: Strictly gated until all 14 sections are approved */}
+                {/* Approve Change: Strictly gated until all scoped change sections are approved */}
                 <button
                   type="button"
                   onClick={handleApproveChange}
-                  disabled={approvedSectionCount < 14}
+                  disabled={!isAllScopedApproved}
                   title={
-                    approvedSectionCount < 14
-                      ? `Approve all 14 sections below to enable change approval (${approvedSectionCount}/14 completed)`
-                      : 'All 14 sections approved! Click to finalize HLD change approval.'
+                    !isAllScopedApproved
+                      ? `Approve all ${scopedTotalCount} scoped section(s) in this change to enable change approval (${scopedApprovedCount}/${scopedTotalCount} completed)`
+                      : 'All scoped sections approved! Click to finalize HLD change approval.'
                   }
                   className={`px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                    approvedSectionCount < 14
+                    !isAllScopedApproved
                       ? 'bg-slate-800 text-slate-500 border border-slate-700/80 cursor-not-allowed opacity-60 shadow-none'
                       : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white cursor-pointer shadow-lg shadow-emerald-500/20 transform hover:scale-[1.02]'
                   }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>
-                    {approvedSectionCount < 14
-                      ? `Approve Change (${approvedSectionCount}/14)`
+                    {!isAllScopedApproved
+                      ? `Approve Change (${scopedApprovedCount}/${scopedTotalCount})`
                       : 'Approve Change'}
                   </span>
                 </button>

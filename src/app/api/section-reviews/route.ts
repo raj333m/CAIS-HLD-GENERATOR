@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
+
+const prisma = new PrismaClient();
 
 export interface SectionReviewData {
   sectionNum: string;
@@ -68,6 +71,32 @@ function saveReviewsState(state: any) {
 
 export async function GET(req: NextRequest) {
   const state = loadReviewsState();
+  const searchParams = req.nextUrl.searchParams;
+  const changeId = searchParams.get('changeId');
+
+  if (changeId) {
+    try {
+      const change = await prisma.caisChange.findFirst({
+        where: { OR: [{ id: changeId }, { crReference: changeId }] },
+      });
+      if (change && change.reviewComments) {
+        try {
+          const parsed = JSON.parse(change.reviewComments);
+          if (parsed && typeof parsed === 'object' && parsed.reviews) {
+            state.reviews = { ...state.reviews, ...parsed.reviews };
+            if (parsed.currentFeedbackRound) {
+              state.currentFeedbackRound = parsed.currentFeedbackRound;
+            }
+          }
+        } catch (e) {
+          // Plain text comment
+        }
+      }
+    } catch (dbErr) {
+      console.warn('Prisma lookup failed in GET /api/section-reviews:', dbErr);
+    }
+  }
+
   return NextResponse.json({
     reviews: state.reviews,
     currentFeedbackRound: state.currentFeedbackRound,
@@ -79,7 +108,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sectionNum, action, feedback, reviewerName, reviewerRole, overallReason, sectionRemarks } = body;
+    const { sectionNum, action, feedback, reviewerName, reviewerRole, overallReason, sectionRemarks, changeId } = body;
 
     const state = loadReviewsState();
     let { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks } = state;
@@ -125,6 +154,32 @@ export async function POST(req: NextRequest) {
       const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
       saveReviewsState(newState);
 
+      // Sync to SQLite DB
+      if (changeId) {
+        try {
+          const change = await prisma.caisChange.findFirst({
+            where: { OR: [{ id: changeId }, { crReference: changeId }] },
+          });
+          if (change) {
+            await prisma.caisChange.update({
+              where: { id: change.id },
+              data: {
+                status: 'SENT_BACK',
+                reviewComments: JSON.stringify({
+                  overallReason: overallReason || newRound.overallReason,
+                  reviews,
+                  currentFeedbackRound: newRound,
+                }),
+                reviewedByName: reviewerName || 'Reviewer / Lead',
+                versionNumber: (change.versionNumber || 1) + 1,
+              },
+            });
+          }
+        } catch (e) {
+          console.warn('DB update failed on SEND_BACK_ROUND:', e);
+        }
+      }
+
       return NextResponse.json({
         success: true,
         currentFeedbackRound,
@@ -151,7 +206,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'RESET_ALL') {
-      // Reset all section approvals back to PENDING on BA resubmission
       Object.keys(reviews).forEach((num) => {
         reviews[num] = {
           sectionNum: num,
@@ -208,6 +262,35 @@ export async function POST(req: NextRequest) {
 
     const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
     saveReviewsState(newState);
+
+    // Sync to SQLite DB via Prisma
+    if (changeId) {
+      try {
+        const change = await prisma.caisChange.findFirst({
+          where: { OR: [{ id: changeId }, { crReference: changeId }] },
+        });
+        if (change) {
+          let existingObj: any = {};
+          try {
+            if (change.reviewComments) existingObj = JSON.parse(change.reviewComments);
+          } catch (e) {}
+
+          await prisma.caisChange.update({
+            where: { id: change.id },
+            data: {
+              reviewComments: JSON.stringify({
+                ...existingObj,
+                reviews,
+                currentFeedbackRound,
+              }),
+              reviewedByName: reviewerName || change.reviewedByName || 'Reviewer / Lead',
+            },
+          });
+        }
+      } catch (dbErr) {
+        console.warn('Prisma update failed in POST /api/section-reviews:', dbErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,

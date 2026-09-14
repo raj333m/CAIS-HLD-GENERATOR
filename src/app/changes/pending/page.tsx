@@ -131,8 +131,14 @@ export default function PendingApprovalPage() {
                 </tr>
               ) : (
                 filtered.map((c) => {
-                  const reviewerName = c.reviewedByName || c.reviewedBy?.name || '—';
-                  const reviewDate = c.reviewedByName && c.updatedAt
+                  const hasBeenReviewed = Boolean(
+                    c.reviewedByName &&
+                    c.reviewedByName !== '[Name]' &&
+                    c.reviewedByName !== 'Unassigned' &&
+                    c.status !== 'IN_REVIEW'
+                  );
+                  const reviewerName = hasBeenReviewed ? (c.reviewedByName || c.reviewedBy?.name) : '—';
+                  const reviewDate = hasBeenReviewed && c.updatedAt
                     ? new Date(c.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                     : '—';
                   const creationDateDisplay = c.creationDate || (c.createdAt ? c.createdAt.substring(0, 10) : '2026-09-14');
