@@ -107,6 +107,49 @@ export async function GET() {
                 ${caption ? `<p class="caption">${caption}</p>` : ''}
               </div>`;
             }
+            if (b.type === 'brand-flow') {
+              const brand = b.payload?.brand || '';
+              const caption = b.payload?.caption || '';
+              const omits = b.payload?.omitsSteps || [];
+              const steps = b.payload?.steps || [];
+              const note = b.payload?.note;
+
+              const flowHtml = steps.map((s: any, idx: number) => `
+                <div style="display:inline-block; padding: 6px 10px; margin: 3px; border: 1px solid #CBD5E1; border-radius: 6px; background: #F8FAFC; text-align: center; font-size: 8pt;">
+                  <strong style="color: #0F172A;">${s.name}</strong>
+                  <div style="color: #475569; font-size: 7.5pt;">${s.owner}</div>
+                </div>
+                ${idx < steps.length - 1 ? '<span style="color:#94A3B8; font-size:10pt;">→</span>' : ''}
+              `).join('');
+
+              return `<div class="diagram-container" style="margin: 20px 0;">
+                <div class="diagram-box" style="padding: 16px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF;">
+                  <h4 style="margin:0 0 10px 0; font-size: 10pt; font-weight: bold; color: #1E293B;">${brand} Design Overview</h4>
+                  ${omits.length > 0 ? `<div style="font-size: 8.5pt; color: #DC2626; margin-bottom: 8px; font-weight: 600;">⚠️ Omitted steps: ${omits.join(', ')}</div>` : ''}
+                  <div style="display:flex; flex-wrap:wrap; gap: 4px; align-items:center; justify-content:center;">
+                    ${flowHtml}
+                  </div>
+                  ${note ? `<div style="margin-top: 12px; padding: 8px; background: #FEF3C7; border-left: 3px solid #F59E0B; font-size: 8.5pt; text-align: left; color: #92400E;"><strong>Supporting Note:</strong> ${note}</div>` : ''}
+                </div>
+                ${caption ? `<p class="caption">${caption}</p>` : ''}
+              </div>`;
+            }
+            if (b.type === 'comparison-table') {
+              const title = b.payload?.title || 'Cross-Brand Process Differences';
+              const caption = b.payload?.caption || '';
+              const headersHtml = (b.payload?.headers || []).map((h: string) => `<th>${h}</th>`).join('');
+              const rowsHtml = (b.payload?.rows || []).map((r: string[], rIdx: number) =>
+                `<tr class="${rIdx % 2 === 1 ? 'alt-row' : ''}">${r.map((cell: string, cIdx: number) => cIdx === 0 ? `<strong>${cell}</strong>` : cell).map(cell => `<td>${cell}</td>`).join('')}</tr>`
+              ).join('');
+
+              return `<div class="diagram-container" style="margin: 20px 0;">
+                <h4 style="margin: 0 0 8px 0; font-size: 11pt; color: #1E293B; font-weight: bold;">${title}</h4>
+                <div class="table-container">
+                  <table><thead><tr>${headersHtml}</tr></thead><tbody>${rowsHtml}</tbody></table>
+                </div>
+                ${caption ? `<p class="caption">${caption}</p>` : ''}
+              </div>`;
+            }
             return '';
           })
           .join('');

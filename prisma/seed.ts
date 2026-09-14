@@ -1078,7 +1078,86 @@ async function main() {
             "type": "diagram",
             "payload": {
               "imageKey": "conceptual",
-              "caption": "Figure 2.1(a) \u2014 Conceptual Data Flow Diagram: the fifteen-step CAIS extract pipeline from Retail/Cards staging through to bureau transmission."
+              "caption": "Figure 2.1(a) — Conceptual Data Flow Diagram: the fifteen-step CAIS extract pipeline from Retail/Cards staging through to bureau transmission."
+            }
+          },
+          {
+            "type": "brand-flow",
+            "payload": {
+              "brand": "hsbc",
+              "title": "Figure 2.1(b) — HSBC Design Overview",
+              "caption": "Figure 2.1(b) — HSBC Design Overview: complete 15-step pipeline for HSBC Cards (Brand 51) and HSBC Retail (Brand 85), including brand-specific exclusion rules and debt sale file processing.",
+              "escalationInfo": "Validation escalations routed to BI Support or CU Team Data Quality.",
+              "steps": [
+                { "num": "1-2", "name": "Retail & Cards Source Staging", "owner": "BI", "desc": "Load DWH staging datasets for HSBC Retail & Cards." },
+                { "num": "3", "name": "HSBC Exclusions Applied", "owner": "CU Team", "desc": "Apply HSBC-specific exclusion files (Virtual/Secondary Cards, Brand 51/85 rules)." },
+                { "num": "4", "name": "Debt Sale Treatment", "owner": "CU Team", "desc": "Apply debt sale files & Delete markers for sold accounts." },
+                { "num": "5-6", "name": "Staging Validation & Address Processing", "owner": "BI", "desc": "Execute staging completeness checks & address standardization." },
+                { "num": "7-9", "name": "DWH_PDS_STAG Core Load & CADS Processing", "owner": "BI & CU Team", "desc": "Populate DWH_PDS_STAG, run CADS, and update DWH_IP_ARRG_CALC_V." },
+                { "num": "10-12", "name": "File Creation & CAIS Snapshot Load", "owner": "BI", "desc": "Generate CRA extract files & load Retail/Cards snapshot tables." },
+                { "num": "13-14", "name": "Business Rules Validation & Ad-hoc Processing", "owner": "BI & CU Team", "desc": "Joint end-to-end validation. Ad-hoc patch runs available if required." },
+                { "num": "15", "name": "File Transmission to CRAs", "owner": "Transmission Team", "desc": "Push extract files to Connect:Direct server for bureau delivery." }
+              ]
+            }
+          },
+          {
+            "type": "brand-flow",
+            "payload": {
+              "brand": "first_direct",
+              "title": "Figure 2.1(c) — First Direct Design Overview",
+              "caption": "Figure 2.1(c) — First Direct Design Overview: 15-step pipeline for First Direct Cards and Retail (Brand 211), including FD exclusion rules, debt sale files, and senior-level sign-off gate.",
+              "escalationInfo": "Validation escalations routed to BI Support or CU Team Data Quality.",
+              "signoffRequired": true,
+              "steps": [
+                { "num": "1-2", "name": "Retail & Cards Source Staging", "owner": "BI", "desc": "Load DWH staging datasets for First Direct (Brand 211)." },
+                { "num": "3", "name": "First Direct Exclusions Applied", "owner": "CU Team", "desc": "Apply FD exclusion file (Positive data sharing flags & TSS_CUST_ID checks)." },
+                { "num": "4", "name": "Debt Sale Treatment", "owner": "CU Team", "desc": "Apply FD debt sale file & Delete marker rules." },
+                { "num": "5-6", "name": "Staging Validation & Address Processing", "owner": "BI", "desc": "Execute staging completeness checks & address standardization." },
+                { "num": "7-9", "name": "DWH_PDS_STAG Core Load & CADS Processing", "owner": "BI & CU Team", "desc": "Populate DWH_PDS_STAG, run CADS, and update DWH_IP_ARRG_CALC_V." },
+                { "num": "10-12", "name": "File Creation & CAIS Snapshot Load", "owner": "BI", "desc": "Generate CRA extract files & load Retail/Cards snapshot tables." },
+                { "num": "13", "name": "Business Rules Validation", "owner": "BI & CU Team", "desc": "Joint validation by Product Owner (Risk CRA) & CU Team." },
+                { "num": "14", "name": "Ad-hoc Rerun / Patch Processing", "owner": "BI / CU Team", "desc": "Post-validation ad-hoc file generation (available when required)." },
+                { "num": "14.5", "name": "Senior-Level Sign-Off Gate", "owner": "Senior Reviewer / Lead", "desc": "Mandatory senior governance sign-off required prior to CRA release." },
+                { "num": "15", "name": "File Transmission to CRAs", "owner": "Transmission Team", "desc": "Push extract files to Connect:Direct server for bureau delivery." }
+              ]
+            }
+          },
+          {
+            "type": "brand-flow",
+            "payload": {
+              "brand": "ms_current_account",
+              "title": "Figure 2.1(d) — M&S Bank Current Account Design Overview",
+              "caption": "Figure 2.1(d) — M&S Bank Current Account Design Overview: streamlined pipeline for M&S Current Accounts (Brand 662 / Gleam 937), omitting Exclusions and Debt Sale steps.",
+              "escalationInfo": "Validation escalations routed to BI Support or CU Team Data Quality.",
+              "isDistinctProcess": true,
+              "supportingNote": "Note on Staging Variables: On M&S Bank Current Account staging data, the CRA_ACCT_TYCD variable takes the value 02 for Personal Loans and 26 for Debt Consolidated Loans (DCLs), consistent with Product Code 02 (Unsecured Loan) and 26 (Debt Consolidated Loan) in the Supported Products table.",
+              "steps": [
+                { "num": "1-2", "name": "M&S Current Account Staging", "owner": "BI", "desc": "Load Gleam (937) staging dataset for M&S Current Accounts (Brand 662)." },
+                { "num": "—", "name": "Exclusions Step Omitted", "owner": "N/A", "desc": "No exclusions file in place for M&S Current Account brand." },
+                { "num": "—", "name": "Debt Sale Step Omitted", "owner": "N/A", "desc": "No debt sale file in place for M&S Current Account brand." },
+                { "num": "5-6", "name": "Staging Validation & Address Processing", "owner": "BI", "desc": "Execute staging completeness checks & address standardization." },
+                { "num": "7-9", "name": "DWH_PDS_STAG Core Load & CADS Processing", "owner": "BI & CU Team", "desc": "Populate DWH_PDS_STAG, run CADS, and update DWH_IP_ARRG_CALC_V." },
+                { "num": "10-12", "name": "File Creation & CAIS Snapshot Load", "owner": "BI", "desc": "Generate CRA extract files & load snapshot table." },
+                { "num": "13-14", "name": "Business Rules Validation & Ad-hoc Potential", "owner": "BI & CU Team", "desc": "Joint validation. Ad-hoc processing available (unused to date)." },
+                { "num": "15", "name": "File Transmission to CRAs", "owner": "Transmission Team", "desc": "Push extract files to Connect:Direct server for bureau delivery." }
+              ]
+            }
+          },
+          {
+            "type": "comparison-table",
+            "payload": {
+              "title": "Figure 2.1(e) — Cross-Brand Process Differences",
+              "caption": "Figure 2.1(e) — Cross-Brand Process Differences: summary of pipeline variations across HSBC, M&S Bank Current Account, and First Direct.",
+              "headers": ["Dimension", "HSBC Card & Retail", "M&S Bank Current Account", "First Direct"],
+              "rows": [
+                ["BI Steps", "Standard BI step count with brand-specific control jobs", "Standard BI step count with M&S-specific control jobs", "Standard BI step count with brand-specific control jobs"],
+                ["Exclusion Files", "Brand-specific exclusion file applied", "No exclusions file in place for this brand", "Exclusion file applied, differs by brand"],
+                ["Debt Sale Files", "Debt sale file applied (CU Team)", "No debt sale file in place for this brand", "Debt sale file applied (CU Team)"],
+                ["CADS Steps", "CU Team-owned CADS processing", "CU Team-owned CADS processing", "CU Team-owned CADS processing"],
+                ["Basic Data Validation", "Performed, escalation via generic team-level validation contacts", "Performed, escalation via generic team-level validation contacts", "Performed, escalation via generic team-level validation contacts"],
+                ["Potential for Ad-hoc File Processing", "Available, post-validation, when used", "Available, but not yet used to date", "Available, post-validation, when used"],
+                ["Sign-off", "No formal sign-off step currently in place", "No formal sign-off step currently in place", "Senior-level sign-off required"]
+              ]
             }
           }
         ]

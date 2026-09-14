@@ -1915,6 +1915,134 @@ export default function LivingDocumentPage() {
             </div>
           );
         }
+
+        if (block.type === 'brand-flow') {
+          const { title, caption, steps = [], isDistinctProcess, supportingNote, signoffRequired } = block.payload || {};
+          return (
+            <div key={idx} className="my-8 space-y-4">
+              <div className="bg-white dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    {title}
+                  </h4>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isDistinctProcess && (
+                      <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold">
+                        Distinct Process: Exclusions & Debt Sale Omitted
+                      </span>
+                    )}
+                    {signoffRequired && (
+                      <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30 text-xs font-semibold">
+                        Senior Sign-Off Gate Required
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pipeline Step Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {steps.map((st: any, sIdx: number) => {
+                    const isOmitted = st.owner === 'N/A';
+                    const isSignoff = st.num === '14.5';
+                    return (
+                      <div
+                        key={sIdx}
+                        className={`p-3.5 rounded-xl border text-xs space-y-1.5 transition-all ${
+                          isOmitted
+                            ? 'bg-slate-100/60 dark:bg-slate-900/40 border-dashed border-slate-300 dark:border-slate-800 opacity-60'
+                            : isSignoff
+                            ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800/60 shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-mono font-bold text-[10px]">
+                          <span className="text-slate-400">Step {st.num}</span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-sans font-semibold ${
+                              st.owner === 'BI'
+                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                : st.owner === 'CU Team'
+                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                                : st.owner === 'Transmission Team'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : st.owner === 'Senior Reviewer / Lead'
+                                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                            }`}
+                          >
+                            {st.owner}
+                          </span>
+                        </div>
+                        <div className="font-bold text-slate-900 dark:text-white leading-tight">
+                          {st.name}
+                        </div>
+                        <div className="text-slate-600 dark:text-slate-400 text-[10.5px] leading-relaxed">
+                          {st.desc}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Supporting Note */}
+                {supportingNote && (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-sans">
+                    <strong>{supportingNote}</strong>
+                  </div>
+                )}
+              </div>
+
+              {/* Caption */}
+              {caption && (
+                <p className="text-[9.5pt] italic text-slate-600 dark:text-slate-400 text-center max-w-3xl mx-auto font-sans">
+                  {caption}
+                </p>
+              )}
+            </div>
+          );
+        }
+
+        if (block.type === 'comparison-table') {
+          const { title, caption, headers = [], rows = [] } = block.payload || {};
+          return (
+            <div key={idx} className="my-8 space-y-3">
+              <div className="bg-white dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md space-y-4">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">
+                  {title}
+                </h4>
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
+                  <table className="w-full text-left border-collapse font-sans text-xs">
+                    <thead className="bg-[#C0272D] text-white font-bold">
+                      <tr>
+                        {headers.map((h: string, hIdx: number) => (
+                          <th key={hIdx} className="p-3 border-b border-red-700 font-bold">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
+                      {rows.map((r: string[], rIdx: number) => (
+                        <tr key={rIdx} className={rIdx % 2 === 1 ? 'bg-[#F9F9F9] dark:bg-slate-900/60' : 'bg-white dark:bg-slate-950'}>
+                          {r.map((cell: string, cIdx: number) => (
+                            <td key={cIdx} className={`p-3 align-top leading-relaxed ${cIdx === 0 ? 'font-bold text-slate-900 dark:text-white w-48' : 'text-slate-700 dark:text-slate-300'}`}>
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {caption && (
+                <p className="text-[9.5pt] italic text-slate-600 dark:text-slate-400 text-center max-w-3xl mx-auto font-sans">
+                  {caption}
+                </p>
+              )}
+            </div>
+          );
+        }
         return null;
       });
     } catch (e) {
