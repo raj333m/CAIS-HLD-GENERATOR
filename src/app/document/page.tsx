@@ -647,7 +647,9 @@ export default function LivingDocumentPage() {
             );
             if (found) {
               setTargetChange(found);
-              setIsReviewerMode(true);
+              if (user?.role === 'REVIEWER' || user?.role === 'ADMIN' || mode === 'review') {
+                setIsReviewerMode(true);
+              }
               fetchSectionReviews(found.id || found.crReference || cId);
               if (found.reviewComments) {
                 try {
@@ -2570,19 +2572,21 @@ export default function LivingDocumentPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsReviewerMode(!isReviewerMode)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
-              isReviewerMode
-                ? 'bg-rose-600 text-white border-rose-500 shadow-md'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-            }`}
-          >
-            {isReviewerMode ? 'Reviewer Governance Mode Active' : 'Switch to Reviewer View'}
-          </button>
-        </div>
+        {isAllowedReviewer && (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsReviewerMode(!isReviewerMode)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                isReviewerMode
+                  ? 'bg-rose-600 text-white border-rose-500 shadow-md'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              {isReviewerMode ? 'Reviewer Governance Mode Active' : 'Switch to Reviewer View'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* COVER PAGE */}
@@ -2770,7 +2774,7 @@ export default function LivingDocumentPage() {
                     {partyCols.map((col, cIdx) => (
                       <td key={cIdx} className="p-3">
                         {isEditing ? (
-                          col.toLowerCase().includes('date') ? (
+                          /\bdate\b/i.test(col) ? (
                             <input
                               type="date"
                               value={
@@ -2901,7 +2905,7 @@ export default function LivingDocumentPage() {
                     {revisionCols.map((col, cIdx) => (
                       <td key={cIdx} className="p-3">
                         {isEditing ? (
-                          col.toLowerCase().includes('date') ? (
+                          /\bdate\b/i.test(col) ? (
                             <input
                               type="date"
                               value={
@@ -3029,7 +3033,7 @@ export default function LivingDocumentPage() {
                     {reviewerCols.map((col, cIdx) => (
                       <td key={cIdx} className="p-3">
                         {isEditing ? (
-                          col.toLowerCase().includes('date') ? (
+                          /\bdate\b/i.test(col) ? (
                             <input
                               type="date"
                               value={
@@ -3321,16 +3325,7 @@ export default function LivingDocumentPage() {
             </div>
           )}
 
-          {/* BA Reviewer Mode Preview Notice */}
-          {isReviewerMode && user?.role === 'BA' && (
-            <div className="p-3.5 rounded-xl bg-blue-950/40 border border-blue-500/30 text-blue-200 text-xs flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-blue-400" />
-                <span><strong>Reviewer Governance Preview Active:</strong> Viewing document layout in Reviewer mode. Approval and Send Back controls are read-only for BA role.</span>
-              </span>
-              <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono text-[10px] font-bold">Role: BA (Preview)</span>
-            </div>
-          )}
+
           {/* Top-of-Page Revision Alert Banner for BA (Draft Revision Requested) */}
           {(currentFeedbackRound || computedHldStatus === 'DRAFT_REVISION_REQUESTED') && (
             <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-3 shadow-md font-sans animate-in fade-in duration-300">
