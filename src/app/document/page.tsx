@@ -1743,8 +1743,19 @@ export default function LivingDocumentPage() {
     const { targetId, crReference } = deleteConfirmModal;
     setDeleteConfirmModal(null);
 
+    if (typeof window !== 'undefined') {
+      try {
+        const localDeleted = JSON.parse(localStorage.getItem('cais_user_deleted_ids') || '[]');
+        const updatedDel = [...localDeleted, targetId, crReference].filter(Boolean);
+        localStorage.setItem('cais_user_deleted_ids', JSON.stringify(updatedDel));
+
+        const localSaved = JSON.parse(localStorage.getItem('cais_user_created_changes') || '[]');
+        const cleanedSaved = localSaved.filter((c: any) => c.id !== targetId && c.crReference !== targetId && c.crReference !== crReference);
+        localStorage.setItem('cais_user_created_changes', JSON.stringify(cleanedSaved));
+      } catch (e) {}
+    }
+
     try {
-      // Optimistically remove from state immediately
       setCaisChanges((prev) =>
         prev.filter((item) => item.id !== targetId && item.crReference !== targetId && item.crReference !== crReference)
       );
@@ -1772,10 +1783,22 @@ export default function LivingDocumentPage() {
       const res = await fetch(`/api/changes?projectId=${targetId}`);
       if (res.ok) {
         const data = await res.json();
+        let list = data.changes || [];
+        if (typeof window !== 'undefined') {
+          try {
+            const localSaved = JSON.parse(localStorage.getItem('cais_user_created_changes') || '[]');
+            const localDeleted = JSON.parse(localStorage.getItem('cais_user_deleted_ids') || '[]');
+            const delSet = new Set(localDeleted);
+
+            const existingRefs = new Set(list.map((c: any) => c.crReference));
+            const newLocal = localSaved.filter((c: any) => !existingRefs.has(c.crReference) && !delSet.has(c.id) && !delSet.has(c.crReference));
+            list = [...newLocal, ...list].filter((c: any) => !delSet.has(c.id) && !delSet.has(c.crReference));
+          } catch (e) {}
+        }
         if (targetId && targetId !== 'proj-alpha') {
-          setCaisChanges((data.changes || []).filter((c: any) => c.projectId === targetId));
+          setCaisChanges(list.filter((c: any) => c.projectId === targetId));
         } else {
-          setCaisChanges(data.changes || []);
+          setCaisChanges(list);
         }
       }
     } catch (e) {
@@ -2032,6 +2055,28 @@ export default function LivingDocumentPage() {
       });
 
       if (res.ok) {
+        const resData = await res.json();
+        const createdObj = resData.change || {
+          id: `change-${Date.now()}`,
+          crReference: submitForm.crReference,
+          title: submitForm.title,
+          status: 'IN_REVIEW',
+          changeType: submitForm.changeType,
+          impactedBureaus: brandsStr,
+          impactedDataItems: varsStr,
+          targetMonth: submitForm.targetMonth,
+          description: submitForm.description,
+          sectionsUpdated: biImpactStr,
+          createdAt: new Date().toISOString(),
+        };
+
+        if (typeof window !== 'undefined') {
+          try {
+            const localSaved = JSON.parse(localStorage.getItem('cais_user_created_changes') || '[]');
+            localStorage.setItem('cais_user_created_changes', JSON.stringify([createdObj, ...localSaved]));
+          } catch (e) {}
+        }
+
         setShowSubmitModal(false);
         setDraftSavedNotice(`Change package ${submitForm.crReference} submitted successfully! Status: In Review.`);
         fetchChanges();
