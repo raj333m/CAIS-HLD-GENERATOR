@@ -432,11 +432,35 @@ export default function LivingDocumentPage() {
     { id: 'proj-alpha', projectName: 'CRA Project Alpha — CAIS 2026', targetBrand: 'HSBC Cards', targetDate: 'December 2026' }
   ]);
   const [activeProjectId, setActiveProjectId] = useState<string>('proj-alpha');
+  const BRAND_OPTIONS = [
+    'HSBC Retail (85)',
+    'HSBC Cards (51)',
+    'M&S Loans (947)',
+    'M&S Current Accounts (662)',
+    'First Direct (211)',
+  ];
+
+  const PRODUCT_OPTIONS = [
+    '02 — Unsecured Loan',
+    '03 — Mortgage',
+    '04 — Revolving Account',
+    '05 — Credit Card',
+    '06 — Charge Card',
+    '15 — Current Account',
+    '16 — Second Mortgage',
+    '19 — Fixed Term Deferred Payment',
+    '25 — Flexible Mortgage',
+    '26 — Debt Consolidated Loan',
+    '71 — Basic Bank Account',
+  ];
+
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
   const [newProjectForm, setNewProjectForm] = useState({
     projectName: '',
-    targetBrand: 'HSBC Cards',
+    targetBrand: 'HSBC Cards (51)',
+    targetBrands: ['HSBC Cards (51)'] as string[],
+    targetProducts: ['05 — Credit Card'] as string[],
     targetDate: 'December 2026',
     strategy: 'COPY_ALL',
     selectedSectionNums: ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '3.0', '4.0'],
@@ -457,6 +481,9 @@ export default function LivingDocumentPage() {
   const handleCreateNewProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectForm.projectName.trim()) return;
+    if (!newProjectForm.targetBrands || newProjectForm.targetBrands.length === 0) return;
+    if (!newProjectForm.targetProducts || newProjectForm.targetProducts.length === 0) return;
+
     setCreatingProject(true);
     try {
       const res = await fetch('/api/hld-projects', {
@@ -464,6 +491,7 @@ export default function LivingDocumentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newProjectForm,
+          targetBrand: newProjectForm.targetBrands.join(', '),
           sourceProjectId: activeProjectId,
         }),
       });
@@ -476,7 +504,9 @@ export default function LivingDocumentPage() {
         setShowCreateProjectModal(false);
         setNewProjectForm({
           projectName: '',
-          targetBrand: 'HSBC Cards',
+          targetBrand: 'HSBC Cards (51)',
+          targetBrands: ['HSBC Cards (51)'],
+          targetProducts: ['05 — Credit Card'],
           targetDate: 'December 2026',
           strategy: 'COPY_ALL',
           selectedSectionNums: ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '3.0', '4.0'],
@@ -623,14 +653,17 @@ export default function LivingDocumentPage() {
     }
   }, [user]);
 
+  const isAllowedReviewer = user?.role === 'REVIEWER' || user?.realRole === 'REVIEWER' || user?.role === 'ADMIN' || user?.realRole === 'ADMIN';
+
   const handleApproveSection = async (sectionNum: string) => {
-    if (user?.role !== 'REVIEWER' && user?.role !== 'ADMIN') {
+    if (!isAllowedReviewer) {
       setDraftSavedNotice('Preview Mode: Section approval is disabled for BA role. Log in as Reviewer.');
       setTimeout(() => setDraftSavedNotice(null), 3500);
       return;
     }
 
     try {
+      const activeCId = targetChange?.id || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('changeId') : null);
       const res = await fetch('/api/section-reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -638,6 +671,7 @@ export default function LivingDocumentPage() {
           sectionNum,
           action: 'APPROVE',
           reviewerName: user?.name || 'Reviewer / Lead',
+          changeId: activeCId,
         }),
       });
       const data = await res.json();
@@ -652,7 +686,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleOpenFeedbackModal = (sectionNum: string, sectionTitle: string) => {
-    if (user?.role !== 'REVIEWER' && user?.role !== 'ADMIN') {
+    if (!isAllowedReviewer) {
       setDraftSavedNotice('Preview Mode: Leaving remarks is disabled for BA role. Log in as Reviewer.');
       setTimeout(() => setDraftSavedNotice(null), 3500);
       return;
@@ -668,7 +702,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleSubmitFeedback = async () => {
-    if (user?.role !== 'REVIEWER' && user?.role !== 'ADMIN') {
+    if (!isAllowedReviewer) {
       setDraftSavedNotice('Preview Mode: Submitting feedback is disabled for BA role. Log in as Reviewer.');
       setTimeout(() => setDraftSavedNotice(null), 3500);
       return;
@@ -676,6 +710,7 @@ export default function LivingDocumentPage() {
 
     if (!feedbackModal || !feedbackModal.feedbackText.trim()) return;
     try {
+      const activeCId = targetChange?.id || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('changeId') : null);
       const res = await fetch('/api/section-reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -684,6 +719,7 @@ export default function LivingDocumentPage() {
           action: 'SHARE_FEEDBACK',
           feedback: feedbackModal.feedbackText,
           reviewerName: user?.name || 'Reviewer / Lead',
+          changeId: activeCId,
         }),
       });
       const data = await res.json();
@@ -699,7 +735,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleConfirmSendBack = async () => {
-    if (user?.role !== 'REVIEWER' && user?.role !== 'ADMIN') {
+    if (!isAllowedReviewer) {
       setDraftSavedNotice('Preview Mode: Send Back is disabled for BA role. Log in as Reviewer.');
       setTimeout(() => setDraftSavedNotice(null), 3500);
       return;
@@ -714,6 +750,7 @@ export default function LivingDocumentPage() {
           remarkText: r.feedback || '',
         }));
 
+      const activeCId = targetChange?.id || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('changeId') : null);
       const res = await fetch('/api/section-reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -723,29 +760,36 @@ export default function LivingDocumentPage() {
           sectionRemarks: sectionRemarksList,
           reviewerName: user?.name || 'Reviewer / Lead',
           reviewerRole: user?.role || 'Reviewer',
+          changeId: activeCId,
         }),
       });
 
-      // Update in-review changes to SENT_BACK
-      try {
-        const changesRes = await fetch('/api/changes');
-        if (changesRes.ok) {
-          const cData = await changesRes.json();
-          const inReview = (cData.changes || []).filter((c: any) => c.status === 'IN_REVIEW' || c.id === targetChange?.id);
-          for (const item of inReview) {
-            await fetch(`/api/changes/${item.id}/review`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+      if (activeCId) {
+        try {
+          const putRes = await fetch(`/api/changes/${encodeURIComponent(activeCId)}/review`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'SENT_BACK',
+              reviewComments: overallSendBackReason,
+              reviewerId: user?.id,
+            }),
+          });
+          if (putRes.ok) {
+            const updatedData = await putRes.json();
+            if (updatedData.updatedChange) {
+              setTargetChange(updatedData.updatedChange);
+            } else {
+              setTargetChange((prev: any) => ({
+                ...prev,
                 status: 'SENT_BACK',
-                reviewComments: overallSendBackReason,
-                reviewerId: user?.id,
-              }),
-            });
+                versionNumber: (prev?.versionNumber || 1) + 1,
+              }));
+            }
           }
+        } catch (e) {
+          console.warn('Failed to sync change status on send back:', e);
         }
-      } catch (e) {
-        console.warn('Failed to sync change status on send back:', e);
       }
 
       const data = await res.json();
@@ -764,32 +808,36 @@ export default function LivingDocumentPage() {
   };
 
   const handleApproveChange = async () => {
-    if (user?.role !== 'REVIEWER' && user?.role !== 'ADMIN') {
+    if (!isAllowedReviewer) {
       setDraftSavedNotice('Preview Mode: Approve Change is disabled for BA role. Log in as Reviewer.');
       setTimeout(() => setDraftSavedNotice(null), 3500);
       return;
     }
 
-    if (approvedSectionCount < 14) return;
+    if (!isAllScopedApproved) return;
 
     try {
-      const changesRes = await fetch('/api/changes');
-      if (changesRes.ok) {
-        const cData = await changesRes.json();
-        const inReview = (cData.changes || []).filter((c: any) => c.status === 'IN_REVIEW' || c.id === targetChange?.id);
-        for (const item of inReview) {
-          await fetch(`/api/changes/${item.id}/review`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              status: 'APPROVED',
-              reviewerId: user?.id,
-            }),
-          });
+      const activeCId = targetChange?.id || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('changeId') : null);
+      if (activeCId) {
+        const putRes = await fetch(`/api/changes/${encodeURIComponent(activeCId)}/review`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'APPROVED',
+            reviewerId: user?.id,
+          }),
+        });
+        if (putRes.ok) {
+          const updatedData = await putRes.json();
+          if (updatedData.updatedChange) {
+            setTargetChange(updatedData.updatedChange);
+          } else {
+            setTargetChange((prev: any) => ({ ...prev, status: 'APPROVED' }));
+          }
         }
       }
 
-      setDraftSavedNotice('All 14 sections approved! Consolidated HLD Change Request approved successfully.');
+      setDraftSavedNotice(`All ${scopedTotalCount} scoped section(s) approved! Consolidated HLD Change Request approved successfully.`);
       setTimeout(() => {
         setDraftSavedNotice(null);
         router.push('/changes');
@@ -1903,9 +1951,9 @@ export default function LivingDocumentPage() {
             </div>
             <p className="text-xs text-slate-400 mt-1">
               {computedHldStatus === 'APPROVED'
-                ? 'All 14 document sections have been reviewed and approved by the Reviewer/Lead.'
-                : computedHldStatus === 'UNDER_REVIEW'
-                ? `${approvedSectionCount} of 14 sections approved. Reviewer feedback or pending approvals exist.`
+                ? `All ${scopedTotalCount} scoped section(s) have been reviewed and approved by the Reviewer/Lead.`
+                : computedHldStatus === 'UNDER_REVIEW' || computedHldStatus === 'IN_REVIEW'
+                ? `${scopedApprovedCount} of ${scopedTotalCount} scoped section(s) approved. Reviewer feedback or pending approvals exist.`
                 : 'Document is in Draft state. Submit for review once initial drafting is complete.'}
             </p>
           </div>
@@ -4282,38 +4330,124 @@ export default function LivingDocumentPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300">
-                    Target Brand *
-                  </label>
-                  <select
-                    value={newProjectForm.targetBrand}
-                    onChange={(e) => setNewProjectForm({ ...newProjectForm, targetBrand: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-[#C0272D]"
-                  >
-                    <option value="HSBC Cards">HSBC Cards</option>
-                    <option value="First Direct">First Direct</option>
-                    <option value="M&S Bank">M&S Bank</option>
-                    <option value="HSBC Personal Banking">HSBC Personal Banking</option>
-                    <option value="Wealth & Private Banking">Wealth & Private Banking</option>
-                    <option value="Global Banking">Global Banking</option>
-                  </select>
+              {/* Target Brand Multi-Select */}
+              <div className="space-y-1.5">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Target Brand *</span>
+                  <span className="text-[10px] text-slate-400 font-normal font-mono">Multi-select brand(s)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[42px] items-center">
+                  {newProjectForm.targetBrands.map((b) => (
+                    <span key={b} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                      {b}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newProjectForm.targetBrands.length <= 1) return;
+                          setNewProjectForm({
+                            ...newProjectForm,
+                            targetBrands: newProjectForm.targetBrands.filter((item) => item !== b),
+                          });
+                        }}
+                        className="hover:text-red-800 dark:hover:text-red-200 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                  {BRAND_OPTIONS.map((opt) => {
+                    const isChecked = newProjectForm.targetBrands.includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-red-500/10 border-red-500/40 text-red-600 dark:text-red-300 font-bold' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? newProjectForm.targetBrands.filter((item) => item !== opt)
+                              : [...newProjectForm.targetBrands, opt];
+                            if (updated.length > 0) {
+                              setNewProjectForm({ ...newProjectForm, targetBrands: updated });
+                            }
+                          }}
+                          className="accent-[#C0272D] rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300">
-                    Target Implementation Date *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. December 2026"
-                    value={newProjectForm.targetDate}
-                    onChange={(e) => setNewProjectForm({ ...newProjectForm, targetDate: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#C0272D]"
-                  />
+              {/* Target Product(s) Multi-Select */}
+              <div className="space-y-1.5 pt-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Target Product(s) *</span>
+                  <span className="text-[10px] text-slate-400 font-normal font-mono">Multi-select in-scope products (PDS codes)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[42px] items-center">
+                  {newProjectForm.targetProducts.map((p) => (
+                    <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                      {p}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newProjectForm.targetProducts.length <= 1) return;
+                          setNewProjectForm({
+                            ...newProjectForm,
+                            targetProducts: newProjectForm.targetProducts.filter((item) => item !== p),
+                          });
+                        }}
+                        className="hover:text-purple-800 dark:hover:text-purple-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pt-1 pr-1">
+                  {PRODUCT_OPTIONS.map((opt) => {
+                    const isChecked = newProjectForm.targetProducts.includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-300 font-bold' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? newProjectForm.targetProducts.filter((item) => item !== opt)
+                              : [...newProjectForm.targetProducts, opt];
+                            if (updated.length > 0) {
+                              setNewProjectForm({ ...newProjectForm, targetProducts: updated });
+                            }
+                          }}
+                          className="accent-purple-600 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">
+                  Target Implementation Date *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. December 2026"
+                  value={newProjectForm.targetDate}
+                  onChange={(e) => setNewProjectForm({ ...newProjectForm, targetDate: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-[#C0272D]"
+                />
               </div>
 
               {/* Strategy choices */}

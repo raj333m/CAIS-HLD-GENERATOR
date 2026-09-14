@@ -13,8 +13,15 @@ export async function PUT(
     const body = await request.json();
     const { status, reviewComments, reviewerId, updatedSectionContent } = body;
 
-    const existingChange = await prisma.caisChange.findUnique({
-      where: { id },
+    const cleanRef = id.replace(/^change-/, '').toUpperCase();
+    const existingChange = await prisma.caisChange.findFirst({
+      where: {
+        OR: [
+          { id },
+          { crReference: id },
+          { crReference: cleanRef },
+        ],
+      },
     });
 
     if (!existingChange) {
@@ -29,7 +36,7 @@ export async function PUT(
     // Update Change entry status
     const isSentBack = status === 'SENT_BACK' || status === 'DRAFT';
     const updatedChange = await prisma.caisChange.update({
-      where: { id },
+      where: { id: existingChange.id },
       data: {
         status: status === 'SENT_BACK' ? 'SENT_BACK' : status, // "APPROVED" | "SENT_BACK" | "IN_REVIEW"
         reviewComments: reviewComments || existingChange.reviewComments,

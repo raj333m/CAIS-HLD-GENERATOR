@@ -5,6 +5,8 @@ export interface HldProject {
   id: string;
   projectName: string;
   targetBrand: string;
+  targetBrands?: string[];
+  targetProducts?: string[];
   targetDate: string;
   createdAt: string;
   sections?: any[];
@@ -14,7 +16,9 @@ let hldProjectsStore: HldProject[] = [
   {
     id: 'proj-alpha',
     projectName: 'CRA Project Alpha — CAIS 2026',
-    targetBrand: 'HSBC Cards',
+    targetBrand: 'HSBC Cards (51)',
+    targetBrands: ['HSBC Cards (51)'],
+    targetProducts: ['05 — Credit Card'],
     targetDate: 'December 2026',
     createdAt: new Date().toISOString(),
   },
@@ -47,17 +51,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { projectName, targetBrand, targetDate, strategy, selectedSectionNums, sourceProjectId } = body;
+    const { projectName, targetBrand, targetBrands, targetProducts, targetDate, strategy, selectedSectionNums, sourceProjectId } = body;
 
     if (!projectName || !projectName.trim()) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
     }
 
+    const brandList = Array.isArray(targetBrands) && targetBrands.length > 0 ? targetBrands : (targetBrand ? [targetBrand] : ['HSBC Cards (51)']);
+    const productList = Array.isArray(targetProducts) && targetProducts.length > 0 ? targetProducts : ['05 — Credit Card'];
+
     const newId = `proj-${Date.now()}`;
     const newProject: HldProject = {
       id: newId,
       projectName: projectName.trim(),
-      targetBrand: targetBrand || 'HSBC Cards',
+      targetBrand: brandList.join(', '),
+      targetBrands: brandList,
+      targetProducts: productList,
       targetDate: targetDate || 'December 2026',
       createdAt: new Date().toISOString(),
     };

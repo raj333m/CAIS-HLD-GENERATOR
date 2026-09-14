@@ -70,13 +70,19 @@ export default function ChangesRegisterPage() {
     fetchChanges();
   }, [search, statusFilter]);
 
-  const getApprovedCount = () => {
-    return Object.values(sectionReviews).filter((r: any) => r.status === 'APPROVED').length;
+  const getChangeScopedSections = (sectionsUpdatedStr?: string) => {
+    if (!sectionsUpdatedStr) return ['1.3', '2.5'];
+    const items = sectionsUpdatedStr.split(/;|\n/);
+    const nums: string[] = [];
+    items.forEach((item) => {
+      const match = item.match(/(\d+\.\d+|\d+\.0|\d+)/);
+      if (match) {
+        nums.push(match[1]);
+      }
+    });
+    const unique = Array.from(new Set(nums));
+    return unique.length > 0 ? unique : ['1.3', '2.5'];
   };
-
-  const approvedCount = getApprovedCount();
-  const totalSections = 14;
-  const progressPercent = Math.round((approvedCount / totalSections) * 100);
 
   const statusBadge = (status: string) => {
     switch (status) {
@@ -189,8 +195,24 @@ export default function ChangesRegisterPage() {
                 </tr>
               ) : (
                 changes.map((c) => {
-                  const itemProgress = c.status === 'APPROVED' ? 100 : progressPercent;
-                  const itemApprovedCount = c.status === 'APPROVED' ? 14 : approvedCount;
+                  const changeScopedNums = getChangeScopedSections(c.sectionsUpdated);
+                  const itemTotalSections = changeScopedNums.length;
+                  let itemApprovedCount = 0;
+
+                  if (c.status === 'APPROVED') {
+                    itemApprovedCount = itemTotalSections;
+                  } else {
+                    let cReviews = sectionReviews;
+                    if (c.reviewComments) {
+                      try {
+                        const parsed = JSON.parse(c.reviewComments);
+                        if (parsed && parsed.reviews) cReviews = parsed.reviews;
+                      } catch (e) {}
+                    }
+                    itemApprovedCount = changeScopedNums.filter((num) => cReviews[num]?.status === 'APPROVED').length;
+                  }
+
+                  const itemProgress = itemTotalSections > 0 ? Math.round((itemApprovedCount / itemTotalSections) * 100) : 0;
                   const createdDateDisplay = c.creationDate || (c.createdAt ? new Date(c.createdAt).toISOString().split('T')[0] : '2026-09-12');
                   const baAuthorName = c.requestedBy || c.createdBy?.name || 'Business Analyst (Author)';
 
@@ -223,7 +245,7 @@ export default function ChangesRegisterPage() {
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-[10px] font-mono">
                             <span className="text-slate-600 dark:text-slate-300 font-semibold">
-                              {itemApprovedCount}/{totalSections} sections approved
+                              {itemApprovedCount}/{itemTotalSections} sections approved
                             </span>
                             <span className="font-bold text-slate-800 dark:text-slate-200">{itemProgress}%</span>
                           </div>
