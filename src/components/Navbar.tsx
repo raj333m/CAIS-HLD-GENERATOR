@@ -84,36 +84,54 @@ export default function Navbar() {
 
           {/* Role-Specific Navigation Links (Parts A & H) */}
           <nav className="hidden md:flex items-center gap-1">
-            {/* 1. Dashboard (Reviewer & Admin ONLY - hidden for BA) */}
-            {user.role !== 'BA' && (
-              <Link href="/dashboard" className={navItemClass('/dashboard')}>
-                <LayoutDashboard className="w-4 h-4 text-emerald-400" />
-                <span>Dashboard</span>
-              </Link>
+            {/* BA Role: EXCLUSIVELY Consolidated HLD & Pending for Approval */}
+            {user.role === 'BA' && (
+              <>
+                <Link href="/document" className={navItemClass('/document')}>
+                  <Layers className="w-4 h-4 text-blue-400" />
+                  <span>Consolidated HLD</span>
+                </Link>
+                <Link href="/changes/pending" className={navItemClass('/changes/pending')}>
+                  <Clock className="w-4 h-4 text-amber-400" />
+                  <span>Pending for Approval</span>
+                </Link>
+              </>
             )}
 
-            {/* 2. Consolidated HLD (BA & Admin ONLY - hidden for Reviewer) */}
-            {user.role !== 'REVIEWER' && (
-              <Link href="/document" className={navItemClass('/document')}>
-                <Layers className="w-4 h-4 text-blue-400" />
-                <span>Consolidated HLD</span>
-              </Link>
+            {/* Reviewer Role: EXCLUSIVELY Dashboard & CAIS Changes Audit Logs 2026 */}
+            {user.role === 'REVIEWER' && (
+              <>
+                <Link href="/dashboard" className={navItemClass('/dashboard')}>
+                  <LayoutDashboard className="w-4 h-4 text-emerald-400" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link href="/changes" className={navItemClass('/changes')}>
+                  <History className="w-4 h-4 text-purple-400" />
+                  <span>CAIS Changes Audit Logs 2026</span>
+                </Link>
+              </>
             )}
 
-            {/* 3. Pending for Approval (BA & Admin ONLY) */}
-            {user.role !== 'REVIEWER' && (
-              <Link href="/changes/pending" className={navItemClass('/changes/pending')}>
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span>Pending for Approval</span>
-              </Link>
-            )}
-
-            {/* 4. CAIS Changes Audit Logs 2026 (Reviewer & Admin ONLY - hidden for BA) */}
-            {user.role !== 'BA' && (
-              <Link href="/changes" className={navItemClass('/changes')}>
-                <History className="w-4 h-4 text-purple-400" />
-                <span>CAIS Changes Audit Logs 2026</span>
-              </Link>
+            {/* System Admin Role: All 4 tabs when not previewing */}
+            {user.role === 'ADMIN' && (
+              <>
+                <Link href="/dashboard" className={navItemClass('/dashboard')}>
+                  <LayoutDashboard className="w-4 h-4 text-emerald-400" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link href="/document" className={navItemClass('/document')}>
+                  <Layers className="w-4 h-4 text-blue-400" />
+                  <span>Consolidated HLD</span>
+                </Link>
+                <Link href="/changes/pending" className={navItemClass('/changes/pending')}>
+                  <Clock className="w-4 h-4 text-amber-400" />
+                  <span>Pending for Approval</span>
+                </Link>
+                <Link href="/changes" className={navItemClass('/changes')}>
+                  <History className="w-4 h-4 text-purple-400" />
+                  <span>CAIS Changes Audit Logs 2026</span>
+                </Link>
+              </>
             )}
           </nav>
 

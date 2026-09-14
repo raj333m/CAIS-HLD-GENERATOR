@@ -45,8 +45,11 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    if (user && user.role === 'BA') {
+      router.replace('/document');
+    }
     fetchChanges();
-  }, []);
+  }, [user, router]);
 
   // Helper to determine Pending With state
   const getPendingWith = (status: string) => {
