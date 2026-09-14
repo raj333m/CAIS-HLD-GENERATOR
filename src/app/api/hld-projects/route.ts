@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
     metadata.interestedParties = sanitizeParties(metadata.interestedParties);
     metadata.reviewedBy = sanitizeReviewedBy(metadata.reviewedBy);
 
-    return NextResponse.json({ project: proj, sections, reviews, metadata });
+    return NextResponse.json({ project: proj, sections, reviews, metadata, commitVersion: 'v51-hardcoded-roster-12345' });
   }
 
   return NextResponse.json({ projects: hldProjectsStore });
