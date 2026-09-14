@@ -36,6 +36,20 @@ export const STATIC_REVIEWED_BY = [
   { id: '3', Reviewer: 'Manash R Chanda', 'Role or Business Unit': 'UKBI Design Manager', Date: initialDate },
 ];
 
+function sanitizeParties(parties?: any[]) {
+  if (!Array.isArray(parties) || parties.length === 0 || parties.some((p: any) => p.Name === '[Name]' || p.Role === 'Lead Business Analyst' || p.Role === 'ETL Engineering Lead')) {
+    return JSON.parse(JSON.stringify(STATIC_INVOLVED_PARTIES));
+  }
+  return parties;
+}
+
+function sanitizeReviewedBy(reviewed?: any[]) {
+  if (!Array.isArray(reviewed) || reviewed.length === 0 || reviewed.some((r: any) => r.Reviewer === '[Name]' || r['Role or Business Unit'] === 'Lead BA Reviewer' || r['Role or Business Unit'] === 'Enterprise Architect')) {
+    return JSON.parse(JSON.stringify(STATIC_REVIEWED_BY));
+  }
+  return reviewed;
+}
+
 let hldProjectsStore: HldProject[] = [
   {
     id: 'proj-alpha',
@@ -94,7 +108,7 @@ export async function GET(req: NextRequest) {
     let metadata = projectMetadataStore[projectId];
 
     // Guarantee the v48 hardcoded roster is returned for proj-alpha or uncustomized placeholder data
-    if (!metadata || projectId === 'proj-alpha' || (metadata.interestedParties && metadata.interestedParties.some((p: any) => p.Name === '[Name]' || p.Role === 'Lead Business Analyst'))) {
+    if (!metadata || projectId === 'proj-alpha') {
       metadata = {
         coverDetails: {
           title: proj?.projectName || 'CRA CAIS Reporting High Level Design',
@@ -111,6 +125,9 @@ export async function GET(req: NextRequest) {
       };
       projectMetadataStore[projectId] = metadata;
     }
+
+    metadata.interestedParties = sanitizeParties(metadata.interestedParties);
+    metadata.reviewedBy = sanitizeReviewedBy(metadata.reviewedBy);
 
     return NextResponse.json({ project: proj, sections, reviews, metadata });
   }

@@ -33,6 +33,35 @@ import {
   Shield,
 } from 'lucide-react';
 import { RuleCategoryChip, StatusBadge, RULE_CATEGORY_CONFIG, TOKENS } from '@/styles/tokens';
+
+const CLIENT_STATIC_INVOLVED_PARTIES = [
+  { id: '1', Name: 'Manash R Chanda', Role: 'UKBI POD Lead' },
+  { id: '2', Name: 'Swapnil Kalidas Sankpal', Role: 'Tech Lead' },
+  { id: '3', Name: 'Vishnu Vardhan', Role: 'Senior Developer' },
+  { id: '4', Name: 'Aishwarya Raj Singh', Role: 'Business Analyst' },
+  { id: '5', Name: 'Narsimha Chary', Role: 'UKBI ITPM' },
+];
+
+const CLIENT_STATIC_REVIEWED_BY = [
+  { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau Team', Date: '14/09/2026' },
+  { id: '2', Reviewer: 'Suranjita Saha', 'Role or Business Unit': 'CU Team Lead', Date: '14/09/2026' },
+  { id: '3', Reviewer: 'Manash R Chanda', 'Role or Business Unit': 'UKBI Design Manager', Date: '14/09/2026' },
+];
+
+function sanitizeParties(parties: any[]) {
+  if (!Array.isArray(parties) || parties.length === 0 || parties.some((p: any) => p.Name === '[Name]' || p.Role === 'Lead Business Analyst' || p.Role === 'ETL Engineering Lead')) {
+    return JSON.parse(JSON.stringify(CLIENT_STATIC_INVOLVED_PARTIES));
+  }
+  return parties;
+}
+
+function sanitizeReviewedBy(reviewed: any[]) {
+  if (!Array.isArray(reviewed) || reviewed.length === 0 || reviewed.some((r: any) => r.Reviewer === '[Name]' || r['Role or Business Unit'] === 'Lead BA Reviewer' || r['Role or Business Unit'] === 'Enterprise Architect')) {
+    return JSON.parse(JSON.stringify(CLIENT_STATIC_REVIEWED_BY));
+  }
+  return reviewed;
+}
+
 import { BLANK_SECTIONS } from '@/lib/sectionsData';
 import AiVoiceFieldWrapper from '@/components/AiVoiceFieldWrapper';
 
@@ -509,9 +538,9 @@ export default function LivingDocumentPage() {
         setCaisChanges([]);
         if (data.metadata) {
           if (data.metadata.coverDetails) setCoverDetails(data.metadata.coverDetails);
-          if (data.metadata.interestedParties) setInvolvedParties(data.metadata.interestedParties);
+          if (data.metadata.interestedParties) setInvolvedParties(sanitizeParties(data.metadata.interestedParties));
           if (data.metadata.revisionHistory) setRevisionHistory(data.metadata.revisionHistory);
-          if (data.metadata.reviewedBy) setReviewedBy(data.metadata.reviewedBy);
+          if (data.metadata.reviewedBy) setReviewedBy(sanitizeReviewedBy(data.metadata.reviewedBy));
         }
         setShowCreateProjectModal(false);
         setNewProjectForm({
@@ -1546,9 +1575,9 @@ export default function LivingDocumentPage() {
         if (data.reviews) setSectionReviews(data.reviews);
         if (data.metadata) {
           if (data.metadata.coverDetails) setCoverDetails(data.metadata.coverDetails);
-          if (data.metadata.interestedParties) setInvolvedParties(data.metadata.interestedParties);
+          if (data.metadata.interestedParties) setInvolvedParties(sanitizeParties(data.metadata.interestedParties));
           if (data.metadata.revisionHistory) setRevisionHistory(data.metadata.revisionHistory);
-          if (data.metadata.reviewedBy) setReviewedBy(data.metadata.reviewedBy);
+          if (data.metadata.reviewedBy) setReviewedBy(sanitizeReviewedBy(data.metadata.reviewedBy));
         }
       } else {
         const fallbackRes = await fetch('/api/sections');
