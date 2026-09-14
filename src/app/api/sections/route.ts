@@ -1,39 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { MASTER_SECTIONS } from '@/lib/sectionsData';
+import { MASTER_SECTIONS, BLANK_SECTIONS } from '@/lib/sectionsData';
 
 const prisma = new PrismaClient();
 
-// GET /api/sections - List all living document sections 1.1-2.6 & Appendix with relational SubSections
-export async function GET() {
+// GET /api/sections - List living document sections
+export async function GET(request: NextRequest) {
   try {
-    const sections = await prisma.documentSection.findMany({
-      include: {
-        lastUpdatedBy: {
-          select: { id: true, name: true, email: true, role: true },
-        },
-        subSections: {
-          orderBy: { displayOrder: 'asc' },
-          include: {
-            versions: {
-              orderBy: { versionNumber: 'desc' },
-              take: 5,
-              include: {
-                editedBy: { select: { id: true, name: true } },
-              },
-            },
-          },
-        },
-      },
-      orderBy: { displayOrder: 'asc' },
-    });
-
-    if (sections && sections.length > 0) {
-      return NextResponse.json({ sections });
+    const { searchParams } = new URL(request.url);
+    const baseline = searchParams.get('baseline');
+    if (baseline === 'true') {
+      return NextResponse.json({ sections: MASTER_SECTIONS });
     }
   } catch (error: any) {
-    console.error('Error fetching sections from DB, using fallback:', error?.message);
+    console.error('Error fetching sections query:', error?.message);
   }
 
-  return NextResponse.json({ sections: MASTER_SECTIONS });
+  return NextResponse.json({ sections: BLANK_SECTIONS });
 }

@@ -33,6 +33,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { RuleCategoryChip, StatusBadge, RULE_CATEGORY_CONFIG, TOKENS } from '@/styles/tokens';
+import { BLANK_SECTIONS } from '@/lib/sectionsData';
 import AiVoiceFieldWrapper from '@/components/AiVoiceFieldWrapper';
 
 function RuleTableBlock({
@@ -424,7 +425,7 @@ function InteractiveBlockTable({
 export default function LivingDocumentPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>(BLANK_SECTIONS);
   const [loading, setLoading] = useState(true);
   const [activeSectionNum, setActiveSectionNum] = useState('1.1');
   const [selectedRuleCategory, setSelectedRuleCategory] = useState<string>('ALL');
