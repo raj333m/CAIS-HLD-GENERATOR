@@ -1,4 +1,4 @@
-// Cloud Persistence Layer for Vercel Serverless Lambdas using Central REST Master Store
+// Cloud Persistence Layer for Vercel Serverless Lambdas using Central REST Master Store with POST Auto-Recovery Fallback
 
 export interface CloudChangeState {
   crReference: string;
@@ -16,17 +16,11 @@ export interface CloudChangeState {
 }
 
 let MASTER_STORE_ID = 'ff808181a09d98f701a0a0eb1b730678';
-let REST_API_BASE = `https://api.restful-api.dev/objects/${MASTER_STORE_ID}`;
 
 // In-memory fallback cache per warm Lambda container
 export const deletedIds = new Set<string>();
 let masterCache: Record<string, any> = {};
 let lastFetchTime = 0;
-
-async function getMasterStoreUrl(): Promise<string> {
-  if (REST_API_BASE) return REST_API_BASE;
-  return `https://api.restful-api.dev/objects/${MASTER_STORE_ID}`;
-}
 
 async function fetchMasterStore(): Promise<Record<string, any>> {
   const now = Date.now();
@@ -34,8 +28,7 @@ async function fetchMasterStore(): Promise<Record<string, any>> {
     return masterCache;
   }
   try {
-    const url = await getMasterStoreUrl();
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, { cache: 'no-store' });
     if (res.ok) {
       const item = await res.json();
       if (item && item.data && typeof item.data === 'object') {
@@ -44,34 +37,60 @@ async function fetchMasterStore(): Promise<Record<string, any>> {
         return masterCache;
       }
     } else if (res.status === 404) {
-      // Auto-provision fresh store if 404
-      const createRes = await fetch('https://api.restful-api.dev/objects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'cais_hld_master_store_production_v59',
-          data: {
-            _createdChanges: [],
-            _projectsStore: [],
-            _projectSectionsStore: {},
-            _projectMetadataStore: {},
-            updatedAt: new Date().toISOString()
-          }
-        })
-      });
-      if (createRes.ok) {
-        const createdObj = await createRes.json();
-        MASTER_STORE_ID = createdObj.id;
-        REST_API_BASE = `https://api.restful-api.dev/objects/${MASTER_STORE_ID}`;
-        masterCache = createdObj.data || {};
-        lastFetchTime = now;
-        return masterCache;
-      }
+      await provisionFreshStore();
     }
   } catch (e) {
     console.warn('fetchMasterStore error:', e);
   }
   return masterCache;
+}
+
+async function provisionFreshStore(dataToSave?: any): Promise<void> {
+  const payload = dataToSave || masterCache || {
+    _createdChanges: [],
+    _projectsStore: [],
+    _projectSectionsStore: {},
+    _projectMetadataStore: {},
+    updatedAt: new Date().toISOString()
+  };
+  try {
+    const createRes = await fetch('https://api.restful-api.dev/objects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'cais_hld_master_store_production_v59',
+        data: payload
+      })
+    });
+    if (createRes.ok) {
+      const createdObj = await createRes.json();
+      MASTER_STORE_ID = createdObj.id;
+      masterCache = createdObj.data || payload;
+      lastFetchTime = Date.now();
+    }
+  } catch (e) {
+    console.error('provisionFreshStore error:', e);
+  }
+}
+
+async function persistStore(storeData: any): Promise<void> {
+  masterCache = storeData;
+  lastFetchTime = Date.now();
+
+  try {
+    const putRes = await fetch(`https://api.restful-api.dev/objects/${MASTER_STORE_ID}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'cais_hld_master_store_production_v59',
+        data: storeData,
+      }),
+    });
+    if (putRes.ok) return;
+  } catch (e) {}
+
+  // POST Fallback if PUT fails or 500s
+  await provisionFreshStore(storeData);
 }
 
 export async function getCloudChangeState(changeRef: string): Promise<CloudChangeState | null> {
@@ -134,23 +153,7 @@ export async function saveCloudChangeState(
     currentStore[updates.crReference.toLowerCase()] = newState;
   }
 
-  masterCache = currentStore;
-  lastFetchTime = Date.now();
-
-  try {
-    const url = await getMasterStoreUrl();
-    await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'cais_hld_master_store_production_v59',
-        data: currentStore,
-      }),
-    });
-  } catch (e) {
-    console.warn('saveCloudChangeState PUT failed:', e);
-  }
-
+  await persistStore(currentStore);
   return newState;
 }
 
@@ -173,18 +176,7 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
     updatedList = [newChange, ...currentList];
   }
   store._createdChanges = updatedList;
-  masterCache = store;
-  lastFetchTime = Date.now();
-  try {
-    const url = await getMasterStoreUrl();
-    await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'cais_hld_master_store_production_v59', data: store }),
-    });
-  } catch (e) {
-    console.warn('saveCreatedChange PUT failed:', e);
-  }
+  await persistStore(store);
 }
 
 export async function deleteCreatedChange(id: string, crReference?: string): Promise<void> {
@@ -204,16 +196,7 @@ export async function deleteCreatedChange(id: string, crReference?: string): Pro
     store[crReference] = { ...(store[crReference] || {}), deleted: true, updatedAt: new Date().toISOString() };
     store[cleanRef] = { ...(store[cleanRef] || {}), deleted: true, updatedAt: new Date().toISOString() };
   }
-  masterCache = store;
-  lastFetchTime = Date.now();
-  try {
-    const url = await getMasterStoreUrl();
-    await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'cais_hld_master_store_production_v59', data: store }),
-    });
-  } catch (e) {}
+  await persistStore(store);
 }
 
 export async function getCloudProjects(): Promise<{ projects: any[]; projectSections: Record<string, any[]>; projectMetadata: Record<string, any> }> {
@@ -246,17 +229,5 @@ export async function saveCloudProject(project: any, sections?: any[], metadata?
     store._projectMetadataStore = store._projectMetadataStore || {};
     store._projectMetadataStore[project.id] = metadata;
   }
-  masterCache = store;
-  lastFetchTime = Date.now();
-  try {
-    const url = await getMasterStoreUrl();
-    await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'cais_hld_master_store_production_v59', data: store }),
-    });
-  } catch (e) {
-    console.warn('saveCloudProject PUT failed:', e);
-  }
+  await persistStore(store);
 }
-
