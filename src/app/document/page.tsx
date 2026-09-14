@@ -648,7 +648,21 @@ export default function LivingDocumentPage() {
             if (found) {
               setTargetChange(found);
               setIsReviewerMode(true);
-              fetchSectionReviews(found.id);
+              fetchSectionReviews(found.id || found.crReference || cId);
+              if (found.reviewComments) {
+                try {
+                  const parsed = JSON.parse(found.reviewComments);
+                  if (parsed && parsed.reviews && typeof parsed.reviews === 'object') {
+                    setSectionReviews((prev) => ({ ...prev, ...parsed.reviews }));
+                  }
+                  if (parsed && parsed.currentFeedbackRound) {
+                    setCurrentFeedbackRound(parsed.currentFeedbackRound);
+                  }
+                  if (parsed && parsed.feedbackRoundsHistory && Array.isArray(parsed.feedbackRoundsHistory)) {
+                    setFeedbackRoundsHistory(parsed.feedbackRoundsHistory);
+                  }
+                } catch (e) {}
+              }
             }
           })
           .catch((e) => console.error(e));

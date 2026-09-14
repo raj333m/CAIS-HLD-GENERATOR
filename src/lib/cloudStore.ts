@@ -44,9 +44,10 @@ async function fetchMasterStore(): Promise<Record<string, CloudChangeState>> {
 
 export async function getCloudChangeState(changeRef: string): Promise<CloudChangeState | null> {
   if (!changeRef) return null;
-  const cleanRef = changeRef.replace(/^change-/, '').toUpperCase();
   const store = await fetchMasterStore();
-  return store[cleanRef] || null;
+  const cleanRef = changeRef.replace(/^change-/, '').toUpperCase();
+  const lowerRef = changeRef.toLowerCase();
+  return store[changeRef] || store[cleanRef] || store[lowerRef] || store[changeRef.toUpperCase()] || null;
 }
 
 export async function saveCloudChangeState(
@@ -55,10 +56,11 @@ export async function saveCloudChangeState(
 ): Promise<CloudChangeState> {
   if (!changeRef) throw new Error('changeRef is required');
   const cleanRef = changeRef.replace(/^change-/, '').toUpperCase();
+  const lowerRef = changeRef.toLowerCase();
 
   const currentStore = await fetchMasterStore();
-  const existing = currentStore[cleanRef] || {
-    crReference: cleanRef,
+  const existing = currentStore[changeRef] || currentStore[cleanRef] || currentStore[lowerRef] || {
+    crReference: updates.crReference || cleanRef,
     status: 'IN_REVIEW',
     versionNumber: 1,
     reviews: {},
@@ -79,11 +81,11 @@ export async function saveCloudChangeState(
     ...existing,
     ...cleanedUpdates,
     reviews: {
-      ...existing.reviews,
+      ...(existing.reviews || {}),
       ...(updates.reviews || {}),
     },
     addressedRemarks: {
-      ...existing.addressedRemarks,
+      ...(existing.addressedRemarks || {}),
       ...(updates.addressedRemarks || {}),
     },
     currentFeedbackRound: updates.currentFeedbackRound !== undefined ? updates.currentFeedbackRound : existing.currentFeedbackRound,
@@ -91,7 +93,14 @@ export async function saveCloudChangeState(
     updatedAt: new Date().toISOString(),
   };
 
+  currentStore[changeRef] = newState;
   currentStore[cleanRef] = newState;
+  currentStore[lowerRef] = newState;
+  if (updates.crReference) {
+    currentStore[updates.crReference] = newState;
+    currentStore[updates.crReference.toUpperCase()] = newState;
+  }
+
   masterCache = currentStore;
   lastFetchTime = Date.now();
 

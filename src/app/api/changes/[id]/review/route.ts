@@ -43,21 +43,39 @@ export async function PUT(
     const currentVersion = existingChange?.versionNumber || 1;
     const nextVersion = isSentBack ? currentVersion + 1 : currentVersion;
 
-    let newReviewCommentsStr = reviewComments || existingChange?.reviewComments;
+    // Fetch existing CloudState to ensure reviews and feedback rounds are preserved
+    const cloudStateExisting = await getCloudChangeState(id) || (existingChange ? await getCloudChangeState(existingChange.crReference) : null);
+
+    let newReviewCommentsStr = existingChange?.reviewComments;
+    let reviewsObj = cloudStateExisting?.reviews || {};
+    let currentRoundObj = cloudStateExisting?.currentFeedbackRound || null;
+    let historyArr = cloudStateExisting?.feedbackRoundsHistory || [];
+
     if (existingChange?.reviewComments) {
       try {
         const parsed = JSON.parse(existingChange.reviewComments);
         if (parsed && typeof parsed === 'object') {
-          parsed.overallReason = reviewComments || parsed.overallReason || parsed.reviewComments;
-          newReviewCommentsStr = JSON.stringify(parsed);
+          if (parsed.reviews) reviewsObj = { ...reviewsObj, ...parsed.reviews };
+          if (parsed.currentFeedbackRound) currentRoundObj = parsed.currentFeedbackRound;
+          if (parsed.feedbackRoundsHistory) historyArr = parsed.feedbackRoundsHistory;
         }
       } catch (e) {}
     }
+
+    newReviewCommentsStr = JSON.stringify({
+      overallReason: reviewComments || 'Review status updated',
+      reviews: reviewsObj,
+      currentFeedbackRound: currentRoundObj,
+      feedbackRoundsHistory: historyArr,
+    });
 
     // Always update CloudStore so all Vercel Serverless Lambdas share the state
     const cloudState = await saveCloudChangeState(id, {
       status: finalStatus,
       versionNumber: nextVersion,
+      reviews: reviewsObj,
+      currentFeedbackRound: currentRoundObj,
+      feedbackRoundsHistory: historyArr,
       reviewComments: newReviewCommentsStr,
       reviewedByName: reviewerNameStr,
       approvalDate: status === 'APPROVED' ? todayStr : existingChange?.approvalDate || undefined,

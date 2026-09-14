@@ -37,17 +37,29 @@ function getStoreFilePath() {
   }
 }
 
-function loadReviewsState() {
+function loadReviewsState(changeId?: string | null) {
   try {
     const filePath = getStoreFilePath();
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
+      if (changeId) {
+        const cleanKey = changeId.replace(/^change-/, '').toUpperCase();
+        const changeSpecific = (parsed.byChange && (parsed.byChange[changeId] || parsed.byChange[cleanKey])) || {};
+        return {
+          reviews: changeSpecific.reviews || parsed.reviews || {},
+          currentFeedbackRound: changeSpecific.currentFeedbackRound || parsed.currentFeedbackRound || null,
+          feedbackRoundsHistory: changeSpecific.feedbackRoundsHistory || parsed.feedbackRoundsHistory || [],
+          addressedRemarks: changeSpecific.addressedRemarks || parsed.addressedRemarks || {},
+          rawStore: parsed,
+        };
+      }
       return {
         reviews: parsed.reviews || {},
         currentFeedbackRound: parsed.currentFeedbackRound || null,
         feedbackRoundsHistory: parsed.feedbackRoundsHistory || [],
         addressedRemarks: parsed.addressedRemarks || {},
+        rawStore: parsed,
       };
     }
   } catch (err) {
@@ -58,13 +70,39 @@ function loadReviewsState() {
     currentFeedbackRound: null,
     feedbackRoundsHistory: [],
     addressedRemarks: {},
+    rawStore: {},
   };
 }
 
-function saveReviewsState(state: any) {
+function saveReviewsState(state: any, changeId?: string | null) {
   try {
     const filePath = getStoreFilePath();
-    fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf-8');
+    let currentDisk: any = {};
+    if (fs.existsSync(filePath)) {
+      try {
+        currentDisk = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      } catch (e) {}
+    }
+
+    currentDisk.reviews = { ...(currentDisk.reviews || {}), ...(state.reviews || {}) };
+    currentDisk.currentFeedbackRound = state.currentFeedbackRound !== undefined ? state.currentFeedbackRound : currentDisk.currentFeedbackRound;
+    currentDisk.feedbackRoundsHistory = state.feedbackRoundsHistory || currentDisk.feedbackRoundsHistory || [];
+    currentDisk.addressedRemarks = { ...(currentDisk.addressedRemarks || {}), ...(state.addressedRemarks || {}) };
+
+    if (changeId) {
+      if (!currentDisk.byChange) currentDisk.byChange = {};
+      const cleanKey = changeId.replace(/^change-/, '').toUpperCase();
+      const changeObj = {
+        reviews: state.reviews || {},
+        currentFeedbackRound: state.currentFeedbackRound || null,
+        feedbackRoundsHistory: state.feedbackRoundsHistory || [],
+        addressedRemarks: state.addressedRemarks || {},
+      };
+      currentDisk.byChange[changeId] = changeObj;
+      currentDisk.byChange[cleanKey] = changeObj;
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(currentDisk, null, 2), 'utf-8');
   } catch (err) {
     console.error('Failed to save reviews state to disk:', err);
   }
@@ -73,21 +111,26 @@ function saveReviewsState(state: any) {
 async function findCaisChange(changeId: string) {
   if (!changeId) return null;
   const cleanRef = changeId.replace(/^change-/, '').toUpperCase();
-  return await prisma.caisChange.findFirst({
-    where: {
-      OR: [
-        { id: changeId },
-        { crReference: changeId },
-        { crReference: cleanRef },
-      ],
-    },
-  });
+  try {
+    return await prisma.caisChange.findFirst({
+      where: {
+        OR: [
+          { id: changeId },
+          { crReference: changeId },
+          { crReference: cleanRef },
+          { id: { equals: changeId } },
+        ],
+      },
+    });
+  } catch (e) {
+    return null;
+  }
 }
 
 export async function GET(req: NextRequest) {
-  const state = loadReviewsState();
   const searchParams = req.nextUrl.searchParams;
   const changeId = searchParams.get('changeId');
+  const state = loadReviewsState(changeId);
 
   if (changeId) {
     try {
@@ -112,8 +155,11 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      // 2. Read from CloudStore (cross-Lambda state) and merge
-      const cloudState = await getCloudChangeState(changeId);
+      // 2. Read from CloudStore (cross-Lambda state) with fallback keys and merge
+      const cloudState = (await getCloudChangeState(changeId)) ||
+        (change?.crReference ? await getCloudChangeState(change.crReference) : null) ||
+        (change?.id ? await getCloudChangeState(change.id) : null);
+
       if (cloudState) {
         if (cloudState.reviews && Object.keys(cloudState.reviews).length > 0) {
           state.reviews = { ...state.reviews, ...cloudState.reviews };
@@ -143,7 +189,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { sectionNum, action, feedback, reviewerName, reviewerRole, overallReason, sectionRemarks, changeId } = body;
 
-    const state = loadReviewsState();
+    const state = loadReviewsState(changeId);
     let { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks } = state;
 
     const timestamp = new Date().toLocaleString([], {
@@ -185,7 +231,7 @@ export async function POST(req: NextRequest) {
       });
 
       const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
-      saveReviewsState(newState);
+      saveReviewsState(newState, changeId);
 
       // Sync to cloudStore & SQLite DB
       if (changeId) {
@@ -197,7 +243,21 @@ export async function POST(req: NextRequest) {
         });
 
         try {
-          await saveCloudChangeState(changeId, {
+          const change = await findCaisChange(changeId);
+          const crRef = change?.crReference || changeId;
+          const targetId = change?.id || changeId;
+
+          await saveCloudChangeState(targetId, {
+            crReference: crRef,
+            status: 'SENT_BACK',
+            reviews,
+            currentFeedbackRound: newRound,
+            feedbackRoundsHistory,
+            reviewedByName: reviewerName || 'Reviewer / Lead',
+            reviewComments: payloadJson,
+          });
+          await saveCloudChangeState(crRef, {
+            crReference: crRef,
             status: 'SENT_BACK',
             reviews,
             currentFeedbackRound: newRound,
@@ -206,7 +266,6 @@ export async function POST(req: NextRequest) {
             reviewComments: payloadJson,
           });
 
-          const change = await findCaisChange(changeId);
           if (change) {
             await prisma.caisChange.update({
               where: { id: change.id },
@@ -239,7 +298,7 @@ export async function POST(req: NextRequest) {
         }
       }
       const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
-      saveReviewsState(newState);
+      saveReviewsState(newState, changeId);
 
       return NextResponse.json({
         success: true,
@@ -264,7 +323,7 @@ export async function POST(req: NextRequest) {
       }
 
       const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
-      saveReviewsState(newState);
+      saveReviewsState(newState, changeId);
 
       return NextResponse.json({
         success: true,
@@ -304,7 +363,7 @@ export async function POST(req: NextRequest) {
     }
 
     const newState = { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks };
-    saveReviewsState(newState);
+    saveReviewsState(newState, changeId);
 
     // Sync to cloudStore & SQLite DB via Prisma
     if (changeId) {
@@ -315,7 +374,20 @@ export async function POST(req: NextRequest) {
       });
 
       try {
-        await saveCloudChangeState(changeId, {
+        const change = await findCaisChange(changeId);
+        const crRef = change?.crReference || changeId;
+        const targetId = change?.id || changeId;
+
+        await saveCloudChangeState(targetId, {
+          crReference: crRef,
+          reviews,
+          currentFeedbackRound,
+          feedbackRoundsHistory,
+          reviewedByName: reviewerName || 'Reviewer / Lead',
+          reviewComments: payloadJson,
+        });
+        await saveCloudChangeState(crRef, {
+          crReference: crRef,
           reviews,
           currentFeedbackRound,
           feedbackRoundsHistory,
@@ -323,7 +395,6 @@ export async function POST(req: NextRequest) {
           reviewComments: payloadJson,
         });
 
-        const change = await findCaisChange(changeId);
         if (change) {
           await prisma.caisChange.update({
             where: { id: change.id },
