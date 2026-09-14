@@ -3234,16 +3234,16 @@ export default function LivingDocumentPage() {
                   )}
 
                   <div className="space-y-8 text-[11pt] text-slate-800 dark:text-slate-200">
-                    {/* A.1 Glossary */}
+                    {/* A.1 Glossary & Abbreviations */}
                     <div className="space-y-3">
                       <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        4.1 Glossary
+                        4.1 Glossary & Abbreviations
                       </h2>
                       <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
                         <table className="w-full text-left border-collapse font-sans text-[11pt]">
                           <thead className="bg-[#C0272D] text-white font-bold">
                             <tr>
-                              <th className="p-3 border-b border-red-700 w-56 font-bold">Term</th>
+                              <th className="p-3 border-b border-red-700 w-64 font-bold">Term</th>
                               <th className="p-3 border-b border-red-700 font-bold">Definition</th>
                             </tr>
                           </thead>
@@ -3288,6 +3288,50 @@ export default function LivingDocumentPage() {
                               <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">Connect:Direct</td>
                               <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">The secure file-transfer mechanism used by the Transmission team to deliver CAIS extract files to the bureaus.</td>
                             </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PLM</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Product Ledger Management.</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BDRAS</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bad Debt Reporting and Accounting System.</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">RMS</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Risk Management System.</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PDS (Product Code)</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">The CAIS product type code used in the Supported Products for CRA Data Reporting table (e.g. 02, 05, 15) — distinct from PDS1 / Gleam above, which refers to the product hierarchy classification, not the product code itself.</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_PDS_STAG</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Staging Table for Retail Banking.</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_CAIS_SMRY_SNAP</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Final Data Mart for Retail Banking.</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BCDU</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bank Cards Data Utility.</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CDU</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Customer Data Utility.</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">OHC</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Cards Source File.</td>
+                            </tr>
+                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">FD</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">First Direct.</td>
+                            </tr>
+                            <tr className="bg-white dark:bg-slate-950">
+                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">M&S</td>
+                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Marks and Spencer.</td>
+                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -3308,81 +3352,6 @@ export default function LivingDocumentPage() {
                       <p className="text-slate-800 dark:text-slate-200 leading-relaxed pt-1">
                         Where an issue cannot be resolved at first line, or where a regulatory deadline is at risk (see Section 1.5, Analysis Risks and Assumptions), escalation should be raised to the Product Owner (Risk CRA) and, if a bureau-facing deadline is affected, to the Transmission team in parallel so that the bureau can be informed of any anticipated delay.
                       </p>
-                    </div>
-
-                    {/* A.3 Abbreviations */}
-                    <div className="space-y-3 pt-2">
-                      <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        4.3 Abbreviations
-                      </h2>
-                      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
-                        <table className="w-full text-left border-collapse font-sans text-[11pt]">
-                          <thead className="bg-[#C0272D] text-white font-bold">
-                            <tr>
-                              <th className="p-3 border-b border-red-700 w-64 font-bold">Term</th>
-                              <th className="p-3 border-b border-red-700 font-bold">Abbreviation</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CAIS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Account Information Sharing</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CRA</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Reference Agencies</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PLM</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Product Ledger Management</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BDRAS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bad Debt Reporting and Accounting System</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">RMS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Risk Management System</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PDS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Product Data/Detail Structure (Product Code)</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_PDS_STAG</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Staging Table for Retail Banking</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_CAIS_SMRY_SNAP</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Final Data Mart for Retail Banking</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BCDU</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bank Cards Data Utility</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CDU</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Customer Data Utility</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">OHC</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Cards Source File</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">FD</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">First Direct</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">M&S</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Marks and Spencer</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CU Team</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Central Utility Team</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
                     </div>
                   </div>
                 </div>

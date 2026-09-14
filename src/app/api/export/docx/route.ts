@@ -705,19 +705,30 @@ export async function GET() {
     );
     docChildren.push(new Paragraph({ text: '' }));
 
-    docChildren.push(makeH2('4.1 Glossary of Terms'));
-    const glossaryHeaders = ['Term', 'Category', 'Verbatim Standard Definition'];
+    docChildren.push(makeH2('4.1 Glossary & Abbreviations'));
+    const glossaryHeaders = ['Term', 'Definition'];
     const glossaryRows = [
-      ['CAIS', 'Regulatory Standard', 'Credit Account Information Sharing standard format for UK CRAs.'],
-      ['CRA', 'Organization', 'Credit Reference Agency (Experian, Equifax, TransUnion).'],
-      ['DWH_PDS_STAG', 'System Staging', 'UK BI Data Warehouse staging data mart table for monthly truncate/insert.'],
-      ['DWH_IP_ARRG_CALC_V', 'System Processing', 'CADS processing view owned by Central Utility (CU) team.'],
-      ['DWH_CAIS_SMRY_SNAP', 'Data Mart Target', 'CRA Final Data Mart snapshot table for CAIS file submission.'],
-      ['DWH_CAIS_EXCEPTION', 'Data Quality', 'CRA Validation table recording staging exceptions and validation flags.'],
-      ['CBM Lead UK', 'Governance Role', 'Credit Bureau Management Lead responsible for UK CRA relationship governance.'],
-      ['SOX Control', 'Compliance', 'Sarbanes-Oxley internal accounting and data integrity control framework.'],
-      ['Connect:Direct', 'Transmission Channel', 'Secure mainframe-to-bureau protocol for batch file delivery to Experian.'],
-      ['PGP Encryption', 'Security', 'Pretty Good Privacy public-key encryption required for CRA file transfers.'],
+      ['CAIS', 'Credit Account Information Sharing — the UK reciprocal data-sharing scheme under which lenders submit account-level performance data to credit reference agencies on a monthly basis.'],
+      ['CRA', 'Credit Reference Agency — in the UK, principally Experian, Equifax, and TransUnion.'],
+      ['CADS', 'Credit Analysis and Decisioning System — the SAS-based processing that derives the six CU-owned calculated variables.'],
+      ['BI', 'Business Intelligence (UK BI Data Warehouse team) — owns staging, validation and file-generation for the CAIS pipeline.'],
+      ['CU Team', 'Central Utility Team — owns exclusions, debt-sale treatment, and the six CU-derived calculated variables.'],
+      ['Forbearance', "A temporary arrangement (such as a payment holiday) that varies a customer's contractual repayment obligations, typically in response to financial difficulty."],
+      ['Debt Sale', "The sale of a defaulted account's outstanding debt to a third-party collection agency; reported to bureaus as a Debt Sale record, typically with a Delete marker."],
+      ['Positive Data Sharing Indicator', "A flag controlling whether a given account's data is eligible for reciprocal (positive) reporting to the bureaus, as distinct from default-only reporting."],
+      ['PDS1 / Gleam', 'The two product hierarchy codes (938 and 937 respectively) used to classify Retail Banking products as eligible for CRA reporting.'],
+      ['Connect:Direct', 'The secure file-transfer mechanism used by the Transmission team to deliver CAIS extract files to the bureaus.'],
+      ['PLM', 'Product Ledger Management.'],
+      ['BDRAS', 'Bad Debt Reporting and Accounting System.'],
+      ['RMS', 'Risk Management System.'],
+      ['PDS (Product Code)', 'The CAIS product type code used in the Supported Products for CRA Data Reporting table (e.g. 02, 05, 15) — distinct from PDS1 / Gleam above, which refers to the product hierarchy classification, not the product code itself.'],
+      ['DWH_PDS_STAG', 'CRA Staging Table for Retail Banking.'],
+      ['DWH_CAIS_SMRY_SNAP', 'CRA Final Data Mart for Retail Banking.'],
+      ['BCDU', 'Bank Cards Data Utility.'],
+      ['CDU', 'Customer Data Utility.'],
+      ['OHC', 'Cards Source File.'],
+      ['FD', 'First Direct.'],
+      ['M&S', 'Marks and Spencer.'],
     ];
     docChildren.push(makeCustomTable(glossaryHeaders, glossaryRows));
     docChildren.push(new Paragraph({ text: '' }));
@@ -729,28 +740,6 @@ export async function GET() {
     docChildren.push(
       makeP('Escalation path: Where an issue cannot be resolved at first line, or where a regulatory deadline is at risk, escalation should be raised to the Product Owner (Risk CRA) and the Transmission team in parallel.')
     );
-    docChildren.push(new Paragraph({ text: '' }));
-
-    docChildren.push(makeH2('4.3 Abbreviations'));
-    docChildren.push(makeP('Quick-lookup reference table for acronyms and short codes used across this document:'));
-    const abbrevHeaders = ['Term', 'Abbreviation'];
-    const abbrevRows = [
-      ['CAIS', 'Credit Account Information Sharing'],
-      ['CRA', 'Credit Reference Agencies'],
-      ['PLM', 'Product Ledger Management'],
-      ['BDRAS', 'Bad Debt Reporting and Accounting System'],
-      ['RMS', 'Risk Management System'],
-      ['PDS', 'Product Data/Detail Structure (Product Code)'],
-      ['DWH_PDS_STAG', 'CRA Staging Table for Retail Banking'],
-      ['DWH_CAIS_SMRY_SNAP', 'CRA Final Data Mart for Retail Banking'],
-      ['BCDU', 'Bank Cards Data Utility'],
-      ['CDU', 'Customer Data Utility'],
-      ['OHC', 'Cards Source File'],
-      ['FD', 'First Direct'],
-      ['M&S', 'Marks and Spencer'],
-      ['CU Team', 'Central Utility Team'],
-    ];
-    docChildren.push(makeCustomTable(abbrevHeaders, abbrevRows));
 
     // Assemble Document with single continuous section, header, and footer
     const doc = new Document({
