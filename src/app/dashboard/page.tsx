@@ -19,6 +19,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { StatusBadge } from '@/styles/tokens';
+import TraceabilityWidget from '@/components/TraceabilityWidget';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -198,6 +199,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Embedded CAIS Variable & Brand Traceability Widget */}
+      <TraceabilityWidget changes={changes} />
 
       {/* Filter and Search Bar */}
       <div className="glass-card p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-slate-200 dark:border-slate-800">

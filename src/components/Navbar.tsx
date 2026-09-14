@@ -19,6 +19,7 @@ import {
   Eye,
   RotateCcw,
   Clock,
+  Grid,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -82,9 +83,9 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Role-Specific Navigation Links (Parts A & H) */}
+          {/* Role-Specific Navigation Links */}
           <nav className="hidden md:flex items-center gap-1">
-            {/* BA Role: EXCLUSIVELY Consolidated HLD & Pending for Approval */}
+            {/* BA Role */}
             {user.role === 'BA' && (
               <>
                 <Link href="/document" className={navItemClass('/document')}>
@@ -95,10 +96,14 @@ export default function Navbar() {
                   <Clock className="w-4 h-4 text-amber-400" />
                   <span>Pending for Approval</span>
                 </Link>
+                <Link href="/traceability" className={navItemClass('/traceability')}>
+                  <Grid className="w-4 h-4 text-cyan-400" />
+                  <span>Traceability Matrix</span>
+                </Link>
               </>
             )}
 
-            {/* Reviewer Role: EXCLUSIVELY Dashboard & CAIS Changes Audit Logs 2026 */}
+            {/* Reviewer Role */}
             {user.role === 'REVIEWER' && (
               <>
                 <Link href="/dashboard" className={navItemClass('/dashboard')}>
@@ -109,10 +114,14 @@ export default function Navbar() {
                   <History className="w-4 h-4 text-purple-400" />
                   <span>CAIS Changes Audit Logs 2026</span>
                 </Link>
+                <Link href="/traceability" className={navItemClass('/traceability')}>
+                  <Grid className="w-4 h-4 text-cyan-400" />
+                  <span>Traceability Matrix</span>
+                </Link>
               </>
             )}
 
-            {/* System Admin Role: All 4 tabs when not previewing */}
+            {/* System Admin Role */}
             {user.role === 'ADMIN' && (
               <>
                 <Link href="/dashboard" className={navItemClass('/dashboard')}>
@@ -130,6 +139,10 @@ export default function Navbar() {
                 <Link href="/changes" className={navItemClass('/changes')}>
                   <History className="w-4 h-4 text-purple-400" />
                   <span>CAIS Changes Audit Logs 2026</span>
+                </Link>
+                <Link href="/traceability" className={navItemClass('/traceability')}>
+                  <Grid className="w-4 h-4 text-cyan-400" />
+                  <span>Traceability Matrix</span>
                 </Link>
               </>
             )}
