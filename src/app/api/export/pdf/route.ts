@@ -108,28 +108,30 @@ export async function GET() {
               </div>`;
             }
             if (b.type === 'brand-flow') {
-              const brand = b.payload?.brand || '';
-              const caption = b.payload?.caption || '';
-              const omits = b.payload?.omitsSteps || [];
-              const steps = b.payload?.steps || [];
-              const note = b.payload?.note;
+              const { title, caption, steps = [], isDistinctProcess, supportingNote, signoffRequired } = b.payload || {};
+              const activeSteps = steps.filter((st: any) => st.owner !== 'N/A');
 
-              const flowHtml = steps.map((s: any, idx: number) => `
-                <div style="display:inline-block; padding: 6px 10px; margin: 3px; border: 1px solid #CBD5E1; border-radius: 6px; background: #F8FAFC; text-align: center; font-size: 8pt;">
-                  <strong style="color: #0F172A;">${s.name}</strong>
-                  <div style="color: #475569; font-size: 7.5pt;">${s.owner}</div>
+              const flowHtml = activeSteps.map((s: any, idx: number) => `
+                <div style="padding: 10px 14px; border: 1px solid #CBD5E1; border-radius: 8px; background: ${s.num === '14.5' ? '#F3E8FF' : '#F8FAFC'}; margin: 0 auto; max-width: 480px; text-align: left; font-size: 8.5pt; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                    <span style="font-family: monospace; font-weight: bold; color: #475569; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 7.5pt;">Step ${s.num}</span>
+                    <span style="font-weight: bold; padding: 2px 8px; border-radius: 12px; font-size: 7.5pt; color: ${s.owner === 'BI' ? '#1D4ED8' : s.owner === 'CU Team' ? '#B91C1C' : s.owner === 'Transmission Team' ? '#047857' : s.owner === 'Senior Reviewer / Lead' ? '#6B21A8' : '#334155'}; background: ${s.owner === 'BI' ? '#DBEAFE' : s.owner === 'CU Team' ? '#FEE2E2' : s.owner === 'Transmission Team' ? '#D1FAE5' : s.owner === 'Senior Reviewer / Lead' ? '#F3E8FF' : '#E2E8F0'};">${s.owner}</span>
+                  </div>
+                  <strong style="color: #0F172A; font-size: 9.5pt; display: block; margin-bottom: 2px;">${s.name}</strong>
+                  <div style="color: #475569; font-size: 8pt; line-height: 1.3;">${s.desc}</div>
                 </div>
-                ${idx < steps.length - 1 ? '<span style="color:#94A3B8; font-size:10pt;">→</span>' : ''}
+                ${idx < activeSteps.length - 1 ? '<div style="text-align: center; color: #64748B; font-size: 14pt; margin: 4px 0; font-weight: bold;">↓</div>' : ''}
               `).join('');
 
-              return `<div class="diagram-container" style="margin: 20px 0;">
-                <div class="diagram-box" style="padding: 16px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF;">
-                  <h4 style="margin:0 0 10px 0; font-size: 10pt; font-weight: bold; color: #1E293B;">${brand} Design Overview</h4>
-                  ${omits.length > 0 ? `<div style="font-size: 8.5pt; color: #DC2626; margin-bottom: 8px; font-weight: 600;">⚠️ Omitted steps: ${omits.join(', ')}</div>` : ''}
-                  <div style="display:flex; flex-wrap:wrap; gap: 4px; align-items:center; justify-content:center;">
+              return `<div class="diagram-container" style="margin: 24px 0;">
+                <div class="diagram-box" style="padding: 18px; border: 1px solid #E2E8F0; border-radius: 12px; background: #FFFFFF; max-width: 580px; margin: 0 auto;">
+                  <h4 style="margin:0 0 10px 0; font-size: 10.5pt; font-weight: bold; color: #1E293B; text-align: center; text-transform: uppercase;">${title || 'Design Overview'}</h4>
+                  ${isDistinctProcess ? `<div style="font-size: 8.5pt; color: #D97706; background: #FEF3C7; padding: 6px 10px; border-radius: 6px; margin-bottom: 12px; font-weight: 600; text-align: center;">⚡ Distinct Pipeline: Exclusions & Debt Sale Steps Omitted (${activeSteps.length} Steps)</div>` : ''}
+                  ${signoffRequired ? `<div style="font-size: 8.5pt; color: #6B21A8; background: #F3E8FF; padding: 6px 10px; border-radius: 6px; margin-bottom: 12px; font-weight: 600; text-align: center;">🛡️ Senior Sign-Off Gate Required</div>` : ''}
+                  ${supportingNote ? `<div style="margin-bottom: 14px; padding: 8px 12px; background: #FEF3C7; border-left: 3px solid #F59E0B; font-size: 8pt; text-align: left; color: #92400E;"><strong>Supporting Note:</strong> ${supportingNote}</div>` : ''}
+                  <div style="display:flex; flex-direction:column; align-items:center;">
                     ${flowHtml}
                   </div>
-                  ${note ? `<div style="margin-top: 12px; padding: 8px; background: #FEF3C7; border-left: 3px solid #F59E0B; font-size: 8.5pt; text-align: left; color: #92400E;"><strong>Supporting Note:</strong> ${note}</div>` : ''}
                 </div>
                 ${caption ? `<p class="caption">${caption}</p>` : ''}
               </div>`;
