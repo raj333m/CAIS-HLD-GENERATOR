@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { StatusBadge, BrandChip, VariableChip } from '@/styles/tokens';
+import DiffViewer from '@/components/DiffViewer';
 
 export interface CaisChangeEntry {
   id?: string;
@@ -178,35 +179,8 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* Before / After Logic */}
-          <div className="space-y-2 pt-1">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
-              Before / After Logic
-            </span>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Before Panel */}
-              <div className="p-3.5 rounded-xl border-l-4 border-l-rose-500 bg-rose-500/5 dark:bg-rose-950/20 border border-slate-200 dark:border-slate-800/80 space-y-1.5 shadow-2xs">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Before (Prior Logic)</span>
-                </div>
-                <div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
-                  {renderTextWithPlaceholderCheck(change.beforeText)}
-                </div>
-              </div>
-
-              {/* After Panel */}
-              <div className="p-3.5 rounded-xl border-l-4 border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-950/20 border border-slate-200 dark:border-slate-800/80 space-y-1.5 shadow-2xs">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>After (Corrected / New Logic)</span>
-                </div>
-                <div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
-                  {renderTextWithPlaceholderCheck(change.afterText)}
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Before / After Logic Diff */}
+          <DiffViewer beforeText={change.beforeText} afterText={change.afterText} />
 
           {/* Impacted Brands */}
           <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4 pt-1">
