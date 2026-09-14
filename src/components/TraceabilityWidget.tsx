@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { Grid, ArrowRight, Layers, Sparkles, CheckCircle2 } from 'lucide-react';
-import { STANDARD_CAIS_ITEMS, STANDARD_BRANDS, isItemMatchedInText, isBrandMatchedInText } from '@/lib/caisCatalog';
+import { STANDARD_CAIS_ITEMS, STANDARD_BRANDS, isItemMatchedInChange, isBrandMatchedInChange } from '@/lib/caisCatalog';
 
 interface TraceabilityWidgetProps {
   changes: any[];
@@ -17,12 +17,10 @@ export default function TraceabilityWidget({ changes }: TraceabilityWidgetProps)
       const brandsSet = new Set<string>();
 
       changes.forEach((c) => {
-        const itemText = `${c.impactedDataItems || ''} ${c.description || ''} ${c.title || ''}`;
-        if (isItemMatchedInText(item, itemText)) {
+        if (isItemMatchedInChange(item, c)) {
           count++;
           STANDARD_BRANDS.forEach((brand) => {
-            const bureauText = `${c.impactedBureaus || ''} ${c.description || ''} ${c.title || ''}`;
-            if (isBrandMatchedInText(brand, bureauText)) {
+            if (isBrandMatchedInChange(brand, c)) {
               brandsSet.add(brand);
             }
           });
@@ -47,9 +45,7 @@ export default function TraceabilityWidget({ changes }: TraceabilityWidgetProps)
     STANDARD_CAIS_ITEMS.forEach((item) => {
       STANDARD_BRANDS.forEach((brand) => {
         changes.forEach((c) => {
-          const bureauText = `${c.impactedBureaus || ''} ${c.description || ''} ${c.title || ''}`;
-          const itemText = `${c.impactedDataItems || ''} ${c.description || ''} ${c.title || ''}`;
-          if (isBrandMatchedInText(brand, bureauText) && isItemMatchedInText(item, itemText)) {
+          if (isBrandMatchedInChange(brand, c) && isItemMatchedInChange(item, c)) {
             total++;
           }
         });

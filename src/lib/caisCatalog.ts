@@ -62,42 +62,81 @@ export const STANDARD_BRANDS = [
   'M&S Loans (947)',
 ];
 
-export function isItemMatchedInText(item: CAISItemDef, rawText: string): boolean {
-  if (!rawText) return false;
-  const lower = rawText.toLowerCase();
-  const nameLower = item.name.toLowerCase();
-  const codeLower = item.code.toLowerCase();
-  const posFormatted = `${item.pos < 10 ? '0' + item.pos : item.pos}`;
-  
-  // Check exact position number e.g. "19. Special Instruction Indicator" or "05. Account Status" or "02. Account Type"
-  if (lower.includes(`${posFormatted}.`) || lower.includes(`${item.pos}.`)) return true;
-  // Check code e.g. SPEC_INST_FLAG or ACC_STATUS
-  if (lower.includes(codeLower)) return true;
-  // Check key words in name e.g. "special instruction", "account status", "default satisfaction", "original default balance"
-  if (lower.includes(nameLower)) return true;
+/**
+ * Strict matching between a CAIS catalog item and a change record's `impactedDataItems`.
+ * Evaluates EXCLUSIVELY the `impactedDataItems` field (never title, description, or sectionsUpdated).
+ */
+export function isItemMatchedInChange(item: CAISItemDef, change: any): boolean {
+  const rawItems = change?.impactedDataItems;
+  if (!rawItems || typeof rawItems !== 'string' && !Array.isArray(rawItems)) return false;
 
-  // Custom alias mappings for common wording in change forms
-  if (item.code === 'SPEC_INST_FLAG' && (lower.includes('special instruction') || lower.includes('forbearance') || lower.includes('payment holiday'))) return true;
-  if (item.code === 'ACC_STATUS' && (lower.includes('account status') || lower.includes('status code'))) return true;
-  if (item.code === 'ACC_TYPE' && (lower.includes('account type') || lower.includes('bnpl') || lower.includes('product type'))) return true;
-  if (item.code === 'CREDIT_LIMIT' && (lower.includes('credit limit') || lower.includes('loan amount'))) return true;
-  if (item.code === 'ORIG_DEF_BAL' && (lower.includes('original default balance') || lower.includes('default balance'))) return true;
-  if (item.code === 'DEF_SAT_DATE' && (lower.includes('default satisfaction date') || lower.includes('satisfaction date'))) return true;
+  const chips: string[] = Array.isArray(rawItems)
+    ? rawItems.map((c) => String(c))
+    : String(rawItems).split(/[,;]+/);
+
+  const itemNameLower = item.name.toLowerCase();
+  const itemCodeLower = item.code.toLowerCase();
+
+  for (let chip of chips) {
+    chip = chip.trim();
+    if (!chip) continue;
+    const chipLower = chip.toLowerCase();
+
+    // 1. Match by Item Name substring e.g. "account type", "special instruction indicator", "original default balance"
+    if (chipLower.includes(itemNameLower)) return true;
+
+    // 2. Match by Item Field Code e.g. ACC_TYPE, SPEC_INST_FLAG, ORIG_DEF_BAL, DEF_SAT_DATE, CREDIT_LIMIT, ACC_STATUS
+    if (chipLower.includes(itemCodeLower)) return true;
+
+    // 3. Match by Position Number if chip specifies prefix e.g. "19.", "05.", "11.", "17.", "36.", "42."
+    const posPadded = item.pos < 10 ? `0${item.pos}` : `${item.pos}`;
+    const posStr = `${item.pos}`;
+
+    // Ensure position matches at start of token (e.g. "19. Special...", "05. Account...")
+    const matchPosPrefix = chipLower.startsWith(`${posPadded}.`) || chipLower.startsWith(`${posStr}.`) || chipLower.startsWith(`${posPadded} `) || chipLower.startsWith(`${posStr} `);
+
+    if (matchPosPrefix) {
+      // Check that the token does not explicitly state a DIFFERENT catalog item's name
+      // e.g. If token is "02. Account Type", it starts with "02." but names "Account Type" (Pos 11).
+      // So Pos 2 ("Monthly Payment") should NOT match.
+      const hasDifferentCatalogName = STANDARD_CAIS_ITEMS.some((other) => {
+        if (other.pos === item.pos) return false;
+        return chipLower.includes(other.name.toLowerCase());
+      });
+
+      if (!hasDifferentCatalogName) {
+        return true;
+      }
+    }
+  }
 
   return false;
 }
 
-export function isBrandMatchedInText(brand: string, rawText: string): boolean {
-  if (!rawText) return false;
-  const lower = rawText.toLowerCase();
+/**
+ * Strict matching between a Brand/Bureau name and a change record's `impactedBureaus`.
+ * Evaluates EXCLUSIVELY the `impactedBureaus` field.
+ */
+export function isBrandMatchedInChange(brand: string, change: any): boolean {
+  const rawBureaus = change?.impactedBureaus;
+  if (!rawBureaus || typeof rawBureaus !== 'string' && !Array.isArray(rawBureaus)) return false;
+
+  const text = Array.isArray(rawBureaus) ? rawBureaus.join(' ') : String(rawBureaus);
+  const textLower = text.toLowerCase();
   const brandLower = brand.toLowerCase();
 
-  // If change states "all bureaus" or "all 3 bureaus", match Experian, Equifax, TransUnion
-  if ((lower.includes('all bureaus') || lower.includes('all 3 bureaus')) && ['experian', 'equifax', 'transunion'].some(b => brandLower.includes(b))) {
+  // "All Bureaus" or "All 3 Bureaus" matches Experian, Equifax, TransUnion
+  if ((textLower.includes('all bureaus') || textLower.includes('all 3 bureaus')) && ['experian', 'equifax', 'transunion'].includes(brandLower)) {
     return true;
   }
 
-  // General brand substring match
-  const brandBaseName = brand.split(' ')[0].toLowerCase(); // e.g. "experian", "hsbc", "first", "m&s"
-  return lower.includes(brandBaseName);
+  // Exact or keyword matching
+  if (brandLower.includes('experian') && textLower.includes('experian')) return true;
+  if (brandLower.includes('equifax') && textLower.includes('equifax')) return true;
+  if (brandLower.includes('transunion') && textLower.includes('transunion')) return true;
+  if (brandLower.includes('hsbc') && (textLower.includes('hsbc') || textLower.includes('51') || textLower.includes('85'))) return true;
+  if (brandLower.includes('first direct') && (textLower.includes('first direct') || textLower.includes('211'))) return true;
+  if (brandLower.includes('m&s') && (textLower.includes('m&s') || textLower.includes('947'))) return true;
+
+  return textLower.includes(brandLower);
 }

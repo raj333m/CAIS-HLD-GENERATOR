@@ -17,7 +17,7 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
-import { STANDARD_CAIS_ITEMS, STANDARD_BRANDS, isItemMatchedInText, isBrandMatchedInText, CAISItemDef } from '@/lib/caisCatalog';
+import { STANDARD_CAIS_ITEMS, STANDARD_BRANDS, isItemMatchedInChange, isBrandMatchedInChange, CAISItemDef } from '@/lib/caisCatalog';
 import { StatusBadge } from '@/styles/tokens';
 
 export default function TraceabilityPage() {
@@ -94,11 +94,8 @@ export default function TraceabilityPage() {
   // Helper to compute matches for a (item, brand) pair
   const getMatchingChanges = (item: CAISItemDef, brand: string) => {
     return activeChanges.filter((change) => {
-      const bureauText = `${change.impactedBureaus || ''} ${change.description || ''} ${change.title || ''}`;
-      const itemText = `${change.impactedDataItems || ''} ${change.description || ''} ${change.title || ''}`;
-
-      const brandMatch = isBrandMatchedInText(brand, bureauText);
-      const itemMatch = isItemMatchedInText(item, itemText);
+      const brandMatch = isBrandMatchedInChange(brand, change);
+      const itemMatch = isItemMatchedInChange(item, change);
 
       return brandMatch && itemMatch;
     });

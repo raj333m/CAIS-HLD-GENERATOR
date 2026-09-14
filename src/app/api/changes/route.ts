@@ -30,7 +30,7 @@ export const PREPOPULATED_CHANGES: any[] = [
     description: 'Incorporate new BNPL installment product line into monthly CAIS reporting files submitted to Experian, Equifax, and TransUnion.',
     sectionsUpdated: '1.3, 2.5',
     impactedBureaus: 'Experian, Equifax, TransUnion',
-    impactedDataItems: '02. Account Type, 09. Credit Limit / Total Loan Amount',
+    impactedDataItems: '11. Account Type, 36. Credit Limit / Total Loan Amount',
     targetMonth: 'November 2026',
     author: 'Aishwarya Raj Singh',
     createdAt: '2026-09-12T10:15:00.000Z',
