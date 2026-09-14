@@ -737,6 +737,11 @@ export default function LivingDocumentPage() {
       const params = new URLSearchParams(window.location.search);
       const cId = params.get('changeId');
       const mode = params.get('mode');
+      const sectionParam = params.get('section');
+
+      if (sectionParam) {
+        setActiveSectionNum(sectionParam);
+      }
 
       if (mode === 'review' && (user?.role === 'REVIEWER' || user?.role === 'ADMIN')) {
         setIsReviewerMode(true);
@@ -771,6 +776,24 @@ export default function LivingDocumentPage() {
                   }
                   if (parsed && parsed.feedbackRoundsHistory && Array.isArray(parsed.feedbackRoundsHistory)) {
                     setFeedbackRoundsHistory(parsed.feedbackRoundsHistory);
+                  }
+
+                  // Land directly on section with feedback if no explicit section parameter was in URL
+                  if (!sectionParam) {
+                    const targetNums = getTargetSectionNumbers(found.sectionsUpdated || found.biImpactedChange);
+                    const scopedList = targetNums.length > 0
+                      ? targetNums
+                      : ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '3.1', '3.2', '4.0'];
+
+                    const revs = parsed?.reviews || {};
+                    const firstWithFeedback = scopedList.find((num) => {
+                      const r = revs[num];
+                      return r && (r.status === 'FEEDBACK_SHARED' || (r.feedback && !r.isAddressed));
+                    });
+
+                    if (firstWithFeedback) {
+                      setActiveSectionNum(firstWithFeedback);
+                    }
                   }
                 } catch (e) {}
               }
