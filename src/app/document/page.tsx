@@ -1919,105 +1919,309 @@ export default function LivingDocumentPage() {
         }
 
         if (block.type === 'brand-flow') {
-          const { title, caption, steps = [], isDistinctProcess, supportingNote, signoffRequired } = block.payload || {};
-          const activeSteps = steps.filter((st: any) => st.owner !== 'N/A');
+          const { brand = 'hsbc', title, caption } = block.payload || {};
 
           return (
-            <div key={idx} className="my-8 space-y-4">
-              <div className="bg-white dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#C0272D] inline-block"></span>
-                      <span>{title}</span>
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-                      Connected Process Flow Diagram ({activeSteps.length} Sequential Steps)
+            <div key={idx} className="my-8 space-y-4 font-sans">
+              <div className="bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-5 sm:p-8 shadow-xl space-y-6 overflow-hidden relative">
+                {/* Slide Header */}
+                <div className="border-b border-slate-300 dark:border-slate-800 pb-4 space-y-1">
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#C0272D] inline-block"></span>
+                    <span>{title || `${brand.toUpperCase()} Design Overview`}</span>
+                  </h3>
+                  {brand === 'ms_current_account' && (
+                    <p className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                      M&amp;S Bank Current Accounts follow a different process to all other M&amp;S products.
                     </p>
+                  )}
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Below is the High level steps taken for File creation, validation and transmission along with initial contacts for the stages.
+                  </p>
+                </div>
+
+                {/* Flowchart Visual Grid (Slide-style diagram matching image) */}
+                <div className="space-y-4 max-w-4xl mx-auto py-2">
+                  {/* Row 1: Step 1 Center + Branching Left (Debt Sale) & Right (Exclusions) */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
+                    {/* Left Branch: Debt Sale */}
+                    {brand !== 'ms_current_account' ? (
+                      <div className="bg-white dark:bg-slate-950 border border-sky-300 dark:border-sky-800 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
+                        <div className="bg-sky-700 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                          <span>3. Debt Sale</span>
+                          <span className="text-[9px] bg-sky-900/60 px-1.5 py-0.5 rounded">Branch Step</span>
+                        </div>
+                        <div className="p-3 space-y-1.5 flex-1">
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Debt sale files &amp; delete markers applied for sold accounts.</p>
+                          <div className="pt-1">
+                            <span className="inline-block bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-sky-300 dark:border-sky-800">
+                              [Name] (Debt Sale Specialist)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-200/50 dark:bg-slate-800/40 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-3 text-center flex items-center justify-center text-xs text-slate-400 font-mono">
+                        Debt Sale Step Omitted
+                      </div>
+                    )}
+
+                    {/* Center Trunk Step 1: Cards Staging Table */}
+                    <div className="bg-white dark:bg-slate-950 border-2 border-purple-500 rounded-xl overflow-hidden shadow-md text-xs flex flex-col justify-between">
+                      <div className="bg-purple-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>1. Cards Staging Table</span>
+                        <span className="text-[9px] bg-purple-950/80 px-1.5 py-0.5 rounded">Source Feed</span>
+                      </div>
+                      <div className="p-3 space-y-1.5 flex-1">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
+                          {brand === 'ms_current_account' ? 'Load Gleam (937) staging dataset for Brand 662.' : 'Load DWH staging datasets for Retail & Cards.'}
+                        </p>
+                        <div className="pt-1">
+                          <span className="inline-block bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-purple-300 dark:border-purple-800">
+                            BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Branch: Exclusions */}
+                    {brand !== 'ms_current_account' ? (
+                      <div className="bg-white dark:bg-slate-950 border border-emerald-300 dark:border-emerald-800 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
+                        <div className="bg-emerald-700 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                          <span>2. Exclusions</span>
+                          <span className="text-[9px] bg-emerald-900/60 px-1.5 py-0.5 rounded">Branch Step</span>
+                        </div>
+                        <div className="p-3 space-y-1.5 flex-1">
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
+                            {brand === 'first_direct' ? 'FD exclusion file (Positive data sharing flags).' : 'Brand exclusion files (Virtual/Secondary Cards).'}
+                          </p>
+                          <div className="pt-1 space-y-1 text-[9px] font-mono">
+                            {brand === 'first_direct' ? (
+                              <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
+                                Fit-One QUERIES (fit-one.queries@firstdirect.com)
+                              </span>
+                            ) : (
+                              <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded border border-emerald-200 dark:border-emerald-900 space-y-0.5 text-emerald-900 dark:text-emerald-200 text-[9px]">
+                                <div>Primary - [Name] (Fraud Investigator)</div>
+                                <div>CWO - [Name] | RCS - [Name]</div>
+                                <div>HSBC Cards / Retail - [Name]</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-200/50 dark:bg-slate-800/40 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-3 text-center flex items-center justify-center text-xs text-slate-400 font-mono">
+                        Exclusion Step Omitted
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {isDistinctProcess && (
-                      <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                        Distinct Pipeline: Exclusions & Debt Sale Omitted ({activeSteps.length} Steps)
-                      </span>
-                    )}
-                    {signoffRequired && (
-                      <span className="px-3 py-1 rounded-full bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5">
-                        <Shield className="w-3.5 h-3.5 text-purple-500" />
-                        Senior Sign-Off Gate Required
-                      </span>
-                    )}
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 2: Step 4 Staging Table Validation */}
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-white dark:bg-slate-950 border border-amber-500 rounded-xl overflow-hidden shadow-xs text-xs">
+                      <div className="bg-amber-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>4. Staging Table Validation</span>
+                        <span className="text-[9px] bg-amber-950/80 px-1.5 py-0.5 rounded">Validation Gate</span>
+                      </div>
+                      <div className="p-3 space-y-1.5">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Execute staging completeness checks &amp; data quality rules.</p>
+                        <span className="inline-block bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-amber-300 dark:border-amber-800">
+                          Dataquality CUT (dataqualitycut@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 3: Step 5&6 Core DWH Load + CADS Processing Branch */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
+                    <div className="md:col-span-2 bg-white dark:bg-slate-950 border-2 border-emerald-500 rounded-xl overflow-hidden shadow-md text-xs flex flex-col justify-between">
+                      <div className="bg-emerald-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>5. Data Loaded to DWH_PDS_STAG for CADS &amp; 6. DWH_IP_ARRG_CALC_V</span>
+                        <span className="text-[9px] bg-emerald-950/80 px-1.5 py-0.5 rounded">Core DWH Load</span>
+                      </div>
+                      <div className="p-3 space-y-1.5 flex-1">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
+                          Populate DWH_PDS_STAG table for retail, prepare input for CRA process, and update calculation view DWH_IP_ARRG_CALC_V.
+                        </p>
+                        <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-emerald-300 dark:border-emerald-800">
+                          Dataquality CUT (dataqualitycut@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* CADS Processing Side Branch */}
+                    <div className="bg-white dark:bg-slate-950 border border-blue-400 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
+                      <div className="bg-blue-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>7. CADS Processing</span>
+                        <span className="text-[9px] bg-blue-950/80 px-1.5 py-0.5 rounded">CU Team CADS</span>
+                      </div>
+                      <div className="p-3 space-y-1.5 flex-1">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Run CADS scoring and attribute calculation rules.</p>
+                        <span className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-blue-300 dark:border-blue-800">
+                          Dataquality CUT (dataqualitycut@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 4: Step 8 Create File + Step 9 Address Processing Branch */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
+                    <div className="md:col-span-2 bg-white dark:bg-slate-950 border border-amber-600 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
+                      <div className="bg-amber-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>8. Create File from DWH_IP_ARRG_CALC_V</span>
+                        <span className="text-[9px] bg-amber-950/80 px-1.5 py-0.5 rounded">File Generation</span>
+                      </div>
+                      <div className="p-3 space-y-1.5 flex-1">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Extract records from calculation view and structure raw CRA file layout.</p>
+                        <span className="inline-block bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-amber-300 dark:border-amber-800">
+                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Address Processing Side Branch */}
+                    <div className="bg-white dark:bg-slate-950 border border-purple-400 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
+                      <div className="bg-purple-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>9. Address Processing</span>
+                        <span className="text-[9px] bg-purple-950/80 px-1.5 py-0.5 rounded">Address Module</span>
+                      </div>
+                      <div className="p-3 space-y-1.5 flex-1">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
+                          {brand === 'ms_current_account' ? 'Address processing in place but file never used.' : 'Execute address standardization and postcode validation.'}
+                        </p>
+                        <span className="inline-block bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-purple-300 dark:border-purple-800">
+                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 5: Step 10 Load Snapshot */}
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-white dark:bg-slate-950 border border-indigo-500 rounded-xl overflow-hidden shadow-xs text-xs">
+                      <div className="bg-indigo-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>10. Load CARDS data to CAIS Snap Shot</span>
+                        <span className="text-[9px] bg-indigo-950/80 px-1.5 py-0.5 rounded">Snapshot Store</span>
+                      </div>
+                      <div className="p-3 space-y-1.5">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Persist monthly snapshot copy into core CAIS snapshot repository.</p>
+                        <span className="inline-block bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-indigo-300 dark:border-indigo-800">
+                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 6: Step 11 Final Validations */}
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-white dark:bg-slate-950 border border-blue-500 rounded-xl overflow-hidden shadow-xs text-xs">
+                      <div className="bg-blue-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>11. Final Validations</span>
+                        <span className="text-[9px] bg-blue-950/80 px-1.5 py-0.5 rounded">Business Check</span>
+                      </div>
+                      <div className="p-3 space-y-1.5">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Run business logic reconciliation and final bureau format checks.</p>
+                        <span className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-blue-300 dark:border-blue-800">
+                          Fit-One QUERIES ({brand === 'first_direct' ? 'fit-one.queries@firstdirect.com' : 'fit-one.queries@hsbc.com'})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 7: Step 12 Ad-hoc Processing */}
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-white dark:bg-slate-950 border border-rose-400 rounded-xl overflow-hidden shadow-xs text-xs">
+                      <div className="bg-rose-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>12. Ad-hoc File Processing</span>
+                        <span className="text-[9px] bg-rose-950/80 px-1.5 py-0.5 rounded">Ad-hoc Patch</span>
+                      </div>
+                      <div className="p-3 space-y-1.5">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Post-validation ad-hoc re-run capability available if manual correction is required.</p>
+                        <span className="inline-block bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-rose-300 dark:border-rose-800">
+                          Dataquality CUT (dataqualitycut@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Sign-Off Gate for First Direct */}
+                  {brand === 'first_direct' && (
+                    <>
+                      <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+                      <div className="max-w-md mx-auto">
+                        <div className="bg-purple-900 text-white border-2 border-purple-400 rounded-xl p-3 shadow-md text-xs space-y-1.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-[11px] text-purple-200">
+                            <Shield className="w-4 h-4 text-purple-300" />
+                            Step 14.5 — Senior-Level Sign-Off Gate
+                          </div>
+                          <p className="text-[10.5px] text-purple-100 leading-snug">Mandatory senior governance sign-off required prior to CRA file release.</p>
+                          <span className="inline-block bg-purple-950 text-purple-200 text-[9px] px-2 py-0.5 rounded font-mono font-semibold border border-purple-700">
+                            Senior Reviewer / Lead Sign-off
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Connector Arrow */}
+                  <div className="flex justify-center text-slate-400 dark:text-slate-600 font-bold text-lg -my-1">↓</div>
+
+                  {/* Row 8: Step 13 / 15 Transmission */}
+                  <div className="max-w-md mx-auto">
+                    <div className="bg-white dark:bg-slate-950 border-2 border-amber-700 rounded-xl overflow-hidden shadow-md text-xs">
+                      <div className="bg-amber-950 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
+                        <span>{brand === 'first_direct' ? '15. File Transmitted to CRAs' : '13. File Transmitted to CRAs'}</span>
+                        <span className="text-[9px] bg-amber-900 px-1.5 py-0.5 rounded">Bureau Transmission</span>
+                      </div>
+                      <div className="p-3 space-y-1.5">
+                        <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Secure file transmission to Experian, Equifax, and TransUnion via Connect:Direct.</p>
+                        <span className="inline-block bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-amber-300 dark:border-amber-800">
+                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Supporting Note */}
-                {supportingNote && (
-                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-sans">
-                    <strong>Supporting Note:</strong> {supportingNote}
+                {/* Footnote text for M&S Bank Current Account */}
+                {brand === 'ms_current_account' && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed space-y-1 font-sans">
+                    <strong className="font-bold block text-amber-950 dark:text-amber-100">Staging Variables Note:</strong>
+                    <p>
+                      Staging tables receive feed as files from source systems in raw tables which further gets transferred to core DWH tables and then as per the applied rules for CRA Reporting is DWH_PDS_STAG for retail which is the input for CRA process. It will have all the Customers and their accounts. The <code className="font-mono bg-amber-200/60 dark:bg-amber-900/80 px-1 rounded font-bold">CRA_ACCT_TYCD</code> variable on it will have a value of <strong>02</strong> for Personal Loans and <strong>26</strong> for Debt Consolidated Loans (DCLs).
+                    </p>
                   </div>
                 )}
 
-                {/* Connected Flow Sequence (Vertical chain with directional arrows) */}
-                <div className="max-w-2xl mx-auto space-y-0 py-2">
-                  {activeSteps.map((st: any, sIdx: number) => {
-                    const isSignoff = st.num === '14.5';
-                    const isLast = sIdx === activeSteps.length - 1;
-
-                    return (
-                      <React.Fragment key={sIdx}>
-                        <div
-                          className={`p-4 rounded-xl border text-xs space-y-2 transition-all shadow-xs relative ${
-                            isSignoff
-                              ? 'bg-purple-500/10 border-purple-400 dark:border-purple-700/80 shadow-md ring-1 ring-purple-500/30'
-                              : st.owner === 'BI'
-                              ? 'bg-blue-500/5 border-blue-200 dark:border-blue-900/60 dark:bg-blue-950/20'
-                              : st.owner === 'CU Team'
-                              ? 'bg-rose-500/5 border-rose-200 dark:border-rose-900/60 dark:bg-rose-950/20'
-                              : st.owner === 'Transmission Team'
-                              ? 'bg-emerald-500/5 border-emerald-200 dark:border-emerald-900/60 dark:bg-emerald-950/20'
-                              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between font-mono">
-                            <span className="font-bold text-slate-700 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px]">
-                              Step {st.num}
-                            </span>
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-bold border ${
-                                st.owner === 'BI'
-                                  ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700/60'
-                                  : st.owner === 'CU Team'
-                                  ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700/60'
-                                  : st.owner === 'Transmission Team'
-                                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60'
-                                  : st.owner === 'Senior Reviewer / Lead'
-                                  ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700/60'
-                                  : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300'
-                              }`}
-                            >
-                              {st.owner}
-                            </span>
-                          </div>
-                          <div className="font-bold text-sm text-slate-900 dark:text-white">
-                            {st.name}
-                          </div>
-                          <div className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-                            {st.desc}
-                          </div>
-                        </div>
-
-                        {!isLast && (
-                          <div className="flex flex-col items-center justify-center my-1.5 py-0.5">
-                            <div className="w-0.5 h-4 bg-slate-400 dark:bg-slate-600"></div>
-                            <svg className="w-5 h-5 text-slate-500 dark:text-slate-400 -mt-1" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 16L6 10H18L12 16Z" />
-                            </svg>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
+                {/* Slide Footer with Brand Logos & RESTRICTED tag */}
+                <div className="pt-4 border-t border-slate-300 dark:border-slate-800 flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-3 font-extrabold text-slate-700 dark:text-slate-300">
+                    <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] tracking-wider">HSBC</span>
+                    <span className="bg-black text-white dark:bg-white dark:text-black px-2 py-0.5 rounded text-[10px] tracking-wider">M&amp;S BANK</span>
+                    <span className="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px] tracking-wider">first direct</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded">
+                    RESTRICTED
+                  </span>
                 </div>
               </div>
 
@@ -2031,38 +2235,191 @@ export default function LivingDocumentPage() {
         }
 
         if (block.type === 'comparison-table') {
-          const { title, caption, headers = [], rows = [] } = block.payload || {};
+          const { title, caption } = block.payload || {};
+
           return (
-            <div key={idx} className="my-8 space-y-3">
-              <div className="bg-white dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md space-y-4">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">
-                  {title}
-                </h4>
-                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
-                  <table className="w-full text-left border-collapse font-sans text-xs">
-                    <thead className="bg-[#C0272D] text-white font-bold">
-                      <tr>
-                        {headers.map((h: string, hIdx: number) => (
-                          <th key={hIdx} className="p-3 border-b border-red-700 font-bold">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
-                      {rows.map((r: string[], rIdx: number) => (
-                        <tr key={rIdx} className={rIdx % 2 === 1 ? 'bg-[#F9F9F9] dark:bg-slate-900/60' : 'bg-white dark:bg-slate-950'}>
-                          {r.map((cell: string, cIdx: number) => (
-                            <td key={cIdx} className={`p-3 align-top leading-relaxed ${cIdx === 0 ? 'font-bold text-slate-900 dark:text-white w-48' : 'text-slate-700 dark:text-slate-300'}`}>
-                              {cell}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <div key={idx} className="my-8 space-y-4 font-sans">
+              <div className="bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl p-5 sm:p-8 shadow-xl space-y-6 overflow-hidden">
+                {/* Header */}
+                <div className="border-b border-slate-300 dark:border-slate-800 pb-4 space-y-1">
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#C0272D] inline-block"></span>
+                    <span>{title || 'Differences'}</span>
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Below is the High level of the differences between brands.
+                  </p>
+                </div>
+
+                {/* 3 Column Visual Flow Streams */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  {/* Column 1: HSBC Card & Retail */}
+                  <div className="space-y-3">
+                    <div className="bg-[#C0272D] text-white font-bold p-2.5 rounded-xl text-center text-xs tracking-wide shadow-xs">
+                      HSBC Card &amp; Retail
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">5 GI Steps</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Initial specific Control M-job</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">Exclusion Files</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">4 different areas</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">Debt Sale Files</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name]</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">CADS Steps</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">5 CADS Steps (Dataquality CUT)</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">Basic Data Validation</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-red-200 dark:border-red-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-red-700 dark:text-red-400">Potential for ADHOC Processing</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Held validation</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                        <div className="font-bold text-[10px] uppercase text-slate-400">Signoff</div>
+                        <div className="text-[11px] mt-0.5">No Signoff</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Column 2: M&S Bank Current Account */}
+                  <div className="space-y-3">
+                    <div className="bg-[#7E22CE] text-white font-bold p-2.5 rounded-xl text-center text-xs tracking-wide shadow-xs">
+                      M&amp;S Bank Current Account
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-purple-200 dark:border-purple-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-purple-700 dark:text-purple-400">5 GI Steps</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Initial specific Control M-job</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-slate-200/60 dark:bg-slate-800/60 p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400">
+                        <div className="font-bold text-[10px] uppercase text-slate-500">Exclusion Files</div>
+                        <div className="text-[11px] mt-0.5 line-through">No Exclusions in PDS</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-slate-200/60 dark:bg-slate-800/60 p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400">
+                        <div className="font-bold text-[10px] uppercase text-slate-500">Debt Sale Files</div>
+                        <div className="text-[11px] mt-0.5 line-through">No Debt Sale File</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-purple-200 dark:border-purple-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-purple-700 dark:text-purple-400">CADS Steps</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">5 CADS Steps (Dataquality CUT)</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-purple-200 dark:border-purple-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-purple-700 dark:text-purple-400">Basic Data Validation</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-purple-200 dark:border-purple-900/60 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-purple-700 dark:text-purple-400">Potential for ADHOC Processing</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Held validation (Not used so far)</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                        <div className="font-bold text-[10px] uppercase text-slate-400">Signoff</div>
+                        <div className="text-[11px] mt-0.5">No Signoff</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Column 3: first direct */}
+                  <div className="space-y-3">
+                    <div className="bg-[#0F172A] text-white font-bold p-2.5 rounded-xl text-center text-xs tracking-wide shadow-xs">
+                      first direct
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">5 GI Steps</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Initial specific Control M-job</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Exclusion Files</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Debt Sale Files</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name]</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">CADS Steps</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">4 CADS Steps (Dataquality CUT)</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Basic Data Validation</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">[Name] &amp; [Name]</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 shadow-xs">
+                        <div className="font-bold text-[10px] uppercase text-slate-800 dark:text-slate-200">Potential for ADHOC Processing</div>
+                        <div className="text-slate-700 dark:text-slate-300 text-[11px] mt-0.5">Held validation</div>
+                      </div>
+                      <div className="flex justify-center text-slate-400 text-xs">↓</div>
+
+                      <div className="bg-purple-900 text-white p-2.5 rounded-xl border-2 border-purple-400 shadow-md font-bold">
+                        <div className="font-extrabold text-[10px] uppercase text-purple-200">Signoff</div>
+                        <div className="text-[11px] mt-0.5 text-purple-100 flex items-center gap-1">
+                          <Shield className="w-3.5 h-3.5 text-purple-300" />
+                          Senior Level Signoff
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="pt-4 border-t border-slate-300 dark:border-slate-800 flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-3 font-extrabold text-slate-700 dark:text-slate-300">
+                    <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] tracking-wider">HSBC</span>
+                    <span className="bg-black text-white dark:bg-white dark:text-black px-2 py-0.5 rounded text-[10px] tracking-wider">M&amp;S BANK</span>
+                    <span className="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px] tracking-wider">first direct</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded">
+                    RESTRICTED
+                  </span>
                 </div>
               </div>
+
               {caption && (
                 <p className="text-[9.5pt] italic text-slate-600 dark:text-slate-400 text-center max-w-3xl mx-auto font-sans">
                   {caption}
