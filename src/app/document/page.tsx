@@ -503,6 +503,12 @@ export default function LivingDocumentPage() {
         setActiveProjectId(data.project.id);
         setSections(data.sections);
         setSectionReviews({});
+        if (data.metadata) {
+          if (data.metadata.coverDetails) setCoverDetails(data.metadata.coverDetails);
+          if (data.metadata.interestedParties) setInvolvedParties(data.metadata.interestedParties);
+          if (data.metadata.revisionHistory) setRevisionHistory(data.metadata.revisionHistory);
+          if (data.metadata.reviewedBy) setReviewedBy(data.metadata.reviewedBy);
+        }
         setShowCreateProjectModal(false);
         setNewProjectForm({
           projectName: '',
@@ -1017,9 +1023,17 @@ export default function LivingDocumentPage() {
   ]);
   const [editingPartyId, setEditingPartyId] = useState<string | null>(null);
 
+  const getTodayFormatted = () => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const [revisionCols, setRevisionCols] = useState(['Version', 'Date', 'Updated By', 'Reason for Issue']);
   const [revisionHistory, setRevisionHistory] = useState<any[]>([
-    { id: '1', Version: '0.1', Date: '[Date]', 'Updated By': '[Name]', 'Reason for Issue': 'Initial consolidated HLD created' },
+    { id: '1', Version: '1.0', Date: getTodayFormatted(), 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
   ]);
   const [editingRevisionId, setEditingRevisionId] = useState<string | null>(null);
 
@@ -1035,9 +1049,9 @@ export default function LivingDocumentPage() {
   const [coverDetails, setCoverDetails] = useState({
     title: 'CRA CAIS Reporting High Level Design',
     subtitle: 'High Level Design — Consolidated Document',
-    author: '[Author Name]',
-    date: '[DD Month YYYY]',
-    version: '[x.x]',
+    author: 'Aishwarya Raj Singh',
+    date: getTodayFormatted(),
+    version: '1.0',
   });
   const [editingCover, setEditingCover] = useState(false);
 
@@ -1500,6 +1514,12 @@ export default function LivingDocumentPage() {
         const data = await res.json();
         if (data.sections) setSections(data.sections);
         if (data.reviews) setSectionReviews(data.reviews);
+        if (data.metadata) {
+          if (data.metadata.coverDetails) setCoverDetails(data.metadata.coverDetails);
+          if (data.metadata.interestedParties) setInvolvedParties(data.metadata.interestedParties);
+          if (data.metadata.revisionHistory) setRevisionHistory(data.metadata.revisionHistory);
+          if (data.metadata.reviewedBy) setReviewedBy(data.metadata.reviewedBy);
+        }
       } else {
         const fallbackRes = await fetch('/api/sections');
         if (fallbackRes.ok) {

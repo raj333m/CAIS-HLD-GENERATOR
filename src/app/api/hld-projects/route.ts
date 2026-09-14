@@ -12,6 +12,16 @@ export interface HldProject {
   sections?: any[];
 }
 
+function getTodayFormatted() {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+const initialDate = getTodayFormatted();
+
 let hldProjectsStore: HldProject[] = [
   {
     id: 'proj-alpha',
@@ -34,6 +44,37 @@ let projectReviewsStore: Record<string, Record<string, any>> = {
   'proj-alpha': {},
 };
 
+// In-memory Document Information metadata store per project ID
+let projectMetadataStore: Record<string, {
+  coverDetails?: any;
+  interestedParties?: any[];
+  revisionHistory?: any[];
+  reviewedBy?: any[];
+}> = {
+  'proj-alpha': {
+    coverDetails: {
+      title: 'CRA CAIS Reporting High Level Design',
+      subtitle: 'High Level Design — Consolidated Document',
+      author: 'Aishwarya Raj Singh',
+      date: initialDate,
+      version: '1.0',
+    },
+    interestedParties: [
+      { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
+      { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
+      { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
+    ],
+    revisionHistory: [
+      { id: '1', Version: '1.0', Date: initialDate, 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
+    ],
+    reviewedBy: [
+      { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
+      { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
+      { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
+    ],
+  },
+};
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const projectId = searchParams.get('projectId');
@@ -42,7 +83,30 @@ export async function GET(req: NextRequest) {
     const proj = hldProjectsStore.find((p) => p.id === projectId);
     const sections = projectSectionsStore[projectId] || JSON.parse(JSON.stringify(MASTER_SECTIONS));
     const reviews = projectReviewsStore[projectId] || {};
-    return NextResponse.json({ project: proj, sections, reviews });
+    const todayStr = getTodayFormatted();
+    const metadata = projectMetadataStore[projectId] || {
+      coverDetails: {
+        title: proj?.projectName || 'CRA CAIS Reporting High Level Design',
+        subtitle: `High Level Design — ${proj?.targetBrand || 'Consolidated Document'}`,
+        author: 'Aishwarya Raj Singh',
+        date: todayStr,
+        version: '1.0',
+      },
+      interestedParties: [
+        { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
+        { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
+        { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
+      ],
+      revisionHistory: [
+        { id: '1', Version: '1.0', Date: todayStr, 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
+      ],
+      reviewedBy: [
+        { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
+        { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
+        { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
+      ],
+    };
+    return NextResponse.json({ project: proj, sections, reviews, metadata });
   }
 
   return NextResponse.json({ projects: hldProjectsStore });
@@ -112,13 +176,66 @@ export async function POST(req: NextRequest) {
       }));
     }
 
+    const todayStr = getTodayFormatted();
+
+    const newMetadata = {
+      coverDetails: {
+        title: projectName.trim(),
+        subtitle: `High Level Design — ${brandList.join(', ')}`,
+        author: 'Aishwarya Raj Singh',
+        date: todayStr,
+        version: '1.0',
+      },
+      interestedParties: [
+        { id: '1', Name: '[Name]', Role: 'Lead Business Analyst', 'Business Unit': 'Credit Risk & Regulatory Reporting' },
+        { id: '2', Name: '[Name]', Role: 'ETL Engineering Lead', 'Business Unit': 'Data Engineering & Warehouse' },
+        { id: '3', Name: '[Name]', Role: 'CRA Liaison Manager', 'Business Unit': 'Credit Bureau Management' },
+      ],
+      revisionHistory: [
+        {
+          id: '1',
+          Version: '1.0',
+          Date: todayStr,
+          'Updated By': 'Aishwarya Raj Singh',
+          'Reason for Issue': 'Initial consolidated HLD created',
+        },
+      ],
+      reviewedBy: [
+        { id: '1', Reviewer: '[Name]', 'Role or Business Unit': 'Lead BA Reviewer', Date: '[Date]' },
+        { id: '2', Reviewer: '[Name]', 'Role or Business Unit': 'Enterprise Architect', Date: '[Date]' },
+        { id: '3', Reviewer: '[Name]', 'Role or Business Unit': 'Technical Lead', Date: '[Date]' },
+      ],
+    };
+
     projectSectionsStore[newId] = newSections;
     projectReviewsStore[newId] = {};
+    projectMetadataStore[newId] = newMetadata;
 
-    return NextResponse.json({ success: true, project: newProject, sections: newSections });
+    return NextResponse.json({ success: true, project: newProject, sections: newSections, metadata: newMetadata });
   } catch (error: any) {
     console.error('Create HLD project error:', error);
     return NextResponse.json({ error: error.message || 'Failed to create project' }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { projectId, coverDetails, interestedParties, revisionHistory, reviewedBy } = body;
+    if (!projectId) {
+      return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
+    }
+    const current = projectMetadataStore[projectId] || {};
+    projectMetadataStore[projectId] = {
+      ...current,
+      coverDetails: coverDetails || current.coverDetails,
+      interestedParties: interestedParties || current.interestedParties,
+      revisionHistory: revisionHistory || current.revisionHistory,
+      reviewedBy: reviewedBy || current.reviewedBy,
+    };
+    return NextResponse.json({ success: true, metadata: projectMetadataStore[projectId] });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
