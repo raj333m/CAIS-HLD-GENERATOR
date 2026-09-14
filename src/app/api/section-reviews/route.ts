@@ -192,6 +192,45 @@ export async function POST(req: NextRequest) {
     const state = loadReviewsState(changeId);
     let { reviews, currentFeedbackRound, feedbackRoundsHistory, addressedRemarks } = state;
 
+    // Merge existing DB & CloudStore reviews to prevent overwriting prior approvals
+    if (changeId) {
+      try {
+        const change = await findCaisChange(changeId);
+        if (change && change.reviewComments) {
+          try {
+            const parsed = JSON.parse(change.reviewComments);
+            if (parsed && typeof parsed === 'object' && parsed.reviews) {
+              reviews = { ...parsed.reviews, ...reviews };
+            }
+            if (parsed && parsed.currentFeedbackRound && !currentFeedbackRound) {
+              currentFeedbackRound = parsed.currentFeedbackRound;
+            }
+            if (parsed && parsed.feedbackRoundsHistory && Array.isArray(parsed.feedbackRoundsHistory) && (!feedbackRoundsHistory || feedbackRoundsHistory.length === 0)) {
+              feedbackRoundsHistory = parsed.feedbackRoundsHistory;
+            }
+          } catch (e) {}
+        }
+
+        const cloudState = (await getCloudChangeState(changeId)) ||
+          (change?.crReference ? await getCloudChangeState(change.crReference) : null) ||
+          (change?.id ? await getCloudChangeState(change.id) : null);
+
+        if (cloudState) {
+          if (cloudState.reviews && Object.keys(cloudState.reviews).length > 0) {
+            reviews = { ...cloudState.reviews, ...reviews };
+          }
+          if (cloudState.currentFeedbackRound && !currentFeedbackRound) {
+            currentFeedbackRound = cloudState.currentFeedbackRound;
+          }
+          if (cloudState.feedbackRoundsHistory && cloudState.feedbackRoundsHistory.length > 0 && (!feedbackRoundsHistory || feedbackRoundsHistory.length === 0)) {
+            feedbackRoundsHistory = cloudState.feedbackRoundsHistory;
+          }
+        }
+      } catch (e) {
+        console.warn('POST lookup failed in /api/section-reviews:', e);
+      }
+    }
+
     const timestamp = new Date().toLocaleString([], {
       dateStyle: 'medium',
       timeStyle: 'short',
