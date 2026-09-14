@@ -111,7 +111,16 @@ export async function GET() {
               const { title, caption, steps = [], isDistinctProcess, supportingNote, signoffRequired } = b.payload || {};
               const activeSteps = steps.filter((st: any) => st.owner !== 'N/A');
 
-              const flowHtml = activeSteps.map((s: any, idx: number) => `
+              const flowHtml = activeSteps.map((s: any, idx: number) => {
+                const contactName = s.owner === 'BI' 
+                  ? 'Aishwarya Raj Singh, Business Analyst' 
+                  : (s.owner === 'CU Team' || s.owner.includes('CU Team')) 
+                    ? 'Suranjita Saha, CU Team Lead' 
+                    : s.owner === 'Senior Reviewer / Lead' 
+                      ? 'Stuart H Lindsay, Product Owner UK Bureau Team' 
+                      : null;
+
+                return `
                 <div style="padding: 10px 14px; border: 1px solid #CBD5E1; border-radius: 8px; background: ${s.num === '14.5' ? '#F3E8FF' : '#F8FAFC'}; margin: 0 auto; max-width: 480px; text-align: left; font-size: 8.5pt; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
                     <span style="font-family: monospace; font-weight: bold; color: #475569; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 7.5pt;">Step ${s.num}</span>
@@ -119,9 +128,11 @@ export async function GET() {
                   </div>
                   <strong style="color: #0F172A; font-size: 9.5pt; display: block; margin-bottom: 2px;">${s.name}</strong>
                   <div style="color: #475569; font-size: 8pt; line-height: 1.3;">${s.desc}</div>
+                  ${contactName ? `<div style="margin-top: 4px; font-size: 7.5pt; font-weight: 600; color: #475569; background: #EEF2FF; padding: 2px 6px; border-radius: 4px; display: inline-block;">Owner: ${contactName}</div>` : ''}
                 </div>
                 ${idx < activeSteps.length - 1 ? '<div style="text-align: center; color: #64748B; font-size: 14pt; margin: 4px 0; font-weight: bold;">↓</div>' : ''}
-              `).join('');
+              `;
+              }).join('');
 
               return `<div class="diagram-container" style="margin: 24px 0;">
                 <div class="diagram-box" style="padding: 18px; border: 1px solid #E2E8F0; border-radius: 12px; background: #FFFFFF; max-width: 580px; margin: 0 auto;">

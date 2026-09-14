@@ -31,7 +31,7 @@ export const STATIC_INVOLVED_PARTIES = [
 ];
 
 export const STATIC_REVIEWED_BY = [
-  { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau', Date: initialDate },
+  { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau Team', Date: initialDate },
   { id: '2', Reviewer: 'Suranjita Saha', 'Role or Business Unit': 'CU Team Lead', Date: initialDate },
   { id: '3', Reviewer: 'Manash R Chanda', 'Role or Business Unit': 'UKBI Design Manager', Date: initialDate },
 ];

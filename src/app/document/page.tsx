@@ -1049,7 +1049,7 @@ export default function LivingDocumentPage() {
 
   const [reviewerCols, setReviewerCols] = useState(['Reviewer', 'Role or Business Unit', 'Date']);
   const [reviewedBy, setReviewedBy] = useState<any[]>([
-    { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau', Date: getTodayFormatted() },
+    { id: '1', Reviewer: 'Stuart H Lindsay', 'Role or Business Unit': 'Product Owner UK Bureau Team', Date: getTodayFormatted() },
     { id: '2', Reviewer: 'Suranjita Saha', 'Role or Business Unit': 'CU Team Lead', Date: getTodayFormatted() },
     { id: '3', Reviewer: 'Manash R Chanda', 'Role or Business Unit': 'UKBI Design Manager', Date: getTodayFormatted() },
   ]);
@@ -2015,13 +2015,13 @@ export default function LivingDocumentPage() {
                       <div className="bg-white dark:bg-slate-950 border border-sky-300 dark:border-sky-800 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
                         <div className="bg-sky-700 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                           <span>3. Debt Sale</span>
-                          <span className="text-[9px] bg-sky-900/60 px-1.5 py-0.5 rounded">Branch Step</span>
+                          <span className="text-[9px] bg-sky-900/60 px-1.5 py-0.5 rounded font-mono font-semibold">CU Team</span>
                         </div>
                         <div className="p-3 space-y-1.5 flex-1">
                           <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Debt sale files &amp; delete markers applied for sold accounts.</p>
                           <div className="pt-1">
                             <span className="inline-block bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-sky-300 dark:border-sky-800">
-                              Narsimha Chary (UKBI ITPM)
+                              Suranjita Saha, CU Team Lead
                             </span>
                           </div>
                         </div>
@@ -2036,7 +2036,7 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border-2 border-purple-500 rounded-xl overflow-hidden shadow-md text-xs flex flex-col justify-between">
                       <div className="bg-purple-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>1. Cards Staging Table</span>
-                        <span className="text-[9px] bg-purple-950/80 px-1.5 py-0.5 rounded">Source Feed</span>
+                        <span className="text-[9px] bg-purple-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI</span>
                       </div>
                       <div className="p-3 space-y-1.5 flex-1">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
@@ -2044,7 +2044,7 @@ export default function LivingDocumentPage() {
                         </p>
                         <div className="pt-1">
                           <span className="inline-block bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-purple-300 dark:border-purple-800">
-                            BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                            Aishwarya Raj Singh, Business Analyst
                           </span>
                         </div>
                       </div>
@@ -2055,24 +2055,16 @@ export default function LivingDocumentPage() {
                       <div className="bg-white dark:bg-slate-950 border border-emerald-300 dark:border-emerald-800 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
                         <div className="bg-emerald-700 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                           <span>2. Exclusions</span>
-                          <span className="text-[9px] bg-emerald-900/60 px-1.5 py-0.5 rounded">Branch Step</span>
+                          <span className="text-[9px] bg-emerald-900/60 px-1.5 py-0.5 rounded font-mono font-semibold">CU Team</span>
                         </div>
                         <div className="p-3 space-y-1.5 flex-1">
                           <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
                             {brand === 'first_direct' ? 'FD exclusion file (Positive data sharing flags).' : 'Brand exclusion files (Virtual/Secondary Cards).'}
                           </p>
-                          <div className="pt-1 space-y-1 text-[9px] font-mono">
-                            {brand === 'first_direct' ? (
-                              <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-                                Fit-One QUERIES (fit-one.queries@firstdirect.com)
-                              </span>
-                            ) : (
-                              <div className="bg-emerald-50 dark:bg-emerald-950/60 p-1.5 rounded border border-emerald-200 dark:border-emerald-900 space-y-0.5 text-emerald-900 dark:text-emerald-200 text-[9px]">
-                                <div>Primary - Swapnil Kalidas Sankpal (Tech Lead)</div>
-                                <div>CWO - Vishnu Vardhan | RCS - Manash R Chanda</div>
-                                <div>HSBC Cards / Retail - Aishwarya Raj Singh (Business Analyst)</div>
-                              </div>
-                            )}
+                          <div className="pt-1">
+                            <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-emerald-300 dark:border-emerald-800">
+                              Suranjita Saha, CU Team Lead
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2091,12 +2083,12 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border border-amber-500 rounded-xl overflow-hidden shadow-xs text-xs">
                       <div className="bg-amber-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>4. Staging Table Validation</span>
-                        <span className="text-[9px] bg-amber-950/80 px-1.5 py-0.5 rounded">Validation Gate</span>
+                        <span className="text-[9px] bg-amber-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI</span>
                       </div>
                       <div className="p-3 space-y-1.5">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Execute staging completeness checks &amp; data quality rules.</p>
                         <span className="inline-block bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-amber-300 dark:border-amber-800">
-                          Dataquality CUT (dataqualitycut@hsbc.com)
+                          Aishwarya Raj Singh, Business Analyst
                         </span>
                       </div>
                     </div>
@@ -2110,14 +2102,14 @@ export default function LivingDocumentPage() {
                     <div className="md:col-span-2 bg-white dark:bg-slate-950 border-2 border-emerald-500 rounded-xl overflow-hidden shadow-md text-xs flex flex-col justify-between">
                       <div className="bg-emerald-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>5. Data Loaded to DWH_PDS_STAG for CADS &amp; 6. DWH_IP_ARRG_CALC_V</span>
-                        <span className="text-[9px] bg-emerald-950/80 px-1.5 py-0.5 rounded">Core DWH Load</span>
+                        <span className="text-[9px] bg-emerald-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI &amp; CU Team</span>
                       </div>
                       <div className="p-3 space-y-1.5 flex-1">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
                           Populate DWH_PDS_STAG table for retail, prepare input for CRA process, and update calculation view DWH_IP_ARRG_CALC_V.
                         </p>
                         <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-emerald-300 dark:border-emerald-800">
-                          Dataquality CUT (dataqualitycut@hsbc.com)
+                          Suranjita Saha, CU Team Lead
                         </span>
                       </div>
                     </div>
@@ -2126,12 +2118,12 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border border-blue-400 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
                       <div className="bg-blue-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>7. CADS Processing</span>
-                        <span className="text-[9px] bg-blue-950/80 px-1.5 py-0.5 rounded">CU Team CADS</span>
+                        <span className="text-[9px] bg-blue-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">CU Team</span>
                       </div>
                       <div className="p-3 space-y-1.5 flex-1">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Run CADS scoring and attribute calculation rules.</p>
                         <span className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-blue-300 dark:border-blue-800">
-                          Dataquality CUT (dataqualitycut@hsbc.com)
+                          Suranjita Saha, CU Team Lead
                         </span>
                       </div>
                     </div>
@@ -2145,12 +2137,12 @@ export default function LivingDocumentPage() {
                     <div className="md:col-span-2 bg-white dark:bg-slate-950 border border-amber-600 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
                       <div className="bg-amber-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>8. Create File from DWH_IP_ARRG_CALC_V</span>
-                        <span className="text-[9px] bg-amber-950/80 px-1.5 py-0.5 rounded">File Generation</span>
+                        <span className="text-[9px] bg-amber-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI</span>
                       </div>
                       <div className="p-3 space-y-1.5 flex-1">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Extract records from calculation view and structure raw CRA file layout.</p>
                         <span className="inline-block bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-amber-300 dark:border-amber-800">
-                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                          Aishwarya Raj Singh, Business Analyst
                         </span>
                       </div>
                     </div>
@@ -2159,14 +2151,14 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border border-purple-400 rounded-xl overflow-hidden shadow-xs text-xs flex flex-col justify-between">
                       <div className="bg-purple-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>9. Address Processing</span>
-                        <span className="text-[9px] bg-purple-950/80 px-1.5 py-0.5 rounded">Address Module</span>
+                        <span className="text-[9px] bg-purple-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI</span>
                       </div>
                       <div className="p-3 space-y-1.5 flex-1">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
                           {brand === 'ms_current_account' ? 'Address processing in place but file never used.' : 'Execute address standardization and postcode validation.'}
                         </p>
                         <span className="inline-block bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-purple-300 dark:border-purple-800">
-                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                          Aishwarya Raj Singh, Business Analyst
                         </span>
                       </div>
                     </div>
@@ -2180,12 +2172,12 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border border-indigo-500 rounded-xl overflow-hidden shadow-xs text-xs">
                       <div className="bg-indigo-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>10. Load CARDS data to CAIS Snap Shot</span>
-                        <span className="text-[9px] bg-indigo-950/80 px-1.5 py-0.5 rounded">Snapshot Store</span>
+                        <span className="text-[9px] bg-indigo-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI</span>
                       </div>
                       <div className="p-3 space-y-1.5">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Persist monthly snapshot copy into core CAIS snapshot repository.</p>
                         <span className="inline-block bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-indigo-300 dark:border-indigo-800">
-                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                          Aishwarya Raj Singh, Business Analyst
                         </span>
                       </div>
                     </div>
@@ -2199,12 +2191,12 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border border-blue-500 rounded-xl overflow-hidden shadow-xs text-xs">
                       <div className="bg-blue-900 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>11. Final Validations</span>
-                        <span className="text-[9px] bg-blue-950/80 px-1.5 py-0.5 rounded">Business Check</span>
+                        <span className="text-[9px] bg-blue-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI &amp; CU Team</span>
                       </div>
                       <div className="p-3 space-y-1.5">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Run business logic reconciliation and final bureau format checks.</p>
                         <span className="inline-block bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-blue-300 dark:border-blue-800">
-                          Fit-One QUERIES ({brand === 'first_direct' ? 'fit-one.queries@firstdirect.com' : 'fit-one.queries@hsbc.com'})
+                          Suranjita Saha, CU Team Lead
                         </span>
                       </div>
                     </div>
@@ -2218,12 +2210,12 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border border-rose-400 rounded-xl overflow-hidden shadow-xs text-xs">
                       <div className="bg-rose-800 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>12. Ad-hoc File Processing</span>
-                        <span className="text-[9px] bg-rose-950/80 px-1.5 py-0.5 rounded">Ad-hoc Patch</span>
+                        <span className="text-[9px] bg-rose-950/80 px-1.5 py-0.5 rounded font-mono font-semibold">BI &amp; CU Team</span>
                       </div>
                       <div className="p-3 space-y-1.5">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Post-validation ad-hoc re-run capability available if manual correction is required.</p>
                         <span className="inline-block bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-rose-300 dark:border-rose-800">
-                          Dataquality CUT (dataqualitycut@hsbc.com)
+                          Suranjita Saha, CU Team Lead
                         </span>
                       </div>
                     </div>
@@ -2241,7 +2233,7 @@ export default function LivingDocumentPage() {
                           </div>
                           <p className="text-[10.5px] text-purple-100 leading-snug">Mandatory senior governance sign-off required prior to CRA file release.</p>
                           <span className="inline-block bg-purple-950 text-purple-200 text-[9px] px-2 py-0.5 rounded font-mono font-semibold border border-purple-700">
-                            Senior Reviewer / Lead Sign-off
+                            Stuart H Lindsay (Product Owner UK Bureau Team) / Senior Lead Sign-off
                           </span>
                         </div>
                       </div>
@@ -2256,12 +2248,12 @@ export default function LivingDocumentPage() {
                     <div className="bg-white dark:bg-slate-950 border-2 border-amber-700 rounded-xl overflow-hidden shadow-md text-xs">
                       <div className="bg-amber-950 text-white font-bold px-3 py-1.5 text-[11px] flex items-center justify-between">
                         <span>{brand === 'first_direct' ? '15. File Transmitted to CRAs' : '13. File Transmitted to CRAs'}</span>
-                        <span className="text-[9px] bg-amber-900 px-1.5 py-0.5 rounded">Bureau Transmission</span>
+                        <span className="text-[9px] bg-amber-900 px-1.5 py-0.5 rounded font-mono font-semibold">Transmission Team</span>
                       </div>
                       <div className="p-3 space-y-1.5">
                         <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">Secure file transmission to Experian, Equifax, and TransUnion via Connect:Direct.</p>
                         <span className="inline-block bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 text-[9.5px] px-2 py-0.5 rounded font-mono font-semibold border border-amber-300 dark:border-amber-800">
-                          BI LIVE SUPPORT (bi.livesupport@hsbc.com)
+                          Transmission Team
                         </span>
                       </div>
                     </div>
