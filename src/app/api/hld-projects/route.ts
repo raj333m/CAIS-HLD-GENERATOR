@@ -188,13 +188,17 @@ export async function POST(req: NextRequest) {
         } else {
           return {
             ...JSON.parse(JSON.stringify(sec)),
-            subSections: [
-              {
-                id: `sub-blank-${sec.sectionNumber}`,
-                heading: 'Content Pending',
-                contentBlocks: JSON.stringify([{ type: 'paragraph', payload: { text: '[Content pending specification for this section]' } }]),
-              },
-            ],
+            subSections: sec.subSections.map((sub: any) => ({
+              id: `sub-blank-${sub.id}`,
+              documentSectionId: sec.id,
+              heading: sub.heading,
+              displayOrder: sub.displayOrder,
+              contentBlocks: JSON.stringify([
+                { type: 'paragraph', payload: { text: '[No content written yet for this section]' } }
+              ]),
+              lastUpdatedById: 'user-ba',
+              versions: [],
+            })),
           };
         }
       });

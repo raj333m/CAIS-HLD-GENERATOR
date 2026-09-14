@@ -1561,12 +1561,17 @@ export default function LivingDocumentPage() {
     }
   };
 
-  const fetchChanges = async () => {
+  const fetchChanges = async (projId = activeProjectId) => {
     try {
-      const res = await fetch('/api/changes');
+      const targetId = projId || activeProjectId;
+      const res = await fetch(`/api/changes?projectId=${targetId}`);
       if (res.ok) {
         const data = await res.json();
-        setCaisChanges(data.changes || []);
+        if (targetId && targetId !== 'proj-alpha') {
+          setCaisChanges((data.changes || []).filter((c: any) => c.projectId === targetId));
+        } else {
+          setCaisChanges(data.changes || []);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -1594,7 +1599,7 @@ export default function LivingDocumentPage() {
           setSections(data.sections || []);
         }
       }
-      await fetchChanges();
+      await fetchChanges(projId);
     } catch (e) {
       console.error(e);
     } finally {
@@ -1875,6 +1880,15 @@ export default function LivingDocumentPage() {
       const blocks = typeof blocksJsonStr === 'string' ? JSON.parse(blocksJsonStr) : blocksJsonStr || [];
       return blocks.map((block: any, idx: number) => {
         if (block.type === 'paragraph') {
+          const isPendingText = typeof block.payload?.text === 'string' && block.payload.text.startsWith('[') && block.payload.text.endsWith(']');
+          if (isPendingText) {
+            return (
+              <div key={idx} className="my-2 p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between">
+                <span>{block.payload.text}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-mono tracking-wider font-semibold">Not Yet Written</span>
+              </div>
+            );
+          }
           return (
             <p key={idx} className="text-[11pt] text-slate-800 dark:text-slate-200 leading-relaxed font-sans mb-3">
               {block.payload.text}

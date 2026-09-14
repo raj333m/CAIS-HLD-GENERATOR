@@ -99,6 +99,11 @@ export async function GET(request: Request) {
 
     changes = enrichedChanges.filter(Boolean);
 
+    const projectId = searchParams.get('projectId');
+    if (projectId && projectId !== 'proj-alpha') {
+      changes = changes.filter((c: any) => c.projectId === projectId);
+    }
+
     if (status) {
       changes = changes.filter((c: any) => c.status === status);
     }

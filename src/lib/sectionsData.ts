@@ -1031,17 +1031,15 @@ export const BLANK_SECTIONS: any[] = MASTER_SECTIONS.map((sec: any) => ({
   displayOrder: sec.displayOrder,
   lastUpdatedById: sec.lastUpdatedById,
   lastUpdatedBy: sec.lastUpdatedBy,
-  subSections: [
-    {
-      id: `sub-blank-${sec.sectionNumber}`,
-      documentSectionId: sec.id,
-      heading: 'Section Overview',
-      displayOrder: 1,
-      contentBlocks: JSON.stringify([
-        { type: 'paragraph', payload: { text: '[Content pending user specification]' } }
-      ]),
-      lastUpdatedById: 'user-ba',
-      versions: [],
-    }
-  ]
+  subSections: sec.subSections.map((sub: any) => ({
+    id: `sub-blank-${sub.id}`,
+    documentSectionId: sec.id,
+    heading: sub.heading,
+    displayOrder: sub.displayOrder,
+    contentBlocks: JSON.stringify([
+      { type: 'paragraph', payload: { text: '[No content written yet for this section]' } }
+    ]),
+    lastUpdatedById: 'user-ba',
+    versions: [],
+  }))
 }));
