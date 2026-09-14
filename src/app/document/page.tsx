@@ -764,6 +764,13 @@ export default function LivingDocumentPage() {
               if (user?.role === 'REVIEWER' || user?.role === 'ADMIN' || mode === 'review') {
                 setIsReviewerMode(true);
               }
+
+              // Default landing section for this change if no explicit section parameter was in URL
+              const targetNums = getTargetSectionNumbers(found.sectionsUpdated || found.biImpactedChange);
+              if (!sectionParam && targetNums.length > 0) {
+                setActiveSectionNum(targetNums[0]);
+              }
+
               fetchSectionReviews(found.id || found.crReference || cId);
               if (found.reviewComments) {
                 try {
@@ -780,7 +787,6 @@ export default function LivingDocumentPage() {
 
                   // Land directly on section with feedback if no explicit section parameter was in URL
                   if (!sectionParam) {
-                    const targetNums = getTargetSectionNumbers(found.sectionsUpdated || found.biImpactedChange);
                     const scopedList = targetNums.length > 0
                       ? targetNums
                       : ['1.1', '1.2', '1.3', '1.4', '1.5', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '3.1', '3.2', '4.0'];
@@ -811,6 +817,16 @@ export default function LivingDocumentPage() {
   }, [user]);
 
   const isAllowedReviewer = user?.role === 'REVIEWER' || user?.realRole === 'REVIEWER' || user?.role === 'ADMIN' || user?.realRole === 'ADMIN';
+
+  const checkLockedReviewModeForBa = (actionName: string): boolean => {
+    const isReviewView = isReviewerMode || Boolean(targetChange) || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'review');
+    if (isReviewView && !isAllowedReviewer) {
+      setDraftSavedNotice(`Preview Mode: ${actionName} is disabled for BA role during review mode. Log in as Reviewer or edit in draft mode.`);
+      setTimeout(() => setDraftSavedNotice(null), 3500);
+      return true;
+    }
+    return false;
+  };
 
   const handleApproveSection = async (sectionNum: string) => {
     if (!isAllowedReviewer) {
@@ -1318,6 +1334,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleToggleCategoryLevel = (index: number) => {
+    if (checkLockedReviewModeForBa('Converting section type')) return;
     const newItems = [...tocItems];
     newItems[index] = {
       ...newItems[index],
@@ -1328,6 +1345,7 @@ export default function LivingDocumentPage() {
 
   // Reorder handlers: Move Up / Down and HTML5 Drag & Drop
   const handleMoveToc = (index: number, direction: 'up' | 'down') => {
+    if (checkLockedReviewModeForBa('Reordering sections')) return;
     const newItems = [...tocItems];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newItems.length) return;
@@ -1337,6 +1355,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleTocDragStart = (e: React.DragEvent, index: number) => {
+    if (checkLockedReviewModeForBa('Reordering sections')) return;
     setDraggedTocIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -1348,6 +1367,7 @@ export default function LivingDocumentPage() {
 
   const handleTocDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    if (checkLockedReviewModeForBa('Reordering sections')) return;
     if (draggedTocIndex === null || draggedTocIndex === dropIndex) return;
     const newItems = [...tocItems];
     const [moved] = newItems.splice(draggedTocIndex, 1);
@@ -1358,6 +1378,7 @@ export default function LivingDocumentPage() {
 
   // TOC CRUD Handlers (Add, Modify, Delete, Convert)
   const handleAddTocSection = () => {
+    if (checkLockedReviewModeForBa('Adding new section')) return;
     const isHeading = window.confirm('Click OK to create a new Main Heading (Category), or Cancel to create a Work Item (Sub-section).');
     const defaultTitle = isHeading ? 'New Category Heading' : 'New Work Item';
     const newTitle = prompt(`Enter title for new ${isHeading ? 'Heading' : 'Work Item'}:`, defaultTitle);
@@ -1376,12 +1397,14 @@ export default function LivingDocumentPage() {
   };
 
   const handleStartEditToc = (item: any) => {
+    if (checkLockedReviewModeForBa('Modifying section title')) return;
     setEditingTocNum(item.num);
     setEditingTocTitle(item.title);
     setEditingTocIsHeader(!!item.isHeader);
   };
 
   const handleSaveEditToc = (num: string) => {
+    if (checkLockedReviewModeForBa('Modifying section title')) return;
     const newItems = tocItems.map((i) =>
       i.num === num ? { ...i, title: editingTocTitle, isHeader: editingTocIsHeader } : i
     );
@@ -1390,6 +1413,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteTocItem = (num: string) => {
+    if (checkLockedReviewModeForBa('Deleting section')) return;
     if (!window.confirm(`Are you sure you want to remove section item ${num} from Table of Contents?`)) return;
     const newItems = tocItems.filter((i) => i.num !== num);
     resequenceAndSyncToc(newItems);
@@ -1400,6 +1424,7 @@ export default function LivingDocumentPage() {
 
   // Handlers for Involved Parties
   const handleAddPartyRow = () => {
+    if (checkLockedReviewModeForBa('Adding party row')) return;
     const newId = String(Date.now());
     const newRow: any = { id: newId };
     partyCols.forEach((col) => {
@@ -1410,6 +1435,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleAddPartyCol = () => {
+    if (checkLockedReviewModeForBa('Adding party column')) return;
     const colName = prompt('Enter new column name for Involved Parties table:', `Column ${partyCols.length + 1}`) || `Column ${partyCols.length + 1}`;
     if (partyCols.includes(colName)) return;
     setPartyCols([...partyCols, colName]);
@@ -1417,6 +1443,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeletePartyCol = (cIdx: number) => {
+    if (checkLockedReviewModeForBa('Deleting party column')) return;
     if (partyCols.length <= 1) return;
     const colToDelete = partyCols[cIdx];
     setPartyCols(partyCols.filter((_, idx) => idx !== cIdx));
@@ -1430,14 +1457,17 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteParty = (id: string) => {
+    if (checkLockedReviewModeForBa('Deleting party row')) return;
     setInvolvedParties(involvedParties.filter((p) => p.id !== id));
   };
   const handleUpdateParty = (id: string, colName: string, value: string) => {
+    if (checkLockedReviewModeForBa('Editing party details')) return;
     setInvolvedParties(involvedParties.map((p) => (p.id === id ? { ...p, [colName]: value } : p)));
   };
 
   // Handlers for Revision History
   const handleAddRevisionRow = () => {
+    if (checkLockedReviewModeForBa('Adding revision row')) return;
     const newId = String(Date.now());
     const newRow: any = { id: newId, Version: '0.2', Date: '[Date]', 'Updated By': '[Name]', 'Reason for Issue': 'Updated document specifications' };
     revisionCols.forEach((col) => {
@@ -1452,6 +1482,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleAddRevisionCol = () => {
+    if (checkLockedReviewModeForBa('Adding revision column')) return;
     const colName = prompt('Enter new column name for Revision History table:', `Column ${revisionCols.length + 1}`) || `Column ${revisionCols.length + 1}`;
     if (revisionCols.includes(colName)) return;
     setRevisionCols([...revisionCols, colName]);
@@ -1459,6 +1490,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteRevisionCol = (cIdx: number) => {
+    if (checkLockedReviewModeForBa('Deleting revision column')) return;
     if (revisionCols.length <= 1) return;
     const colToDelete = revisionCols[cIdx];
     setRevisionCols(revisionCols.filter((_, idx) => idx !== cIdx));
@@ -1472,14 +1504,17 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteRevision = (id: string) => {
+    if (checkLockedReviewModeForBa('Deleting revision entry')) return;
     setRevisionHistory(revisionHistory.filter((r) => r.id !== id));
   };
   const handleUpdateRevision = (id: string, colName: string, value: string) => {
+    if (checkLockedReviewModeForBa('Editing revision entry')) return;
     setRevisionHistory(revisionHistory.map((r) => (r.id === id ? { ...r, [colName]: value } : r)));
   };
 
   // Handlers for Reviewed By
   const handleAddReviewerRow = () => {
+    if (checkLockedReviewModeForBa('Adding reviewer row')) return;
     const newId = String(Date.now());
     const newRow: any = { id: newId, Reviewer: '[Name]', 'Role or Business Unit': 'Reviewer / Lead Role', Date: '[Date]' };
     reviewerCols.forEach((col) => {
@@ -1494,6 +1529,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleAddReviewerCol = () => {
+    if (checkLockedReviewModeForBa('Adding reviewer column')) return;
     const colName = prompt('Enter new column name for Reviewed By table:', `Column ${reviewerCols.length + 1}`) || `Column ${reviewerCols.length + 1}`;
     if (reviewerCols.includes(colName)) return;
     setReviewerCols([...reviewerCols, colName]);
@@ -1501,6 +1537,7 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteReviewerCol = (cIdx: number) => {
+    if (checkLockedReviewModeForBa('Deleting reviewer column')) return;
     if (reviewerCols.length <= 1) return;
     const colToDelete = reviewerCols[cIdx];
     setReviewerCols(reviewerCols.filter((_, idx) => idx !== cIdx));
@@ -1514,9 +1551,11 @@ export default function LivingDocumentPage() {
   };
 
   const handleDeleteReviewer = (id: string) => {
+    if (checkLockedReviewModeForBa('Deleting reviewer row')) return;
     setReviewedBy(reviewedBy.filter((r) => r.id !== id));
   };
   const handleUpdateReviewer = (id: string, colName: string, value: string) => {
+    if (checkLockedReviewModeForBa('Editing reviewer row')) return;
     setReviewedBy(reviewedBy.map((r) => (r.id === id ? { ...r, [colName]: value } : r)));
   };
 
@@ -3080,7 +3119,10 @@ export default function LivingDocumentPage() {
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => setEditingPartyId(p.id)}
+                              onClick={() => {
+                                if (checkLockedReviewModeForBa('Editing party details')) return;
+                                setEditingPartyId(p.id);
+                              }}
                               className="p-1 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800"
                               title="Edit party details"
                             >
@@ -3211,7 +3253,10 @@ export default function LivingDocumentPage() {
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => setEditingRevisionId(r.id)}
+                              onClick={() => {
+                                if (checkLockedReviewModeForBa('Editing revision entry')) return;
+                                setEditingRevisionId(r.id);
+                              }}
                               className="p-1 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800"
                               title="Edit revision entry"
                             >
@@ -3339,7 +3384,10 @@ export default function LivingDocumentPage() {
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => setEditingReviewerId(r.id)}
+                              onClick={() => {
+                                if (checkLockedReviewModeForBa('Editing reviewer row')) return;
+                                setEditingReviewerId(r.id);
+                              }}
                               className="p-1 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800"
                               title="Edit reviewer row"
                             >
@@ -3851,10 +3899,10 @@ export default function LivingDocumentPage() {
                               type="button"
                               onClick={() => handleOpenFeedbackModal('4.0', '4 Appendix')}
                               className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
-                              title="Share feedback with BA for Appendix section"
+                              title={isAllowedReviewer ? "Share feedback with BA for Appendix section" : "View reviewer feedback / status for Appendix section"}
                             >
                               <MessageSquare className="w-3.5 h-3.5 text-rose-500" />
-                              <span>Share Feedback</span>
+                              <span>{isAllowedReviewer ? 'Share Feedback' : 'Reviewer Feedback'}</span>
                             </button>
                           </div>
                         )}
@@ -4079,10 +4127,10 @@ export default function LivingDocumentPage() {
                           type="button"
                           onClick={() => handleOpenFeedbackModal(item.num, item.title)}
                           className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
-                          title="Share feedback with BA for this section"
+                          title={isAllowedReviewer ? "Share feedback with BA for this section" : "View reviewer feedback / status for this section"}
                         >
                           <MessageSquare className="w-3.5 h-3.5 text-rose-500" />
-                          <span>Share Feedback</span>
+                          <span>{isAllowedReviewer ? 'Share Feedback' : 'Reviewer Feedback'}</span>
                         </button>
                       </>
                     )}

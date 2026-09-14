@@ -89,6 +89,7 @@ export default function PendingApprovalPage() {
       feedbackCount: feedbackSections.length,
       firstFeedbackSection,
       feedbackSections,
+      scopedSectionsList,
     };
   };
 
@@ -231,9 +232,8 @@ export default function PendingApprovalPage() {
                     : '—';
                   const creationDateDisplay = c.creationDate || (c.createdAt ? c.createdAt.substring(0, 10) : '2026-09-14');
 
-                  const detailUrl = summary.firstFeedbackSection
-                    ? `/document?changeId=${encodeURIComponent(c.id || c.crReference)}&mode=review&section=${summary.firstFeedbackSection}`
-                    : `/document?changeId=${encodeURIComponent(c.id || c.crReference)}&mode=review`;
+                  const targetLandingSection = summary.firstFeedbackSection || (summary.scopedSectionsList && summary.scopedSectionsList.length > 0 ? summary.scopedSectionsList[0] : '1.1');
+                  const detailUrl = `/document?changeId=${encodeURIComponent(c.id || c.crReference)}&mode=review&section=${targetLandingSection}`;
 
                   return (
                     <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
