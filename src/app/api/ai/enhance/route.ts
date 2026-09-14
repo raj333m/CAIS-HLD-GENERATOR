@@ -2,65 +2,54 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json();
+    const body = await req.json();
+    const { text, fieldName, currentValue, formContext } = body;
 
-    if (!text || typeof text !== 'string' || !text.trim()) {
-      return NextResponse.json({ error: 'Text string is required' }, { status: 400 });
-    }
+    const inputVal = (currentValue || text || '').trim();
+    const ctx = formContext || {};
 
-    const trimmed = text.trim();
+    const titleStr = ctx.title || 'CAIS Reporting Change';
+    const productsStr = Array.isArray(ctx.impactedProducts) ? ctx.impactedProducts.join(', ') : ctx.impactedProducts || 'HSBC Cards (51)';
+    const varsStr = Array.isArray(ctx.impactedVariables) ? ctx.impactedVariables.join(', ') : ctx.impactedVariables || '17. Original Default Balance, 42. Default Satisfaction Date';
+    const biStr = Array.isArray(ctx.biImpactedChange) ? ctx.biImpactedChange.join(', ') : ctx.biImpactedChange || 'Staging, Exceptions';
+    const beforeStr = ctx.beforeText || '';
+    const afterStr = ctx.afterText || '';
 
-    // Check environment variables for Gemini API key if available
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
-    if (apiKey) {
-      try {
-        const prompt = `You are a Senior Regulatory Business Analyst. Rewrite and polish the following text into professional, logical, crisp, and concise regulatory documentation language suitable for a UK CAIS High-Level Design document.
-
-RULES:
-1. Maintain the EXACT SAME facts, figures, product codes, dates, brand names, and technical logic.
-2. Do NOT invent or add any new facts, figures, assumptions, or claims not present in the draft.
-3. Improve clarity, grammar, flow, and professional tone.
-4. Output ONLY the polished text with no surrounding markdown explanations or quotes.
-
-DRAFT TEXT:
-${trimmed}`;
-
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 1000 },
-          }),
+    // Smart contextual draft generator if field is empty or short
+    if (!inputVal || inputVal.length < 5) {
+      if (fieldName === 'title') {
+        return NextResponse.json({ enhancedText: `${titleStr} — Data Transformation & Validation Update` });
+      }
+      if (fieldName === 'description') {
+        return NextResponse.json({
+          enhancedText: `Update CAIS monthly reporting extract logic for ${productsStr} impacting ${varsStr} across ${biStr}. Aligns extraction and staging validation rules in accordance with regulatory reporting specifications.`,
         });
-
-        if (res.ok) {
-          const data = await res.json();
-          const enhanced = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (enhanced) {
-            return NextResponse.json({ enhancedText: enhanced });
-          }
-        }
-      } catch (e) {
-        console.error('Gemini API call failed, using rule-based enhancer fallback:', e);
+      }
+      if (fieldName === 'beforeText') {
+        return NextResponse.json({
+          enhancedText: beforeStr || `Prior logic extracted ${productsStr} without applying updated validation checks for ${varsStr}.`,
+        });
+      }
+      if (fieldName === 'afterText') {
+        return NextResponse.json({
+          enhancedText: afterStr || `Corrected logic applies standardized transformation and staging validation for ${varsStr} across ${productsStr} prior to monthly snapshot loading.`,
+        });
       }
     }
 
-    // High-quality fallback rule-based enhancement if API key is not present or offline
-    let enhanced = trimmed;
-    // Sentence cleanup & capitalization
-    enhanced = enhanced.replace(/\b(wanna|gonna|gotta)\b/gi, (match) => {
+    // Polishing existing text
+    let enhanced = inputVal;
+
+    enhanced = enhanced.replace(/\b(wanna|gonna|gotta)\b/gi, (match: string) => {
       if (match.toLowerCase() === 'wanna') return 'intend to';
       if (match.toLowerCase() === 'gonna') return 'will';
       if (match.toLowerCase() === 'gotta') return 'must';
       return match;
     });
 
-    // Normalize spacing and list markers
     enhanced = enhanced
       .split('\n')
-      .map(line => {
+      .map((line: string) => {
         let l = line.trim();
         if (l.startsWith('- ') || l.startsWith('* ')) {
           l = '• ' + l.substring(2);
@@ -72,7 +61,6 @@ ${trimmed}`;
       })
       .join('\n');
 
-    // Ensure ending period for paragraphs
     if (!enhanced.endsWith('.') && !enhanced.endsWith(';') && !enhanced.endsWith(':')) {
       enhanced += '.';
     }

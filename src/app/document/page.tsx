@@ -494,6 +494,62 @@ export default function LivingDocumentPage() {
     '71 — Basic Bank Account',
   ];
 
+  const CAIS_VARIABLE_OPTIONS = [
+    '1. Close Date',
+    '2. Monthly Payment',
+    '3. Repayment Period',
+    '4. Current Balance',
+    '5. Account Status',
+    '6. Flag Settings',
+    '7. Transaction Flag',
+    '8. Payment Frequency',
+    '9. Account Number',
+    '10. Sequence Number',
+    '11. Account Type',
+    '12. Start Date',
+    '13. Credit Balance Indicator',
+    '14. Payment Amount',
+    '15. Name',
+    '16. Date of Birth',
+    '17. Original Default Balance',
+    '18. New Sequence Number',
+    '19. Special Instruction Indicator',
+    '20. Experian Block',
+    '21. Credit Payment Indicator',
+    '22. Previous Statement Balance',
+    '23. Previous Statement Balance Indicator',
+    '24. Number of Cash Advances',
+    '25. Value of Cash Advances',
+    '26. Payment Code',
+    '27. Promotion Activity Flag',
+    '28. Filler 1',
+    '29. Transient Association Flag',
+    '30. Air Time Flag',
+    '31. Address 1',
+    '32. Address 2',
+    '33. Address 3',
+    '34. Address 4',
+    '35. Postcode',
+    '36. Credit Limit',
+    '37. Filler 2',
+    '38. Transferred to Collection Account',
+    '39. Balance Type',
+    '40. Credit Turnover',
+    '41. Primary Account Indicator',
+    '42. Default Satisfaction Date',
+    '43. Filler 3',
+    '44. New Account Number',
+  ];
+
+  const BI_IMPACTED_CHANGE_OPTIONS = [
+    'Staging',
+    'Snap',
+    'Exceptions',
+    'Between Staging and Snap',
+    'UKBI Core Tables',
+    'Others',
+  ];
+
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
   const [newProjectForm, setNewProjectForm] = useState({
@@ -1045,19 +1101,68 @@ export default function LivingDocumentPage() {
   const [enlargedImage, setEnlargedImage] = useState<{ src: string; caption: string } | null>(null);
 
   // Submit Modal Metadata State
-  const [submitForm, setSubmitForm] = useState({
+  const [submitForm, setSubmitForm] = useState<{
+    crReference: string;
+    title: string;
+    impactedProducts: string[];
+    changeType: string;
+    impactedBrands: string[];
+    impactedVariables: string[];
+    biImpactedChange: string[];
+    targetMonth: string;
+    description: string;
+    beforeText: string;
+    afterText: string;
+  }>({
     crReference: 'CAIS-2026-004',
     title: 'Updated CAIS Reporting Specifications & Exclusions',
-    businessDriver: 'FCA Consumer Duty / CAIS Data Standard v2026.1',
+    impactedProducts: ['05 — Credit Card', '02 — Unsecured Loan'],
     changeType: 'Existing data item amended',
-    impactedBrands: 'HSBC Cards (51), First Direct Cards (211)',
-    impactedVariables: '17. Original Default Balance, 42. Default Satisfaction Date',
+    impactedBrands: ['HSBC Cards (51)'],
+    impactedVariables: ['17. Original Default Balance', '42. Default Satisfaction Date'],
+    biImpactedChange: ['Staging', 'Snap'],
     targetMonth: 'December 2026',
     description: 'Updated narrative specifications and exclusion logic across Retail and Cards staging streams.',
-    sectionsUpdated: 'Section 1.3 — Exclusion Rules Applied Post-Staging (All Brands); Section 2.5 — CAIS Variables 17 and 42',
     beforeText: '[Describe prior logic before change]',
     afterText: '[Describe corrected logic once implemented]',
   });
+
+  const handleOpenSubmitModal = () => {
+    const activeProj = hldProjects.find((p) => p.id === activeProjectId);
+
+    let nextCrNum = 1;
+    (caisChanges || []).forEach((ch) => {
+      const match = (ch.crReference || '').match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num >= nextCrNum) nextCrNum = num + 1;
+      }
+    });
+    const nextCrRef = `CAIS-2026-${String(nextCrNum).padStart(3, '0')}`;
+
+    const defaultProducts = activeProj?.targetProducts && activeProj.targetProducts.length > 0
+      ? activeProj.targetProducts
+      : ['05 — Credit Card', '02 — Unsecured Loan'];
+
+    const defaultBrandStr = activeProj?.targetBrand || 'HSBC Cards (51)';
+    const defaultBrands = defaultBrandStr.split(/[,;]/).map((s: string) => s.trim()).filter(Boolean);
+
+    setSubmitForm((prev) => ({
+      ...prev,
+      crReference: prev.crReference || nextCrRef,
+      title: prev.title || (activeProj ? `${activeProj.projectName} — Change Package` : 'Updated CAIS Reporting Specifications'),
+      impactedProducts: prev.impactedProducts && prev.impactedProducts.length > 0 ? prev.impactedProducts : defaultProducts,
+      impactedBrands: prev.impactedBrands && prev.impactedBrands.length > 0 ? prev.impactedBrands : defaultBrands,
+      targetMonth: prev.targetMonth || activeProj?.targetDate || 'December 2026',
+      biImpactedChange: prev.biImpactedChange && prev.biImpactedChange.length > 0 ? prev.biImpactedChange : ['Staging', 'Snap'],
+      impactedVariables: prev.impactedVariables && prev.impactedVariables.length > 0 ? prev.impactedVariables : ['17. Original Default Balance', '42. Default Satisfaction Date'],
+      description: prev.description || 'Updated narrative specifications and exclusion logic across Retail and Cards staging streams.',
+      beforeText: prev.beforeText || '[Describe prior logic before change]',
+      afterText: prev.afterText || '[Describe corrected logic once implemented]',
+    }));
+
+    setShowSubmitModal(true);
+  };
 
   // Interactive Document Information Tables State & Dynamic Column Handlers
   const [partyCols, setPartyCols] = useState(['Name', 'Role']);
@@ -1476,19 +1581,24 @@ export default function LivingDocumentPage() {
   const [savingEditChange, setSavingEditChange] = useState(false);
 
   const handleOpenEditChangeModal = (c: any) => {
+    const parseChips = (str?: string) => {
+      if (!str || str === 'N/A') return [];
+      return str.split(/[,;]/).map((item) => item.trim()).filter(Boolean);
+    };
+
     setEditingChange({
       id: c.id,
       crReference: c.crReference || '',
       title: c.title || '',
       status: c.status || 'DRAFT',
       changeType: c.changeType || 'Existing data item amended',
-      businessDriver: c.businessDriver || '',
+      impactedProducts: parseChips(c.impactedProducts || c.businessDriver),
       description: c.description || '',
-      sectionsUpdated: c.sectionsUpdated || '',
+      biImpactedChange: parseChips(c.biImpactedChange || c.sectionsUpdated),
       beforeText: c.beforeText || '',
       afterText: c.afterText || '',
-      impactedBureaus: c.impactedBureaus || '',
-      impactedDataItems: c.impactedDataItems || '',
+      impactedBureaus: parseChips(c.impactedBureaus),
+      impactedDataItems: parseChips(c.impactedDataItems),
       targetMonth: c.targetMonth || 'December 2026',
     });
     setShowEditChangeModal(true);
@@ -1499,10 +1609,25 @@ export default function LivingDocumentPage() {
     if (!editingChange?.id) return;
     setSavingEditChange(true);
     try {
+      const productsStr = Array.isArray(editingChange.impactedProducts) ? editingChange.impactedProducts.join(', ') : (editingChange.impactedProducts || '');
+      const biImpactStr = Array.isArray(editingChange.biImpactedChange) ? editingChange.biImpactedChange.join(', ') : (editingChange.biImpactedChange || '');
+      const brandsStr = Array.isArray(editingChange.impactedBureaus) ? editingChange.impactedBureaus.join(', ') : (editingChange.impactedBureaus || '');
+      const varsStr = Array.isArray(editingChange.impactedDataItems) ? editingChange.impactedDataItems.join(', ') : (editingChange.impactedDataItems || '');
+
+      const payload = {
+        ...editingChange,
+        businessDriver: productsStr,
+        impactedProducts: productsStr,
+        sectionsUpdated: biImpactStr,
+        biImpactedChange: biImpactStr,
+        impactedBureaus: brandsStr,
+        impactedDataItems: varsStr,
+      };
+
       const res = await fetch(`/api/changes/${editingChange.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingChange),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -1789,19 +1914,37 @@ export default function LivingDocumentPage() {
     e.preventDefault();
     setSubmittingChange(true);
     try {
+      const productsStr = Array.isArray(submitForm.impactedProducts)
+        ? submitForm.impactedProducts.join(', ')
+        : submitForm.impactedProducts || '';
+
+      const biImpactStr = Array.isArray(submitForm.biImpactedChange)
+        ? submitForm.biImpactedChange.join(', ')
+        : submitForm.biImpactedChange || '';
+
+      const brandsStr = Array.isArray(submitForm.impactedBrands)
+        ? submitForm.impactedBrands.join(', ')
+        : submitForm.impactedBrands || '';
+
+      const varsStr = Array.isArray(submitForm.impactedVariables)
+        ? submitForm.impactedVariables.join(', ')
+        : submitForm.impactedVariables || '';
+
       const res = await fetch('/api/changes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: submitForm.title,
           crReference: submitForm.crReference,
-          businessDriver: submitForm.businessDriver,
+          businessDriver: productsStr,
+          impactedProducts: productsStr,
           changeType: submitForm.changeType,
-          impactedBureaus: submitForm.impactedBrands,
-          impactedDataItems: submitForm.impactedVariables,
+          impactedBureaus: brandsStr,
+          impactedDataItems: varsStr,
           targetMonth: submitForm.targetMonth,
           description: submitForm.description,
-          sectionsUpdated: submitForm.sectionsUpdated,
+          sectionsUpdated: biImpactStr,
+          biImpactedChange: biImpactStr,
           beforeText: submitForm.beforeText,
           afterText: submitForm.afterText,
           userId: user?.id,
@@ -1811,6 +1954,7 @@ export default function LivingDocumentPage() {
       if (res.ok) {
         setShowSubmitModal(false);
         setDraftSavedNotice(`Change package ${submitForm.crReference} submitted successfully! Status: In Review.`);
+        fetchChanges();
         setTimeout(() => {
           router.push('/dashboard');
         }, 1500);
@@ -4434,7 +4578,7 @@ export default function LivingDocumentPage() {
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleSubmitChange}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl overflow-y-auto"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col space-y-4 shadow-2xl overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
               <div>
@@ -4443,7 +4587,7 @@ export default function LivingDocumentPage() {
                 </h3>
                 <p className="text-xs text-slate-500">Capture change metadata required for the Section 3 Audit Log.</p>
               </div>
-              <button type="button" onClick={() => setShowSubmitModal(false)} className="p-1 text-slate-400 hover:text-white">
+              <button type="button" onClick={() => setShowSubmitModal(false)} className="p-1 text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -4464,49 +4608,78 @@ export default function LivingDocumentPage() {
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Implementation Month *</label>
                   <input
-                    type="date"
+                    type="text"
                     required
-                    value={
-                      submitForm.targetMonth && submitForm.targetMonth.includes('/')
-                        ? submitForm.targetMonth.split('/').reverse().join('-')
-                        : submitForm.targetMonth && submitForm.targetMonth.includes('-')
-                        ? submitForm.targetMonth
-                        : ''
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val) {
-                        const [yyyy, mm, dd] = val.split('-');
-                        setSubmitForm({ ...submitForm, targetMonth: `${dd}/${mm}/${yyyy}` });
-                      } else {
-                        setSubmitForm({ ...submitForm, targetMonth: '' });
-                      }
-                    }}
+                    placeholder="e.g. December 2026"
+                    value={submitForm.targetMonth}
+                    onChange={(e) => setSubmitForm({ ...submitForm, targetMonth: e.target.value })}
                     className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Change Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={submitForm.title}
-                  onChange={(e) => setSubmitForm({ ...submitForm, title: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-semibold"
-                />
-              </div>
+              {/* Change Title with Voice Dictation & AI Write */}
+              <AiVoiceFieldWrapper
+                label="Change Title"
+                required
+                value={submitForm.title}
+                onChange={(val) => setSubmitForm({ ...submitForm, title: val })}
+                fieldName="Change Title"
+                formContext={submitForm}
+                placeholder="Enter concise, descriptive change title..."
+              />
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Business / Regulatory Driver *</label>
-                <input
-                  type="text"
-                  required
-                  value={submitForm.businessDriver}
-                  onChange={(e) => setSubmitForm({ ...submitForm, businessDriver: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                />
+              {/* Impacted Products Multi-Select (Replacing Business/Regulatory Driver) */}
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Impacted Products (PDS Codes) *</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Multi-select in-scope products</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[40px] items-center">
+                  {(submitForm.impactedProducts || []).map((p) => (
+                    <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                      {p}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitForm({
+                            ...submitForm,
+                            impactedProducts: submitForm.impactedProducts.filter((item) => item !== p),
+                          });
+                        }}
+                        className="hover:text-purple-800 dark:hover:text-purple-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {(submitForm.impactedProducts || []).length === 0 && (
+                    <span className="text-slate-400 italic text-xs">No products selected</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1 max-h-36 overflow-y-auto pr-1 border border-slate-100 dark:border-slate-800 rounded-xl p-1 bg-slate-50/50 dark:bg-slate-950/50">
+                  {PRODUCT_OPTIONS.map((opt) => {
+                    const isChecked = (submitForm.impactedProducts || []).includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-1.5 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-300 font-bold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? submitForm.impactedProducts.filter((item) => item !== opt)
+                              : [...(submitForm.impactedProducts || []), opt];
+                            setSubmitForm({ ...submitForm, impactedProducts: updated });
+                          }}
+                          className="accent-purple-600 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -4515,7 +4688,7 @@ export default function LivingDocumentPage() {
                   <select
                     value={submitForm.changeType}
                     onChange={(e) => setSubmitForm({ ...submitForm, changeType: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-semibold"
                   >
                     <option value="New data item added">New data item added</option>
                     <option value="Existing data item amended">Existing data item amended</option>
@@ -4530,68 +4703,158 @@ export default function LivingDocumentPage() {
                   <input
                     type="text"
                     required
-                    value={submitForm.impactedBrands}
-                    onChange={(e) => setSubmitForm({ ...submitForm, impactedBrands: e.target.value })}
+                    value={Array.isArray(submitForm.impactedBrands) ? submitForm.impactedBrands.join(', ') : submitForm.impactedBrands}
+                    onChange={(e) => setSubmitForm({ ...submitForm, impactedBrands: e.target.value.split(/[,;]/).map(s => s.trim()).filter(Boolean) })}
                     className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Impacted CAIS Variables</label>
-                <input
-                  type="text"
-                  value={submitForm.impactedVariables}
-                  onChange={(e) => setSubmitForm({ ...submitForm, impactedVariables: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                />
+              {/* Impacted CAIS Variables Multi-Select */}
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Impacted CAIS Variables *</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Select from 44 CAIS field catalog</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[40px] items-center">
+                  {(submitForm.impactedVariables || []).map((v) => (
+                    <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20">
+                      {v}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitForm({
+                            ...submitForm,
+                            impactedVariables: submitForm.impactedVariables.filter((item) => item !== v),
+                          });
+                        }}
+                        className="hover:text-amber-800 dark:hover:text-amber-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {(submitForm.impactedVariables || []).length === 0 && (
+                    <span className="text-slate-400 italic text-xs">No CAIS variables selected</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1 max-h-40 overflow-y-auto pr-1 border border-slate-100 dark:border-slate-800 rounded-xl p-1 bg-slate-50/50 dark:bg-slate-950/50">
+                  {CAIS_VARIABLE_OPTIONS.map((opt) => {
+                    const isChecked = (submitForm.impactedVariables || []).includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-1.5 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-300 font-bold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? submitForm.impactedVariables.filter((item) => item !== opt)
+                              : [...(submitForm.impactedVariables || []), opt];
+                            setSubmitForm({ ...submitForm, impactedVariables: updated });
+                          }}
+                          className="accent-amber-500 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Section(s) Updated *</label>
-                <input
-                  type="text"
-                  required
-                  value={submitForm.sectionsUpdated}
-                  onChange={(e) => setSubmitForm({ ...submitForm, sectionsUpdated: e.target.value })}
-                  placeholder="e.g. Section 1.3 — Exclusion Rules; Section 2.5 — Variable 17"
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono"
-                />
+              {/* BI Impacted Change Multi-Select (Replacing Section(s) Updated) */}
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>BI Impacted Change *</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Multi-select impacted processing layers</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[40px] items-center">
+                  {(submitForm.biImpactedChange || []).map((layer) => (
+                    <span key={layer} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                      {layer}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitForm({
+                            ...submitForm,
+                            biImpactedChange: submitForm.biImpactedChange.filter((item) => item !== layer),
+                          });
+                        }}
+                        className="hover:text-blue-800 dark:hover:text-blue-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {(submitForm.biImpactedChange || []).length === 0 && (
+                    <span className="text-slate-400 italic text-xs">No layers selected</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
+                  {BI_IMPACTED_CHANGE_OPTIONS.map((opt) => {
+                    const isChecked = (submitForm.biImpactedChange || []).includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-300 font-bold' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? submitForm.biImpactedChange.filter((item) => item !== opt)
+                              : [...(submitForm.biImpactedChange || []), opt];
+                            setSubmitForm({ ...submitForm, biImpactedChange: updated });
+                          }}
+                          className="accent-blue-600 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Description of Change *</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={submitForm.description}
-                  onChange={(e) => setSubmitForm({ ...submitForm, description: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
+              {/* Description of Change with Voice Dictation & AI Write */}
+              <AiVoiceFieldWrapper
+                label="Description of Change"
+                required
+                multiline
+                rows={3}
+                value={submitForm.description}
+                onChange={(val) => setSubmitForm({ ...submitForm, description: val })}
+                fieldName="Description of Change"
+                formContext={submitForm}
+                placeholder="Detail narrative description of proposed change..."
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Before (Prior Logic) *</label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={submitForm.beforeText}
-                    onChange={(e) => setSubmitForm({ ...submitForm, beforeText: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-[11px]"
-                  />
-                </div>
+                {/* Before Logic with Voice Dictation & AI Write */}
+                <AiVoiceFieldWrapper
+                  label="Before (Prior Logic)"
+                  required
+                  multiline
+                  rows={2}
+                  value={submitForm.beforeText}
+                  onChange={(val) => setSubmitForm({ ...submitForm, beforeText: val })}
+                  fieldName="Before (Prior Logic)"
+                  formContext={submitForm}
+                  placeholder="Describe baseline processing logic before change..."
+                />
 
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">After (Corrected / New Logic) *</label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={submitForm.afterText}
-                    onChange={(e) => setSubmitForm({ ...submitForm, afterText: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-[11px]"
-                  />
-                </div>
+                {/* After Logic with Voice Dictation & AI Write */}
+                <AiVoiceFieldWrapper
+                  label="After (Corrected / New Logic)"
+                  required
+                  multiline
+                  rows={2}
+                  value={submitForm.afterText}
+                  onChange={(val) => setSubmitForm({ ...submitForm, afterText: val })}
+                  fieldName="After (Corrected / New Logic)"
+                  formContext={submitForm}
+                  placeholder="Describe corrected processing logic once implemented..."
+                />
               </div>
             </div>
 
@@ -4599,14 +4862,14 @@ export default function LivingDocumentPage() {
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submittingChange}
-                className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20"
+                className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20 cursor-pointer"
               >
                 {submittingChange ? 'Submitting...' : 'Submit to Reviewer Queue'}
               </button>
@@ -4840,7 +5103,7 @@ export default function LivingDocumentPage() {
                   setShowEditChangeModal(false);
                   setEditingChange(null);
                 }}
-                className="p-1 text-slate-400 hover:text-white"
+                className="p-1 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -4885,95 +5148,243 @@ export default function LivingDocumentPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Change Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingChange.title}
-                  onChange={(e) => setEditingChange({ ...editingChange, title: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-semibold"
-                />
-              </div>
+              {/* Change Title with Voice Dictation & AI Write */}
+              <AiVoiceFieldWrapper
+                label="Change Title"
+                required
+                value={editingChange.title}
+                onChange={(val) => setEditingChange({ ...editingChange, title: val })}
+                fieldName="Change Title"
+                formContext={editingChange}
+                placeholder="Enter concise, descriptive change title..."
+              />
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Business / Regulatory Driver *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingChange.businessDriver}
-                  onChange={(e) => setEditingChange({ ...editingChange, businessDriver: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                />
+              {/* Impacted Products Multi-Select (Replacing Business/Regulatory Driver) */}
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Impacted Products (PDS Codes) *</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Multi-select in-scope products</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[40px] items-center">
+                  {(editingChange.impactedProducts || []).map((p: string) => (
+                    <span key={p} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                      {p}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingChange({
+                            ...editingChange,
+                            impactedProducts: editingChange.impactedProducts.filter((item: string) => item !== p),
+                          });
+                        }}
+                        className="hover:text-purple-800 dark:hover:text-purple-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {(editingChange.impactedProducts || []).length === 0 && (
+                    <span className="text-slate-400 italic text-xs">No products selected</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1 max-h-36 overflow-y-auto pr-1 border border-slate-100 dark:border-slate-800 rounded-xl p-1 bg-slate-50/50 dark:bg-slate-950/50">
+                  {PRODUCT_OPTIONS.map((opt) => {
+                    const isChecked = (editingChange.impactedProducts || []).includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-1.5 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-300 font-bold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? editingChange.impactedProducts.filter((item: string) => item !== opt)
+                              : [...(editingChange.impactedProducts || []), opt];
+                            setEditingChange({ ...editingChange, impactedProducts: updated });
+                          }}
+                          className="accent-purple-600 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Change Type *</label>
+                  <select
+                    value={editingChange.changeType}
+                    onChange={(e) => setEditingChange({ ...editingChange, changeType: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-semibold"
+                  >
+                    <option value="New data item added">New data item added</option>
+                    <option value="Existing data item amended">Existing data item amended</option>
+                    <option value="New account/product type">New account/product type</option>
+                    <option value="Business rule">Business rule</option>
+                    <option value="File format">File format</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Impacted Brands *</label>
                   <input
                     type="text"
                     required
-                    value={editingChange.impactedBureaus}
-                    onChange={(e) => setEditingChange({ ...editingChange, impactedBureaus: e.target.value })}
+                    value={Array.isArray(editingChange.impactedBureaus) ? editingChange.impactedBureaus.join(', ') : editingChange.impactedBureaus}
+                    onChange={(e) => setEditingChange({ ...editingChange, impactedBureaus: e.target.value.split(/[,;]/).map(s => s.trim()).filter(Boolean) })}
                     className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Impacted CAIS Variables</label>
-                  <input
-                    type="text"
-                    value={editingChange.impactedDataItems}
-                    onChange={(e) => setEditingChange({ ...editingChange, impactedDataItems: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono"
-                  />
+              {/* Impacted CAIS Variables Multi-Select */}
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Impacted CAIS Variables *</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Select from 44 CAIS field catalog</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[40px] items-center">
+                  {(editingChange.impactedDataItems || []).map((v: string) => (
+                    <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20">
+                      {v}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingChange({
+                            ...editingChange,
+                            impactedDataItems: editingChange.impactedDataItems.filter((item: string) => item !== v),
+                          });
+                        }}
+                        className="hover:text-amber-800 dark:hover:text-amber-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {(editingChange.impactedDataItems || []).length === 0 && (
+                    <span className="text-slate-400 italic text-xs">No CAIS variables selected</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pt-1 max-h-40 overflow-y-auto pr-1 border border-slate-100 dark:border-slate-800 rounded-xl p-1 bg-slate-50/50 dark:bg-slate-950/50">
+                  {CAIS_VARIABLE_OPTIONS.map((opt) => {
+                    const isChecked = (editingChange.impactedDataItems || []).includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-1.5 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-300 font-bold' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? editingChange.impactedDataItems.filter((item: string) => item !== opt)
+                              : [...(editingChange.impactedDataItems || []), opt];
+                            setEditingChange({ ...editingChange, impactedDataItems: updated });
+                          }}
+                          className="accent-amber-500 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Section(s) Updated *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingChange.sectionsUpdated}
-                  onChange={(e) => setEditingChange({ ...editingChange, sectionsUpdated: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono"
-                />
+              {/* BI Impacted Change Multi-Select (Replacing Section(s) Updated) */}
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>BI Impacted Change *</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Multi-select impacted processing layers</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 min-h-[40px] items-center">
+                  {(editingChange.biImpactedChange || []).map((layer: string) => (
+                    <span key={layer} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20">
+                      {layer}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingChange({
+                            ...editingChange,
+                            biImpactedChange: editingChange.biImpactedChange.filter((item: string) => item !== layer),
+                          });
+                        }}
+                        className="hover:text-blue-800 dark:hover:text-blue-100 cursor-pointer ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {(editingChange.biImpactedChange || []).length === 0 && (
+                    <span className="text-slate-400 italic text-xs">No layers selected</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
+                  {BI_IMPACTED_CHANGE_OPTIONS.map((opt) => {
+                    const isChecked = (editingChange.biImpactedChange || []).includes(opt);
+                    return (
+                      <label key={opt} className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-medium cursor-pointer transition-all ${
+                        isChecked ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-300 font-bold' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            const updated = isChecked
+                              ? editingChange.biImpactedChange.filter((item: string) => item !== opt)
+                              : [...(editingChange.biImpactedChange || []), opt];
+                            setEditingChange({ ...editingChange, biImpactedChange: updated });
+                          }}
+                          className="accent-blue-600 rounded"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Description of Change *</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={editingChange.description}
-                  onChange={(e) => setEditingChange({ ...editingChange, description: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
-                />
-              </div>
+              {/* Description of Change with Voice Dictation & AI Write */}
+              <AiVoiceFieldWrapper
+                label="Description of Change"
+                required
+                multiline
+                rows={3}
+                value={editingChange.description}
+                onChange={(val) => setEditingChange({ ...editingChange, description: val })}
+                fieldName="Description of Change"
+                formContext={editingChange}
+                placeholder="Detail narrative description of proposed change..."
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Before Logic *</label>
-                  <textarea
-                    rows={3}
-                    required
-                    value={editingChange.beforeText}
-                    onChange={(e) => setEditingChange({ ...editingChange, beforeText: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-[11px]"
-                  />
-                </div>
+                {/* Before Logic with Voice Dictation & AI Write */}
+                <AiVoiceFieldWrapper
+                  label="Before Logic"
+                  required
+                  multiline
+                  rows={2}
+                  value={editingChange.beforeText}
+                  onChange={(val) => setEditingChange({ ...editingChange, beforeText: val })}
+                  fieldName="Before (Prior Logic)"
+                  formContext={editingChange}
+                  placeholder="Describe baseline processing logic before change..."
+                />
 
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">After Logic *</label>
-                  <textarea
-                    rows={3}
-                    required
-                    value={editingChange.afterText}
-                    onChange={(e) => setEditingChange({ ...editingChange, afterText: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-[11px]"
-                  />
-                </div>
+                {/* After Logic with Voice Dictation & AI Write */}
+                <AiVoiceFieldWrapper
+                  label="After Logic"
+                  required
+                  multiline
+                  rows={2}
+                  value={editingChange.afterText}
+                  onChange={(val) => setEditingChange({ ...editingChange, afterText: val })}
+                  fieldName="After (Corrected / New Logic)"
+                  formContext={editingChange}
+                  placeholder="Describe corrected processing logic once implemented..."
+                />
               </div>
             </div>
 
@@ -4984,14 +5395,14 @@ export default function LivingDocumentPage() {
                   setShowEditChangeModal(false);
                   setEditingChange(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={savingEditChange}
-                className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20"
+                className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 cursor-pointer"
               >
                 {savingEditChange ? 'Saving Modifications...' : 'Save Modifications'}
               </button>

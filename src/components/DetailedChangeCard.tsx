@@ -20,9 +20,11 @@ export interface CaisChangeEntry {
   crReference: string;
   title: string;
   status: string;
-  businessDriver: string;
+  businessDriver?: string;
+  impactedProducts?: string;
   description: string;
   sectionsUpdated?: string;
+  biImpactedChange?: string;
   beforeText?: string;
   afterText?: string;
   impactedBureaus?: string; // Impacted Brands
@@ -146,13 +148,13 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* Business / Regulatory Driver */}
+          {/* Impacted Products */}
           <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-4">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
-              Business/Regulatory Driver
+              Impacted Products
             </span>
             <div className="text-xs text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-              {change.businessDriver}
+              {change.impactedProducts || change.businessDriver || 'Not specified'}
             </div>
           </div>
 
@@ -166,13 +168,13 @@ export default function DetailedChangeCard({
             </div>
           </div>
 
-          {/* Section(s) Updated */}
+          {/* BI Impacted Change */}
           <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-4 pt-1">
             <span className="w-48 text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 uppercase tracking-wider">
-              Section(s) Updated
+              BI Impacted Change
             </span>
             <div className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 rounded-lg border border-blue-500/20 inline-block">
-              {change.sectionsUpdated || 'Section 1.3 — Exclusion Rules; Section 2.5 — Report Layout'}
+              {change.biImpactedChange || change.sectionsUpdated || 'Staging, Snap'}
             </div>
           </div>
 
