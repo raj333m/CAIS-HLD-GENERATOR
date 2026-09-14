@@ -164,31 +164,39 @@ export async function DELETE(
     const { id } = await params;
     const cleanRef = id.replace(/^change-/, '').toUpperCase();
 
-    // Track deletion in memory & CloudStore
+    // 1. Find existing change in Prisma DB or pre-populated items
+    let existingChange = await prisma.caisChange.findFirst({
+      where: {
+        OR: [
+          { id },
+          { crReference: id },
+          { crReference: cleanRef },
+        ],
+      },
+    });
+
+    const crRef = existingChange?.crReference || (id.startsWith('CAIS-') ? id : cleanRef);
+    const dbId = existingChange?.id || id;
+
+    // Track deletion in memory & CloudStore across ALL key aliases
     deletedIds.add(id);
-    deletedIds.add(id.toLowerCase());
+    deletedIds.add(dbId);
+    deletedIds.add(crRef);
+    deletedIds.add(crRef.toLowerCase());
+    deletedIds.add(crRef.toUpperCase());
     deletedIds.add(cleanRef);
     deletedIds.add(cleanRef.toLowerCase());
     deletedIds.add(`change-${cleanRef.toLowerCase()}`);
 
-    try {
-      await saveCloudChangeState(id, { deleted: true });
-      await saveCloudChangeState(cleanRef, { deleted: true });
-      await saveCloudChangeState(`change-${cleanRef.toLowerCase()}`, { deleted: true });
-    } catch (e) {}
+    const deleteUpdate = { deleted: true };
+    await saveCloudChangeState(dbId, deleteUpdate);
+    await saveCloudChangeState(id, deleteUpdate);
+    await saveCloudChangeState(crRef, deleteUpdate);
+    await saveCloudChangeState(crRef.toUpperCase(), deleteUpdate);
+    await saveCloudChangeState(crRef.toLowerCase(), deleteUpdate);
+    await saveCloudChangeState(cleanRef, deleteUpdate);
 
     try {
-      const existingChange = await prisma.caisChange.findFirst({
-        where: {
-          OR: [
-            { id },
-            { crReference: id },
-            { crReference: cleanRef },
-            { id: { equals: id } },
-          ],
-        },
-      });
-
       if (existingChange) {
         await prisma.changeRisk.deleteMany({ where: { changeId: existingChange.id } });
         await prisma.caisChange.delete({ where: { id: existingChange.id } });

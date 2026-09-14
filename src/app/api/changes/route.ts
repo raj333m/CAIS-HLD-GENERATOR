@@ -73,7 +73,14 @@ export async function GET(request: Request) {
     const enrichedChanges = await Promise.all(
       changes.map(async (c: any) => {
         try {
-          const cloudState = await getCloudChangeState(c.crReference || c.id);
+          const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
+          const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
+          const cloudState = (cloudStateByRef && cloudStateByRef.deleted)
+            ? cloudStateByRef
+            : (cloudStateById && cloudStateById.deleted)
+            ? cloudStateById
+            : (cloudStateByRef || cloudStateById);
+
           if (cloudState) {
             if (cloudState.deleted) return null;
             return {

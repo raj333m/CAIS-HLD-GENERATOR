@@ -15,7 +15,7 @@ export interface CloudChangeState {
   updatedAt: string;
 }
 
-const MASTER_STORE_ID = 'ff808181a09d98f701a09f462af602c3';
+const MASTER_STORE_ID = 'ff808181a09d98f701a0a0a7ef8c05fd';
 const REST_API_BASE = `https://api.restful-api.dev/objects/${MASTER_STORE_ID}`;
 
 // In-memory fallback cache per warm Lambda container
@@ -24,7 +24,7 @@ let lastFetchTime = 0;
 
 async function fetchMasterStore(): Promise<Record<string, CloudChangeState>> {
   const now = Date.now();
-  if (now - lastFetchTime < 1000 && Object.keys(masterCache).length > 0) {
+  if (now - lastFetchTime < 100 && Object.keys(masterCache).length > 0) {
     return masterCache;
   }
   try {
@@ -81,6 +81,7 @@ export async function saveCloudChangeState(
   const newState: CloudChangeState = {
     ...existing,
     ...cleanedUpdates,
+    ...(updates.deleted !== undefined ? { deleted: updates.deleted } : {}),
     reviews: {
       ...(existing.reviews || {}),
       ...(updates.reviews || {}),
@@ -100,6 +101,7 @@ export async function saveCloudChangeState(
   if (updates.crReference) {
     currentStore[updates.crReference] = newState;
     currentStore[updates.crReference.toUpperCase()] = newState;
+    currentStore[updates.crReference.toLowerCase()] = newState;
   }
 
   masterCache = currentStore;
