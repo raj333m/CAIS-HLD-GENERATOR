@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MASTER_SECTIONS, BLANK_SECTIONS } from '@/lib/sectionsData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export interface HldProject {
   id: string;
   projectName: string;
