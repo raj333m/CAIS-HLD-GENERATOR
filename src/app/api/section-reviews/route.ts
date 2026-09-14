@@ -69,6 +69,20 @@ function saveReviewsState(state: any) {
   }
 }
 
+async function findCaisChange(changeId: string) {
+  if (!changeId) return null;
+  const cleanRef = changeId.replace(/^change-/, '').toUpperCase();
+  return await prisma.caisChange.findFirst({
+    where: {
+      OR: [
+        { id: changeId },
+        { crReference: changeId },
+        { crReference: cleanRef },
+      ],
+    },
+  });
+}
+
 export async function GET(req: NextRequest) {
   const state = loadReviewsState();
   const searchParams = req.nextUrl.searchParams;
@@ -76,16 +90,19 @@ export async function GET(req: NextRequest) {
 
   if (changeId) {
     try {
-      const change = await prisma.caisChange.findFirst({
-        where: { OR: [{ id: changeId }, { crReference: changeId }] },
-      });
+      const change = await findCaisChange(changeId);
       if (change && change.reviewComments) {
         try {
           const parsed = JSON.parse(change.reviewComments);
-          if (parsed && typeof parsed === 'object' && parsed.reviews) {
-            state.reviews = { ...state.reviews, ...parsed.reviews };
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.reviews) {
+              state.reviews = parsed.reviews;
+            }
             if (parsed.currentFeedbackRound) {
               state.currentFeedbackRound = parsed.currentFeedbackRound;
+            }
+            if (parsed.feedbackRoundsHistory) {
+              state.feedbackRoundsHistory = parsed.feedbackRoundsHistory;
             }
           }
         } catch (e) {
@@ -157,9 +174,7 @@ export async function POST(req: NextRequest) {
       // Sync to SQLite DB
       if (changeId) {
         try {
-          const change = await prisma.caisChange.findFirst({
-            where: { OR: [{ id: changeId }, { crReference: changeId }] },
-          });
+          const change = await findCaisChange(changeId);
           if (change) {
             await prisma.caisChange.update({
               where: { id: change.id },
@@ -169,6 +184,7 @@ export async function POST(req: NextRequest) {
                   overallReason: overallReason || newRound.overallReason,
                   reviews,
                   currentFeedbackRound: newRound,
+                  feedbackRoundsHistory,
                 }),
                 reviewedByName: reviewerName || 'Reviewer / Lead',
                 versionNumber: (change.versionNumber || 1) + 1,
@@ -266,9 +282,7 @@ export async function POST(req: NextRequest) {
     // Sync to SQLite DB via Prisma
     if (changeId) {
       try {
-        const change = await prisma.caisChange.findFirst({
-          where: { OR: [{ id: changeId }, { crReference: changeId }] },
-        });
+        const change = await findCaisChange(changeId);
         if (change) {
           let existingObj: any = {};
           try {
@@ -278,10 +292,12 @@ export async function POST(req: NextRequest) {
           await prisma.caisChange.update({
             where: { id: change.id },
             data: {
+              status: change.status === 'DRAFT' ? 'IN_REVIEW' : change.status,
               reviewComments: JSON.stringify({
                 ...existingObj,
                 reviews,
                 currentFeedbackRound,
+                feedbackRoundsHistory,
               }),
               reviewedByName: reviewerName || change.reviewedByName || 'Reviewer / Lead',
             },

@@ -632,10 +632,17 @@ export default function LivingDocumentPage() {
       }
 
       if (cId) {
+        fetchSectionReviews(cId);
         fetch('/api/changes')
           .then((res) => res.json())
           .then((data) => {
-            const found = (data.changes || []).find((c: any) => c.id === cId || c.crReference === cId);
+            const cleanCId = cId.replace(/^change-/, '').toUpperCase();
+            const found = (data.changes || []).find((c: any) =>
+              c.id === cId ||
+              c.crReference === cId ||
+              c.crReference === cleanCId ||
+              c.id.toLowerCase() === cId.toLowerCase()
+            );
             if (found) {
               setTargetChange(found);
               setIsReviewerMode(true);
@@ -2960,34 +2967,51 @@ export default function LivingDocumentPage() {
                   </div>
 
                   {/* Reviewer Governance Controls for Section 4 */}
-                  {isReviewerMode && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleApproveSection('4.0')}
-                        disabled={sectionReviews['4.0']?.status === 'APPROVED'}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs border ${
-                          sectionReviews['4.0']?.status === 'APPROVED'
-                            ? 'bg-emerald-600 text-white border-emerald-500 opacity-90 cursor-default'
-                            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
-                        }`}
-                        title="Approve Appendix section"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{sectionReviews['4.0']?.status === 'APPROVED' ? 'Approved' : 'Approve Section'}</span>
-                      </button>
+                  {(() => {
+                    const isSection4InChangeScope = !targetChange || targetSectionNums.length === 0 || targetSectionNums.some((num) => num.startsWith('4'));
+                    return (
+                      <>
+                        {isReviewerMode && isSection4InChangeScope && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleApproveSection('4.0')}
+                              disabled={sectionReviews['4.0']?.status === 'APPROVED'}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs border ${
+                                sectionReviews['4.0']?.status === 'APPROVED'
+                                  ? 'bg-emerald-600 text-white border-emerald-500 opacity-90 cursor-default'
+                                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
+                              }`}
+                              title="Approve Appendix section"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>{sectionReviews['4.0']?.status === 'APPROVED' ? 'Approved' : 'Approve Section'}</span>
+                            </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleOpenFeedbackModal('4.0', '4 Appendix')}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
-                        title="Share feedback with BA for Appendix section"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 text-rose-500" />
-                        <span>Share Feedback</span>
-                      </button>
-                    </div>
-                  )}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFeedbackModal('4.0', '4 Appendix')}
+                              className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                              title="Share feedback with BA for Appendix section"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-rose-500" />
+                              <span>Share Feedback</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {isReviewerMode && !isSection4InChangeScope && targetChange && (
+                          <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+                              <Lock className="w-4 h-4 text-slate-400" />
+                              <span>Reference Content (Outside Change Scope) — Section 4 is not modified by {targetChange.crReference || targetChange.title}</span>
+                            </div>
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-200/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 font-mono text-[10px] font-semibold">Read Only</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   {/* Reviewer Feedback Callout Banner for BA Visibility */}
                   {sectionReviews['4.0']?.status === 'FEEDBACK_SHARED' && sectionReviews['4.0']?.feedback && (
