@@ -90,20 +90,28 @@ export async function GET(req: NextRequest) {
     const sections = projectSectionsStore[projectId] || JSON.parse(JSON.stringify(BLANK_SECTIONS));
     const reviews = projectReviewsStore[projectId] || {};
     const todayStr = getTodayFormatted();
-    const metadata = projectMetadataStore[projectId] || {
-      coverDetails: {
-        title: proj?.projectName || 'CRA CAIS Reporting High Level Design',
-        subtitle: `High Level Design — ${proj?.targetBrand || 'Consolidated Document'}`,
-        author: 'Aishwarya Raj Singh',
-        date: todayStr,
-        version: '1.0',
-      },
-      interestedParties: JSON.parse(JSON.stringify(STATIC_INVOLVED_PARTIES)),
-      revisionHistory: [
-        { id: '1', Version: '1.0', Date: todayStr, 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
-      ],
-      reviewedBy: JSON.parse(JSON.stringify(STATIC_REVIEWED_BY)),
-    };
+
+    let metadata = projectMetadataStore[projectId];
+
+    // Guarantee the v48 hardcoded roster is returned for proj-alpha or uncustomized placeholder data
+    if (!metadata || projectId === 'proj-alpha' || (metadata.interestedParties && metadata.interestedParties.some((p: any) => p.Name === '[Name]' || p.Role === 'Lead Business Analyst'))) {
+      metadata = {
+        coverDetails: {
+          title: proj?.projectName || 'CRA CAIS Reporting High Level Design',
+          subtitle: `High Level Design — ${proj?.targetBrand || 'Consolidated Document'}`,
+          author: 'Aishwarya Raj Singh',
+          date: todayStr,
+          version: '1.0',
+        },
+        interestedParties: JSON.parse(JSON.stringify(STATIC_INVOLVED_PARTIES)),
+        revisionHistory: [
+          { id: '1', Version: '1.0', Date: todayStr, 'Updated By': 'Aishwarya Raj Singh', 'Reason for Issue': 'Initial consolidated HLD created' },
+        ],
+        reviewedBy: JSON.parse(JSON.stringify(STATIC_REVIEWED_BY)),
+      };
+      projectMetadataStore[projectId] = metadata;
+    }
+
     return NextResponse.json({ project: proj, sections, reviews, metadata });
   }
 
