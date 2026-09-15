@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export const PREPOPULATED_CHANGES: any[] = [
   {
     id: '37eda0d7-1c69-40f4-94ff-452c6141b56a',
-    crReference: 'CAIS-2026-001',
+    crReference: 'CAIS-BASE-001',
     title: 'Consumer Duty Payment Holiday & Forbearance Indicator Update',
     status: 'APPROVED',
     changeType: 'Existing data item amended, Business rule change, Bureau variation',
@@ -22,7 +22,7 @@ export const PREPOPULATED_CHANGES: any[] = [
   },
   {
     id: 'b82df910-449e-4e63-8a3e-721fb653ab12',
-    crReference: 'CAIS-2026-002',
+    crReference: 'CAIS-BASE-002',
     title: 'Buy-Now-Pay-Later (BNPL) Product Scope Expansion to CAIS',
     status: 'IN_REVIEW',
     changeType: 'New product type, New data item added, Technical schema change',
@@ -37,7 +37,7 @@ export const PREPOPULATED_CHANGES: any[] = [
   },
   {
     id: 'f9411d38-2e02-4740-9a29-158a1834279b',
-    crReference: 'CAIS-2026-003',
+    crReference: 'CAIS-BASE-003',
     title: 'Default Balance Reconciliation & Account Closure Date Alignment',
     status: 'DRAFT',
     changeType: 'Existing data item amended, Business rule change',

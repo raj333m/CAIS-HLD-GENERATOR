@@ -270,7 +270,18 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
     })
   );
 
-  return enrichedList.filter(Boolean);
+  const activeList = enrichedList.filter(Boolean);
+
+  // 5. Deduplicate by crReference per project (live created items take precedence over prepopulated items)
+  const dedupedByRef = new Map<string, any>();
+  for (const c of activeList) {
+    const key = `${c.projectId || 'proj-alpha'}::${(c.crReference || '').trim().toUpperCase()}`;
+    if (!dedupedByRef.has(key)) {
+      dedupedByRef.set(key, c);
+    }
+  }
+
+  return Array.from(dedupedByRef.values());
 }
 
 export async function deleteCreatedChange(id: string, crReference?: string): Promise<void> {
