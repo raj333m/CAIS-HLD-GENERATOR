@@ -3891,6 +3891,15 @@ export default function LivingDocumentPage() {
             }
 
             if (isAttachments) {
+              const secData = sections.find(
+                (s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0' || s.title?.toLowerCase().includes('appendix')
+              ) || {
+                id: 'sec-4-0',
+                sectionNumber: '4.0',
+                title: item.title || '4 Appendix',
+                subSections: [],
+              };
+
               return (
                 <div
                   key={item.key || item.num}
@@ -3966,126 +3975,27 @@ export default function LivingDocumentPage() {
                     </div>
                   )}
 
+                  {/* Dynamic Sub-sections Rendering for Section 4 */}
                   <div className="space-y-8 text-[11pt] text-slate-800 dark:text-slate-200">
-                    {/* A.1 Glossary & Abbreviations */}
-                    <div className="space-y-3">
-                      <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        4.1 Glossary & Abbreviations
-                      </h2>
-                      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
-                        <table className="w-full text-left border-collapse font-sans text-[11pt]">
-                          <thead className="bg-[#C0272D] text-white font-bold">
-                            <tr>
-                              <th className="p-3 border-b border-red-700 w-64 font-bold">Term</th>
-                              <th className="p-3 border-b border-red-700 font-bold">Definition</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CAIS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Account Information Sharing — the UK reciprocal data-sharing scheme under which lenders submit account-level performance data to credit reference agencies on a monthly basis.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CRA</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Reference Agency — in the UK, principally Experian, Equifax, and TransUnion.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CADS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Credit Analysis and Decisioning System — the SAS-based processing that derives the six CU-owned calculated variables.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BI</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Business Intelligence (UK BI Data Warehouse team) — owns staging, validation and file-generation for the CAIS pipeline.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CU Team</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Central Utility Team — owns exclusions, debt-sale treatment, and the six CU-derived calculated variables.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">Forbearance</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">A temporary arrangement (such as a payment holiday) that varies a customer's contractual repayment obligations, typically in response to financial difficulty.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">Debt Sale</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">The sale of a defaulted account's outstanding debt to a third-party collection agency; reported to bureaus as a Debt Sale record, typically with a Delete marker.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">Positive Data Sharing Indicator</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">A flag controlling whether a given account's data is eligible for reciprocal (positive) reporting to the bureaus, as distinct from default-only reporting.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PDS1 / Gleam</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">The two product hierarchy codes (938 and 937 respectively) used to classify Retail Banking products as eligible for CRA reporting.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">Connect:Direct</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">The secure file-transfer mechanism used by the Transmission team to deliver CAIS extract files to the bureaus.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PLM</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Product Ledger Management.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BDRAS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bad Debt Reporting and Accounting System.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">RMS</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Risk Management System.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">PDS (Product Code)</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">The CAIS product type code used in the Supported Products for CRA Data Reporting table (e.g. 02, 05, 15) — distinct from PDS1 / Gleam above, which refers to the product hierarchy classification, not the product code itself.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_PDS_STAG</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Staging Table for Retail Banking.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">DWH_CAIS_SMRY_SNAP</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">CRA Final Data Mart for Retail Banking.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">BCDU</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Bank Cards Data Utility.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">CDU</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Customer Data Utility.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">OHC</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Cards Source File.</td>
-                            </tr>
-                            <tr className="bg-[#F9F9F9] dark:bg-slate-900/60">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">FD</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">First Direct.</td>
-                            </tr>
-                            <tr className="bg-white dark:bg-slate-950">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white font-mono text-[10.5pt] align-top">M&S</td>
-                              <td className="p-3 text-slate-800 dark:text-slate-200 leading-relaxed align-top">Marks and Spencer.</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                    {secData.subSections && secData.subSections.length > 0 ? (
+                      secData.subSections.map((sub: any) => (
+                        <div key={sub.id} className="space-y-3 pt-2">
+                          {sub.heading && (
+                            <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                              {sub.heading}
+                            </h2>
+                          )}
+                          <div>
+                            {renderSubSectionBlocks(sub.contentBlocks, secData.id, sub.id, sub.heading)}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between">
+                        <span>[No content written yet for this section]</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-mono tracking-wider font-semibold">Not Yet Written</span>
                       </div>
-                    </div>
-
-                    {/* A.2 Operational Support and Escalation */}
-                    <div className="space-y-3 pt-2">
-                      <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                        4.2 Operational Support and Escalation
-                      </h2>
-                      <p className="text-slate-800 dark:text-slate-200 leading-relaxed">
-                        The following mailboxes provide first-line support for issues identified with the CAIS reporting process, and are monitored daily:
-                      </p>
-                      <ul className="list-disc pl-6 space-y-1.5 text-slate-800 dark:text-slate-200 leading-relaxed">
-                        <li>BI data issues: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-mono text-slate-800 dark:text-slate-200">[bi.support mailbox]</code></li>
-                        <li>CU data quality issues: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-mono text-slate-800 dark:text-slate-200">[dataquality.cut mailbox]</code></li>
-                      </ul>
-                      <p className="text-slate-800 dark:text-slate-200 leading-relaxed pt-1">
-                        Where an issue cannot be resolved at first line, or where a regulatory deadline is at risk (see Section 1.5, Analysis Risks and Assumptions), escalation should be raised to the Product Owner (Risk CRA) and, if a bureau-facing deadline is affected, to the Transmission team in parallel so that the bureau can be informed of any anticipated delay.
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               );

@@ -1021,6 +1021,39 @@ export const MASTER_SECTIONS: any[] = [
         ]
       }
     ]
+  },
+  {
+    "id": "sec-4-0",
+    "sectionNumber": "4.0",
+    "title": "4 Appendix",
+    "displayOrder": 13,
+    "lastUpdatedById": "user-ba",
+    "lastUpdatedBy": {
+      "id": "user-ba",
+      "name": "Aishwarya Raj Singh",
+      "email": "ba@cais.com",
+      "role": "BA"
+    },
+    "subSections": [
+      {
+        "id": "sub-4-1-1",
+        "documentSectionId": "sec-4-0",
+        "heading": "4.1 Glossary & Abbreviations",
+        "displayOrder": 1,
+        "contentBlocks": "[{\"type\":\"table\",\"payload\":{\"headers\":[\"Term\",\"Definition\"],\"rows\":[[\"CAIS\",\"Credit Account Information Sharing — the UK reciprocal data-sharing scheme under which lenders submit account-level performance data to credit reference agencies on a monthly basis.\"],[\"CRA\",\"Credit Reference Agency — in the UK, principally Experian, Equifax, and TransUnion.\"],[\"CADS\",\"Credit Analysis and Decisioning System — the SAS-based processing that derives the six CU-owned calculated variables.\"],[\"BI\",\"Business Intelligence (UK BI Data Warehouse team) — owns staging, validation and file-generation for the CAIS pipeline.\"],[\"CU Team\",\"Central Utility Team — owns exclusions, debt-sale treatment, and the six CU-derived calculated variables.\"],[\"Forbearance\",\"A temporary arrangement (such as a payment holiday) that varies a customer's contractual repayment obligations, typically in response to financial difficulty.\"],[\"Debt Sale\",\"The sale of a defaulted account's outstanding debt to a third-party collection agency; reported to bureaus as a Debt Sale record, typically with a Delete marker.\"],[\"Positive Data Sharing Indicator\",\"A flag controlling whether a given account's data is eligible for reciprocal (positive) reporting to the bureaus, as distinct from default-only reporting.\"],[\"PDS1 / Gleam\",\"The two product hierarchy codes (938 and 937 respectively) used to classify Retail Banking products as eligible for CRA reporting.\"],[\"Connect:Direct\",\"The secure file-transfer mechanism used by the Transmission team to deliver CAIS extract files to the bureaus.\"],[\"PLM\",\"Product Ledger Management.\"],[\"BDRAS\",\"Bad Debt Reporting and Accounting System.\"],[\"RMS\",\"Risk Management System.\"],[\"PDS (Product Code)\",\"The CAIS product type code used in the Supported Products for CRA Data Reporting table (e.g. 02, 05, 15) — distinct from PDS1 / Gleam above, which refers to the product hierarchy classification, not the product code itself.\"],[\"DWH_PDS_STAG\",\"CRA Staging Table for Retail Banking.\"],[\"DWH_CAIS_SMRY_SNAP\",\"CRA Final Data Mart for Retail Banking.\"],[\"BCDU\",\"Bank Cards Data Utility.\"],[\"CDU\",\"Customer Data Utility.\"],[\"OHC\",\"Cards Source File.\"],[\"FD\",\"First Direct.\"],[\"M&S\",\"Marks and Spencer.\"]]}}]",
+        "lastUpdatedById": "user-ba",
+        "versions": []
+      },
+      {
+        "id": "sub-4-2-1",
+        "documentSectionId": "sec-4-0",
+        "heading": "4.2 Operational Support and Escalation",
+        "displayOrder": 2,
+        "contentBlocks": "[{\"type\":\"paragraph\",\"payload\":{\"text\":\"The following mailboxes provide first-line support for issues identified with the CAIS reporting process, and are monitored daily:\"}},{\"type\":\"bullets\",\"payload\":{\"items\":[\"BI data issues: bi.support mailbox\",\"CU data quality issues: dataquality.cut mailbox\"]}},{\"type\":\"paragraph\",\"payload\":{\"text\":\"Where an issue cannot be resolved at first line, or where a regulatory deadline is at risk (see Section 1.5, Analysis Risks and Assumptions), escalation should be raised to the Product Owner (Risk CRA) and, if a bureau-facing deadline is affected, to the Transmission team in parallel so that the bureau can be informed of any anticipated delay.\"}}]",
+        "lastUpdatedById": "user-ba",
+        "versions": []
+      }
+    ]
   }
 ];
 

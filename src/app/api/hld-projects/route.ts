@@ -74,9 +74,18 @@ let hldProjectsStore: HldProject[] = [
   },
 ];
 
+const defaultAlphaSections = JSON.parse(JSON.stringify(BLANK_SECTIONS));
+const sec4Master = MASTER_SECTIONS.find((s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0');
+if (sec4Master) {
+  const alphaSec4Idx = defaultAlphaSections.findIndex((s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0');
+  if (alphaSec4Idx !== -1) {
+    defaultAlphaSections[alphaSec4Idx] = JSON.parse(JSON.stringify(sec4Master));
+  }
+}
+
 // In-memory sections store per project ID (starts BLANK until Create New HLD is run with consent)
 let projectSectionsStore: Record<string, any[]> = {
-  'proj-alpha': JSON.parse(JSON.stringify(BLANK_SECTIONS)),
+  'proj-alpha': defaultAlphaSections,
 };
 
 // In-memory section reviews per project ID
@@ -127,7 +136,14 @@ export async function GET(req: NextRequest) {
 
   if (projectId) {
     const proj = hldProjectsStore.find((p) => p.id === projectId);
-    const sections = projectSectionsStore[projectId] || JSON.parse(JSON.stringify(BLANK_SECTIONS));
+    let sections = projectSectionsStore[projectId] || JSON.parse(JSON.stringify(BLANK_SECTIONS));
+    const hasSec4 = sections.some((s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0');
+    if (!hasSec4) {
+      const fallbackSec4 = BLANK_SECTIONS.find((s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0');
+      if (fallbackSec4) {
+        sections = [...sections, JSON.parse(JSON.stringify(fallbackSec4))];
+      }
+    }
     const reviews = projectReviewsStore[projectId] || {};
     const todayStr = getTodayFormatted();
 
@@ -187,18 +203,22 @@ export async function POST(req: NextRequest) {
     hldProjectsStore.push(newProject);
 
     // Populate sections according to strategy
-    // If user selected COPY_ALL (Pre-populated baseline with user consent), use MASTER_SECTIONS
-    const baselineSections = MASTER_SECTIONS;
+    // If user selected COPY_ALL, copy sections from the active source project (or MASTER_SECTIONS as baseline fallback)
+    const sourceSections = (sourceProjectId && projectSectionsStore[sourceProjectId])
+      ? projectSectionsStore[sourceProjectId]
+      : MASTER_SECTIONS;
     const blankShellSections = BLANK_SECTIONS;
 
     let newSections: any[] = [];
 
     if (strategy === 'COPY_ALL') {
-      newSections = JSON.parse(JSON.stringify(baselineSections));
+      newSections = JSON.parse(JSON.stringify(sourceSections));
     } else if (strategy === 'CHOOSE_SECTIONS') {
       const allowedNums: string[] = selectedSectionNums || [];
-      newSections = baselineSections.map((sec: any) => {
-        if (allowedNums.includes(sec.sectionNumber)) {
+      newSections = sourceSections.map((sec: any) => {
+        const isSelected = allowedNums.includes(sec.sectionNumber) || 
+          (sec.sectionNumber === '4.0' && (allowedNums.includes('4.0') || allowedNums.includes('4.1') || allowedNums.includes('4.2')));
+        if (isSelected) {
           return JSON.parse(JSON.stringify(sec));
         } else {
           return {
