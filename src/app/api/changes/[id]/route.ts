@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { PREPOPULATED_CHANGES } from '../route';
-import { saveCloudChangeState, deletedIds, deleteCreatedChange, getCreatedChanges, getCloudChangeState, getMergedChanges } from '@/lib/cloudStore';
+import { saveCloudChangeState, deletedIds, deleteCreatedChange, getCreatedChanges, saveCreatedChange, getCloudChangeState, getMergedChanges } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -135,6 +135,8 @@ export async function PUT(
         risks: true,
       },
     });
+
+    await saveCreatedChange(updatedChange);
 
     return NextResponse.json({ change: updatedChange });
   } catch (error: any) {

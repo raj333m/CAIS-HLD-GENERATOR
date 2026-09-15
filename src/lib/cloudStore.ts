@@ -30,24 +30,30 @@ export const deletedIds = new Set<string>();
 let masterCache: Record<string, any> = {};
 let lastFetchTime = 0;
 
-async function fetchMasterStore(): Promise<Record<string, any>> {
+async function fetchMasterStore(forceFresh = false): Promise<Record<string, any>> {
   const now = Date.now();
-  if (now - lastFetchTime < 500 && Object.keys(masterCache).length > 0) {
+  if (!forceFresh && now - lastFetchTime < 100 && Object.keys(masterCache).length > 0) {
     return masterCache;
   }
   try {
-    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}?_t=${now}`, {
       headers: HEADERS,
       cache: 'no-store',
+      next: { revalidate: 0 },
     });
     if (res.ok) {
       const data = await res.json();
       const rawContent = data.files['cais_master_store.json']?.content;
       if (rawContent) {
         masterCache = JSON.parse(rawContent);
-        lastFetchTime = now;
+        lastFetchTime = Date.now();
+        if (Array.isArray(masterCache._deletedIds)) {
+          masterCache._deletedIds.forEach((id: string) => deletedIds.add(id));
+        }
         return masterCache;
       }
+    } else {
+      console.error('[fetchMasterStore Gist Error Status]:', res.status, await res.text());
     }
   } catch (e) {
     console.error('[fetchMasterStore Gist Error]:', e);
@@ -56,30 +62,31 @@ async function fetchMasterStore(): Promise<Record<string, any>> {
 }
 
 async function persistStore(storeData: any): Promise<void> {
+  storeData._deletedIds = Array.from(deletedIds);
+  storeData.updatedAt = new Date().toISOString();
+
   masterCache = storeData;
   lastFetchTime = Date.now();
 
-  try {
-    const patchRes = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      method: 'PATCH',
-      headers: HEADERS,
-      body: JSON.stringify({
-        files: {
-          'cais_master_store.json': {
-            content: JSON.stringify(storeData, null, 2),
-          },
+  const patchRes = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+    method: 'PATCH',
+    headers: HEADERS,
+    body: JSON.stringify({
+      files: {
+        'cais_master_store.json': {
+          content: JSON.stringify(storeData, null, 2),
         },
-      }),
-    });
-    if (patchRes.ok) {
-      console.log('[persistStore Gist Success] Successfully updated master store in GitHub Gist');
-      return;
-    } else {
-      console.error('[persistStore Gist Error Status]:', patchRes.status, await patchRes.text());
-    }
-  } catch (e) {
-    console.error('[persistStore Gist Exception]:', e);
+      },
+    }),
+  });
+
+  if (!patchRes.ok) {
+    const errText = await patchRes.text();
+    console.error('[persistStore Gist Error Status]:', patchRes.status, errText);
+    throw new Error(`GitHub Gist persistence write failed (HTTP ${patchRes.status}): ${errText}`);
   }
+
+  console.log('[persistStore Gist Success] Successfully updated master store in GitHub Gist');
 }
 
 export async function getCloudChangeState(changeRef: string): Promise<CloudChangeState | null> {
@@ -98,7 +105,7 @@ export async function saveCloudChangeState(
   const cleanRef = changeRef.replace(/^change-/, '').toUpperCase();
   const lowerRef = changeRef.toLowerCase();
 
-  const currentStore = await fetchMasterStore();
+  const currentStore = await fetchMasterStore(true);
   const existing = currentStore[changeRef] || currentStore[cleanRef] || currentStore[lowerRef] || {
     crReference: updates.crReference || cleanRef,
     status: 'IN_REVIEW',
@@ -147,15 +154,15 @@ export async function saveCloudChangeState(
 }
 
 export async function getCreatedChanges(): Promise<any[]> {
-  const store: any = await fetchMasterStore();
+  const store: any = await fetchMasterStore(true);
   const list = store._createdChanges || [];
-  console.log('[getCreatedChanges] Count:', list.length, 'Items:', JSON.stringify(list));
+  console.log('[getCreatedChanges] Count:', list.length);
   return Array.isArray(list) ? list : [];
 }
 
 export async function saveCreatedChange(newChange: any): Promise<void> {
   if (!newChange || !newChange.id) return;
-  const store: any = await fetchMasterStore();
+  const store: any = await fetchMasterStore(true);
 
   const id = newChange.id;
   const crRef = newChange.crReference;
@@ -163,6 +170,7 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
   // Revoke any previous deletion tombstone strictly for this record's unique ID
   if (store[id]) delete store[id].deleted;
   deletedIds.delete(id);
+  deletedIds.delete(`change-${id}`);
 
   const currentList = Array.isArray(store._createdChanges) ? store._createdChanges : [];
   const existingIdx = currentList.findIndex((c: any) => c.id === id);
@@ -181,13 +189,27 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
 export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = []): Promise<any[]> {
   const mapById = new Map<string, any>();
 
-  // 1. Prepopulated Changes (default base template)
-  for (const c of prepopulatedList) {
-    const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
-    if (item.id) mapById.set(item.id, item);
+  // 1. Fetch Cloud Store Created Changes FIRST (highest authority for live data)
+  let cloudCreated: any[] = [];
+  try {
+    cloudCreated = await getCreatedChanges();
+    for (const c of cloudCreated) {
+      const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
+      if (item.id) mapById.set(item.id, item);
+    }
+  } catch (e) {
+    console.warn('[getMergedChanges] Cloud created changes query skipped:', e);
   }
 
-  // 2. Database Changes (Prisma DB)
+  // 2. Add Prepopulated Base Template items only if not overridden or deleted
+  for (const c of prepopulatedList) {
+    const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
+    if (item.id && !mapById.has(item.id)) {
+      mapById.set(item.id, item);
+    }
+  }
+
+  // 3. Database Changes (Prisma DB) fallback
   if (prisma) {
     try {
       const dbChanges = await prisma.caisChange.findMany({
@@ -200,32 +222,23 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
       });
       for (const c of dbChanges) {
         const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
-        if (item.id) mapById.set(item.id, item);
+        if (item.id && !mapById.has(item.id)) {
+          mapById.set(item.id, item);
+        }
       }
     } catch (e) {
       console.warn('[getMergedChanges] DB query skipped:', e);
     }
   }
 
-  // 3. Cloud Store Created Changes (highest priority for user creations)
-  try {
-    const cloudCreated = await getCreatedChanges();
-    for (const c of cloudCreated) {
-      const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
-      if (item.id) mapById.set(item.id, item);
-    }
-  } catch (e) {
-    console.warn('[getMergedChanges] Cloud created changes query skipped:', e);
-  }
-
   const allCandidates = Array.from(mapById.values());
+  const store = await fetchMasterStore(true);
 
-  // 4. Enrich with CloudStore status & filter tombstones (deleted strictly by ID)
+  // 4. Enrich with CloudStore status & filter tombstones
   const enrichedList = await Promise.all(
     allCandidates.map(async (c: any) => {
       try {
-        const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
-        const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
+        const cloudStateById = c.id ? store[c.id] : null;
 
         const isDeleted =
           (cloudStateById && cloudStateById.deleted === true) ||
@@ -233,7 +246,7 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
 
         if (isDeleted) return null;
 
-        const cloudState = cloudStateById || cloudStateByRef;
+        const cloudState = cloudStateById;
         const pId = c.projectId || c.hldDocumentId || 'proj-alpha';
 
         if (cloudState) {
@@ -261,7 +274,7 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
 }
 
 export async function deleteCreatedChange(id: string, crReference?: string): Promise<void> {
-  const store: any = await fetchMasterStore();
+  const store: any = await fetchMasterStore(true);
   const currentList = Array.isArray(store._createdChanges) ? store._createdChanges : [];
   const filtered = currentList.filter((c: any) => c.id !== id && c.id !== `change-${id}`);
   store._createdChanges = filtered;
