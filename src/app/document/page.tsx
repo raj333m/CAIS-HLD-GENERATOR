@@ -5185,7 +5185,6 @@ export default function LivingDocumentPage() {
                       >
                         <option value="DRAFT">DRAFT</option>
                         <option value="IN_REVIEW">IN_REVIEW</option>
-                        <option value="APPROVED">APPROVED</option>
                       </select>
                     </div>
                   </div>
@@ -5372,7 +5371,6 @@ export default function LivingDocumentPage() {
                     <option value="DRAFT">Draft</option>
                     <option value="IN_REVIEW">In Review</option>
                     <option value="SENT_BACK">Draft (Revision Requested)</option>
-                    <option value="APPROVED">Approved</option>
                   </select>
                 </div>
               </div>

@@ -117,6 +117,7 @@ export async function POST(request: Request) {
         const authorId = item.userId || body.userId || defaultBa?.id || 'ba-demo-user-id';
         if (!item.title || !item.crReference) continue;
         const itemProjectId = item.projectId || targetProjectId;
+        const itemStatus = (item.status === 'APPROVED' ? 'IN_REVIEW' : item.status) || 'DRAFT';
 
         let createdItem: any = null;
         try {
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
             data: {
               title: item.title,
               crReference: item.crReference,
-              status: item.status || 'DRAFT',
+              status: itemStatus,
               changeType: Array.isArray(item.changeType) ? item.changeType.join(', ') : item.changeType || 'Existing data item amended',
               businessDriver: item.businessDriver || 'CAIS Regulatory Requirement',
               description: item.description || '',
@@ -144,7 +145,7 @@ export async function POST(request: Request) {
             id: `change-${Date.now()}-${Math.floor(Math.random()*1000)}`,
             title: item.title,
             crReference: item.crReference,
-            status: item.status || 'DRAFT',
+            status: itemStatus,
             changeType: item.changeType || 'Existing data item amended',
             businessDriver: item.businessDriver || 'CAIS Regulatory Requirement',
             description: item.description || '',
@@ -184,13 +185,14 @@ export async function POST(request: Request) {
     }
 
     const authorId = userId || defaultBa?.id || 'ba-demo-user-id';
+    const singleStatus = (body.status === 'APPROVED' ? 'IN_REVIEW' : body.status) || 'DRAFT';
 
     try {
       const newChange: any = await prisma.caisChange.create({
         data: {
           title,
           crReference,
-          status: body.status || 'DRAFT',
+          status: singleStatus,
           changeType: Array.isArray(changeType) ? changeType.join(', ') : changeType || 'Existing data item amended',
           businessDriver: businessDriver || 'CAIS Regulatory Requirement',
           description: description || '',
