@@ -155,6 +155,22 @@ export async function DELETE(
     const cleanRef = id.replace(/^change-/, '').toUpperCase();
 
     // 1. Find existing change in Prisma DB or pre-populated items
+    const allChanges = await getMergedChanges(prisma, PREPOPULATED_CHANGES, { includeDrafts: true });
+    const targetChange = allChanges.find(
+      (c: any) =>
+        c.id === id ||
+        c.crReference === id ||
+        c.crReference?.toLowerCase() === id.toLowerCase() ||
+        c.crReference?.toUpperCase() === cleanRef
+    );
+
+    if (targetChange && targetChange.status !== 'DRAFT') {
+      return NextResponse.json(
+        { error: `Cannot delete change entry with status '${targetChange.status}'. Only DRAFT entries can be deleted.` },
+        { status: 403 }
+      );
+    }
+
     let existingChange = await prisma.caisChange.findFirst({
       where: {
         OR: [

@@ -4034,8 +4034,13 @@ export default function LivingDocumentPage() {
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteChange(c.id)}
-                                        className="px-2.5 py-1 rounded bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-all"
-                                        title="Delete this change entry"
+                                        disabled={c.status !== 'DRAFT'}
+                                        className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-all ${
+                                          c.status !== 'DRAFT'
+                                            ? 'opacity-40 cursor-not-allowed bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                                            : 'bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                                        }`}
+                                        title={c.status !== 'DRAFT' ? "Only DRAFT change entries can be deleted" : "Delete this change entry"}
                                       >
                                         <Trash2 className="w-3 h-3" /> Delete
                                       </button>

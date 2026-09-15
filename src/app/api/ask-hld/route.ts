@@ -72,21 +72,23 @@ export async function POST(req: NextRequest) {
       }
     };
 
+    const isSubSectionWritten = (sub: any) => {
+      const raw = typeof sub.contentBlocks === 'string' ? sub.contentBlocks : JSON.stringify(sub.contentBlocks || []);
+      if (!raw || raw.trim() === '[]' || raw.trim() === '') return false;
+      if (
+        raw.includes('[Content to be confirmed by BA') ||
+        raw.includes('[No content written yet') ||
+        raw.includes('[Business rule content to be confirmed')
+      ) {
+        return false;
+      }
+      return true;
+    };
+
     const isSectionWritten = (secNum: string) => {
       const targetSec = (sections || []).find((s: any) => s.sectionNumber === secNum);
       if (!targetSec || !targetSec.subSections || targetSec.subSections.length === 0) return false;
-      for (const sub of targetSec.subSections) {
-        const raw = typeof sub.contentBlocks === 'string' ? sub.contentBlocks : JSON.stringify(sub.contentBlocks || []);
-        if (
-          raw.includes('[Content to be confirmed by BA') ||
-          raw.includes('[No content written yet') ||
-          raw.includes('[Business rule content to be confirmed') ||
-          raw.trim() === '[]'
-        ) {
-          return false;
-        }
-      }
-      return true;
+      return targetSec.subSections.some((sub: any) => isSubSectionWritten(sub));
     };
 
     let answer = '';
