@@ -92,7 +92,7 @@ export async function GET() {
         margin: 40,
         size: 'A4',
         info: {
-          Title: 'CRA CAIS Reporting High Level Design',
+          Title: 'CRA CAIS Reporting HLD',
           Author: 'CAIS HLD Generator',
           Subject: 'UK CAIS Monthly Regulatory Reporting Process High Level Design',
         },
@@ -110,7 +110,7 @@ export async function GET() {
 
       // --- COVER PAGE ---
       doc.moveDown(4);
-      doc.fontSize(22).fillColor(primaryRed).font('Helvetica-Bold').text('CRA CAIS Reporting High Level Design');
+      doc.fontSize(22).fillColor(primaryRed).font('Helvetica-Bold').text('CRA CAIS Reporting HLD');
       doc.moveDown(0.5);
       doc.fontSize(14).fillColor(darkGrey).font('Helvetica').text('High Level Design — Consolidated Document');
       doc.moveDown(2);

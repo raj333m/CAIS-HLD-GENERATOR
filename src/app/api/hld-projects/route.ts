@@ -145,8 +145,8 @@ export async function GET(req: NextRequest) {
     if (!metadata || projectId === 'proj-alpha') {
       metadata = {
         coverDetails: {
-          title: proj?.projectName || 'CRA CAIS Reporting High Level Design',
-          subtitle: `High Level Design — ${proj?.targetBrand || 'Consolidated Document'}`,
+          title: 'CRA CAIS Reporting HLD',
+          subtitle: 'High Level Design — Consolidated Document',
           author: 'Aishwarya Raj Singh',
           date: todayStr,
           version: '1.0',
@@ -247,8 +247,8 @@ export async function POST(req: NextRequest) {
 
     const newMetadata = {
       coverDetails: {
-        title: projectName.trim(),
-        subtitle: `High Level Design — ${brandList.join(', ')}`,
+        title: 'CRA CAIS Reporting HLD',
+        subtitle: 'High Level Design — Consolidated Document',
         author: 'Aishwarya Raj Singh',
         date: todayStr,
         version: '1.0',

@@ -475,7 +475,7 @@ export async function GET() {
         spacing: { before: 0, after: 120 },
         children: [
           new TextRun({
-            text: 'CRA CAIS Reporting High Level Design',
+            text: 'CRA CAIS Reporting HLD',
             bold: true,
             size: 48, // 24pt
             font: 'Calibri',

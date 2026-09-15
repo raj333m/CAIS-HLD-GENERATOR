@@ -31,6 +31,8 @@ import {
   GripVertical,
   AlertTriangle,
   Shield,
+  Search,
+  Filter,
 } from 'lucide-react';
 import { RuleCategoryChip, StatusBadge, RULE_CATEGORY_CONFIG, TOKENS } from '@/styles/tokens';
 
@@ -1229,13 +1231,18 @@ export default function LivingDocumentPage() {
 
   // Editable Cover Metadata State
   const [coverDetails, setCoverDetails] = useState({
-    title: 'CRA CAIS Reporting High Level Design',
+    title: 'CRA CAIS Reporting HLD',
     subtitle: 'High Level Design — Consolidated Document',
     author: 'Aishwarya Raj Singh',
     date: getTodayFormatted(),
     version: '1.0',
   });
   const [editingCover, setEditingCover] = useState(false);
+
+  // Section 3 Search & Filter state
+  const [sec3CrSearch, setSec3CrSearch] = useState('');
+  const [sec3FromDate, setSec3FromDate] = useState('');
+  const [sec3ToDate, setSec3ToDate] = useState('');
 
   // Editable and Reorderable Table of Contents State
   const [tocItems, setTocItems] = useState<any[]>([
@@ -1555,6 +1562,39 @@ export default function LivingDocumentPage() {
 
   // Section 3 CAIS Changes & Batch Intake State
   const [caisChanges, setCaisChanges] = useState<any[]>([]);
+
+  const filteredCaisChanges = React.useMemo(() => {
+    return caisChanges.filter((c: any) => {
+      // CR Number Search
+      if (sec3CrSearch.trim()) {
+        const q = sec3CrSearch.trim().toLowerCase();
+        const matchRef = c.crReference && c.crReference.toLowerCase().includes(q);
+        const matchTitle = c.title && c.title.toLowerCase().includes(q);
+        if (!matchRef && !matchTitle) return false;
+      }
+
+      // Date Range Filter
+      const dateRaw = c.creationDate || c.createdAt || c.date;
+      if (dateRaw && (sec3FromDate || sec3ToDate)) {
+        let changeDateStr = '';
+        try {
+          const d = new Date(dateRaw);
+          if (!isNaN(d.getTime())) {
+            changeDateStr = d.toISOString().substring(0, 10);
+          } else if (typeof dateRaw === 'string') {
+            changeDateStr = dateRaw.substring(0, 10);
+          }
+        } catch (e) {
+          changeDateStr = String(dateRaw).substring(0, 10);
+        }
+
+        if (sec3FromDate && changeDateStr < sec3FromDate) return false;
+        if (sec3ToDate && changeDateStr > sec3ToDate) return false;
+      }
+
+      return true;
+    });
+  }, [caisChanges, sec3CrSearch, sec3FromDate, sec3ToDate]);
   const [showBatchChangeModal, setShowBatchChangeModal] = useState(false);
   const [submittingBatch, setSubmittingBatch] = useState(false);
   const [batchChangesList, setBatchChangesList] = useState<any[]>([
@@ -2817,16 +2857,22 @@ export default function LivingDocumentPage() {
         </div>
       )}
 
-      {/* PAGE HEADER: 9pt Calibri regular #606060 with 1pt red bottom rule */}
-      <div className="border-b border-[#C0272D] pb-2 flex items-center justify-between">
-        <span className="text-[9pt] text-[#606060] dark:text-slate-400 font-sans tracking-wide">
-          Data Engineering | Data Services
-        </span>
-        <div className="flex items-center gap-2">
+      {/* PAGE HEADER: Static Title "CRA CAIS Reporting HLD" with red bottom rule */}
+      <div className="border-b border-[#C0272D] pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <BookOpen className="w-6 h-6 text-[#C0272D] shrink-0" />
+            CRA CAIS Reporting HLD
+          </h1>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans tracking-wide block mt-0.5">
+            Data Engineering | Data Services — Consolidated Living Document
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <a
             href="/api/export/docx"
             download
-            className="px-3 py-1.5 rounded-lg bg-[#C0272D] hover:bg-red-700 text-white text-xs font-semibold flex items-center gap-1 transition-all shadow-xs"
+            className="px-3.5 py-2 rounded-xl bg-[#C0272D] hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
           >
             <Download className="w-3.5 h-3.5" /> Export Word (.docx)
           </a>
@@ -2834,7 +2880,7 @@ export default function LivingDocumentPage() {
             href="/api/export/pdf"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs border border-slate-700"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs border border-slate-700"
             title="Download document as PDF"
           >
             <Download className="w-3.5 h-3.5 text-rose-400" /> Export PDF (.pdf)
@@ -2842,10 +2888,9 @@ export default function LivingDocumentPage() {
         </div>
       </div>
 
-      {/* PROJECT SWITCHER TOOLBAR */}
+      {/* PROJECT SWITCHER TOOLBAR (Moved under static title) */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <BookOpen className="w-4 h-4 text-[#C0272D]" />
           <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Active CRA HLD Project:</span>
           <select
             value={activeProjectId}
@@ -3801,13 +3846,94 @@ export default function LivingDocumentPage() {
                     )}
                   </div>
 
+                  {/* SECTION 3 SEARCH & FILTER CONTROL BAR */}
+                  <div className="p-4 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-200/80 dark:border-slate-700/60 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-[#C0272D]" />
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                          Section 3 Register Search & Date Range Filter
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 font-mono bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                          {(sec3CrSearch || sec3FromDate || sec3ToDate)
+                            ? `Showing ${filteredCaisChanges.length} of ${caisChanges.length} changes`
+                            : `${caisChanges.length} Total Entries`}
+                        </span>
+                        {(sec3CrSearch || sec3FromDate || sec3ToDate) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSec3CrSearch('');
+                              setSec3FromDate('');
+                              setSec3ToDate('');
+                            }}
+                            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" /> Reset filters
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* CR Number Text Search */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
+                          CR Number / Reference
+                        </label>
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                          <input
+                            type="text"
+                            value={sec3CrSearch}
+                            onChange={(e) => setSec3CrSearch(e.target.value)}
+                            placeholder="e.g. 003 or CAIS-2026-003"
+                            className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C0272D]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Creation Date From */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
+                          Creation Date From
+                        </label>
+                        <input
+                          type="date"
+                          value={sec3FromDate}
+                          onChange={(e) => setSec3FromDate(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#C0272D]"
+                        />
+                      </div>
+
+                      {/* Creation Date To */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wider">
+                          Creation Date To
+                        </label>
+                        <input
+                          type="date"
+                          value={sec3ToDate}
+                          onChange={(e) => setSec3ToDate(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#C0272D]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Master Change Log Table */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h2 className="text-[13pt] font-bold text-[#202020] dark:text-white">
                         Master Change Log
                       </h2>
-                      <span className="text-xs font-mono text-slate-500">{caisChanges.length} Entries Logged</span>
+                      <span className="text-xs font-mono text-slate-500">
+                        {(sec3CrSearch || sec3FromDate || sec3ToDate)
+                          ? `Showing ${filteredCaisChanges.length} of ${caisChanges.length} Entries`
+                          : `${caisChanges.length} Entries Logged`}
+                      </span>
                     </div>
                     <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
                       <table className="w-full text-left text-[11pt] border-collapse">
@@ -3823,46 +3949,54 @@ export default function LivingDocumentPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans">
-                          {caisChanges.map((c, idx) => (
-                            <tr key={c.id || idx} className={idx % 2 === 1 ? 'bg-[#F2F2F2] dark:bg-slate-900/60' : 'bg-white dark:bg-slate-950'}>
-                              <td className="p-3 font-mono font-bold text-slate-900 dark:text-white">{c.crReference}</td>
-                              <td className="p-3 font-semibold text-slate-900 dark:text-slate-200">{c.title}</td>
-                              <td className="p-3 text-xs text-slate-700 dark:text-slate-300">{c.changeType}</td>
-                              <td className="p-3 text-xs text-slate-700 dark:text-slate-300">{c.impactedBureaus}</td>
-                              <td className="p-3 text-xs font-mono text-slate-800 dark:text-slate-200">{c.targetMonth}</td>
-                              <td className="p-3">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                  c.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
-                                  c.status === 'IN_REVIEW' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
-                                  'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
-                                }`}>
-                                  {c.status}
-                                </span>
+                          {filteredCaisChanges.length === 0 ? (
+                            <tr>
+                              <td colSpan={isBaOrAdmin ? 7 : 6} className="p-6 text-center text-xs text-slate-500 italic">
+                                No CAIS changes match the active search/filter criteria.
                               </td>
-                              {isBaOrAdmin && (
-                                <td className="p-3 text-center whitespace-nowrap">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleOpenEditChangeModal(c)}
-                                      className="px-2.5 py-1 rounded bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-300 border border-blue-500/20 text-xs font-semibold flex items-center gap-1 transition-all"
-                                      title="Modify / Edit this change entry"
-                                    >
-                                      <Edit3 className="w-3 h-3" /> Modify
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteChange(c.id)}
-                                      className="px-2.5 py-1 rounded bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-all"
-                                      title="Delete this change entry"
-                                    >
-                                      <Trash2 className="w-3 h-3" /> Delete
-                                    </button>
-                                  </div>
-                                </td>
-                              )}
                             </tr>
-                          ))}
+                          ) : (
+                            filteredCaisChanges.map((c, idx) => (
+                              <tr key={c.id || idx} className={idx % 2 === 1 ? 'bg-[#F2F2F2] dark:bg-slate-900/60' : 'bg-white dark:bg-slate-950'}>
+                                <td className="p-3 font-mono font-bold text-slate-900 dark:text-white">{c.crReference}</td>
+                                <td className="p-3 font-semibold text-slate-900 dark:text-slate-200">{c.title}</td>
+                                <td className="p-3 text-xs text-slate-700 dark:text-slate-300">{c.changeType}</td>
+                                <td className="p-3 text-xs text-slate-700 dark:text-slate-300">{c.impactedBureaus}</td>
+                                <td className="p-3 text-xs font-mono text-slate-800 dark:text-slate-200">{c.targetMonth}</td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                    c.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
+                                    c.status === 'IN_REVIEW' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' :
+                                    'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                                  }`}>
+                                    {c.status}
+                                  </span>
+                                </td>
+                                {isBaOrAdmin && (
+                                  <td className="p-3 text-center whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenEditChangeModal(c)}
+                                        className="px-2.5 py-1 rounded bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-300 border border-blue-500/20 text-xs font-semibold flex items-center gap-1 transition-all"
+                                        title="Modify / Edit this change entry"
+                                      >
+                                        <Edit3 className="w-3 h-3" /> Modify
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteChange(c.id)}
+                                        className="px-2.5 py-1 rounded bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition-all"
+                                        title="Delete this change entry"
+                                      >
+                                        <Trash2 className="w-3 h-3" /> Delete
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -3874,16 +4008,22 @@ export default function LivingDocumentPage() {
                       Detailed Change Entries
                     </h2>
                     <div className="space-y-4">
-                      {caisChanges.map((c, idx) => (
-                        <DetailedChangeCard
-                          key={c.id || idx}
-                          change={c}
-                          defaultExpanded={idx === 0}
-                          isBaOrAdmin={isBaOrAdmin}
-                          onEdit={handleOpenEditChangeModal}
-                          onDelete={handleDeleteChange}
-                        />
-                      ))}
+                      {filteredCaisChanges.length === 0 ? (
+                        <div className="p-6 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 text-center text-xs text-slate-500 italic">
+                          No detailed change specifications match the active search/filter criteria.
+                        </div>
+                      ) : (
+                        filteredCaisChanges.map((c, idx) => (
+                          <DetailedChangeCard
+                            key={c.id || idx}
+                            change={c}
+                            defaultExpanded={idx === 0}
+                            isBaOrAdmin={isBaOrAdmin}
+                            onEdit={handleOpenEditChangeModal}
+                            onDelete={handleDeleteChange}
+                          />
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
