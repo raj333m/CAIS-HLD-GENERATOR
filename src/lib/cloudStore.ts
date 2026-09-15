@@ -270,7 +270,13 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
     })
   );
 
-  const activeList = enrichedList.filter(Boolean);
+  const activeList = enrichedList.filter((c: any) => {
+    if (!c) return false;
+    if (c.title === 'Draft CAIS Change Intake' && (!c.description || c.description.trim() === '')) {
+      return false;
+    }
+    return true;
+  });
 
   // 4b. Normalize baseline seed items to CAIS-BASE-00X
   const normalizedList = activeList.map((c: any) => {

@@ -78,7 +78,8 @@ export default function NewChangeIntakePage() {
     selectedBureaus.length > 0;
 
   const autoSaveDraftToBackend = async () => {
-    if (!title.trim() && !crReference.trim()) return;
+    const hasMeaningfulContent = Boolean(title.trim() || description.trim() || businessDriver.trim());
+    if (!hasMeaningfulContent) return;
     try {
       const payload = {
         title: title.trim() || 'Draft CAIS Change Intake',
@@ -130,9 +131,10 @@ export default function NewChangeIntakePage() {
     }
   };
 
-  // Auto-save draft effect
+  // Auto-save draft effect (only fires when user types title, description, or business driver)
   useEffect(() => {
-    if (title.trim() || crReference.trim()) {
+    const hasMeaningfulContent = Boolean(title.trim() || description.trim() || businessDriver.trim());
+    if (hasMeaningfulContent) {
       const timer = setTimeout(() => {
         autoSaveDraftToBackend();
       }, 1000);
