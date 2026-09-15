@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import {
   Document,
@@ -20,7 +20,7 @@ import {
 } from 'docx';
 import { MASTER_SECTIONS } from '@/lib/sectionsData';
 import { PREPOPULATED_CHANGES } from '@/app/api/changes/route';
-import { getCloudChangeState, deletedIds, getCreatedChanges } from '@/lib/cloudStore';
+import { getMergedChanges } from '@/lib/cloudStore';
 import { getDiagramAPngBuffer, getDiagramBPngBuffer } from '@/lib/exportDiagrams';
 import {
   REGULATORY_TOC,
@@ -253,8 +253,11 @@ function makeCustomTable(headers: string[], rows: string[][]) {
   });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const projectId = searchParams.get('projectId') || 'proj-alpha';
+
     let sections: any[] = [];
     let changes: any[] = [];
 
@@ -263,58 +266,21 @@ export async function GET() {
         include: { subSections: { orderBy: { displayOrder: 'asc' } } },
         orderBy: { displayOrder: 'asc' },
       });
-      changes = await prisma.caisChange.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
     } catch (dbErr) {
       console.error('DB query failed in DOCX export, using fallbacks:', dbErr);
     }
 
-    if (!changes || changes.length === 0) {
-      changes = PREPOPULATED_CHANGES;
-    }
-
-    try {
-      const cloudCreated = await getCreatedChanges();
-      if (cloudCreated.length > 0) {
-        const existingRefs = new Set(changes.map((c: any) => c.crReference));
-        const newItems = cloudCreated.filter((c: any) => !existingRefs.has(c.crReference));
-        changes = [...newItems, ...changes];
-      }
-    } catch (e) {}
-
-    const enrichedChanges = await Promise.all(
-      changes.map(async (c: any) => {
-        try {
-          const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
-          const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
-          const isDeleted =
-            (cloudStateByRef && cloudStateByRef.deleted) ||
-            (cloudStateById && cloudStateById.deleted) ||
-            deletedIds.has(c.id) ||
-            deletedIds.has(c.crReference);
-          if (isDeleted) return null;
-
-          const cloudState = cloudStateByRef || cloudStateById;
-          if (cloudState) {
-            return {
-              ...c,
-              status: cloudState.status || c.status,
-              versionNumber: cloudState.versionNumber || c.versionNumber,
-              reviewComments: cloudState.reviewComments || c.reviewComments,
-              reviewedByName: cloudState.reviewedByName || c.reviewedByName,
-              approvalDate: cloudState.approvalDate || c.approvalDate,
-            };
-          }
-        } catch (e) {}
-        return c;
-      })
-    );
-
-    changes = enrichedChanges.filter(Boolean);
-
     if (!sections || sections.length === 0) {
       sections = MASTER_SECTIONS;
+    }
+
+    // Retrieve merged live changes
+    try {
+      const allMerged = await getMergedChanges(prisma, PREPOPULATED_CHANGES);
+      changes = allMerged.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);
+    } catch (err) {
+      console.error('Failed to retrieve merged changes in DOCX export:', err);
+      changes = PREPOPULATED_CHANGES.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);
     }
 
     const diagramAPng = getDiagramAPngBuffer();
@@ -358,6 +324,7 @@ export async function GET() {
     docChildren.push(makeP('Organization: HSBC Operations, Services and Technology'));
     docChildren.push(makeP('Classification: RESTRICTED'));
     docChildren.push(makeP('Date: 14 September 2026'));
+    docChildren.push(makeP(`Project ID: ${projectId}`));
     docChildren.push(makeP('Version: 1.0 (Regulatory Consolidated)'));
     docChildren.push(new Paragraph({ text: '' }));
 
@@ -533,7 +500,7 @@ export async function GET() {
               data: diagramAPng,
               type: 'png',
               transformation: { width: 500, height: 575 },
-              altText: { title: 'Diagram A', description: 'Primary Process Flow', name: 'Diagram A' },
+              altText: { title: 'Diagram A', description: 'Primary Process Flow Diagram A', name: 'Diagram A' },
             }),
           ],
         })
@@ -553,7 +520,7 @@ export async function GET() {
               data: diagramBPng,
               type: 'png',
               transformation: { width: 500, height: 583 },
-              altText: { title: 'Diagram B', description: 'Operational Swimlane Diagram', name: 'Diagram B' },
+              altText: { title: 'Diagram B', description: 'Operational Swimlane Diagram B', name: 'Diagram B' },
             }),
           ],
         })
@@ -679,19 +646,20 @@ export async function GET() {
 
     docChildren.push(makeH2('Master Change Log'));
     const changeLogHeaders = ['CR Reference', 'Title', 'Change Type', 'Impacted Bureaus', 'Target Month', 'Status'];
-    const changeLogRows = changes.map((c) => [
+    const changeLogRows = (changes || []).map((c) => [
       c.crReference || ' ',
       c.title || ' ',
       c.changeType || ' ',
       c.impactedBureaus || ' ',
       c.targetMonth || ' ',
-      c.status || ' ',
+      c.status === 'REVISION_REQUESTED' ? 'SENT_BACK' : (c.status || 'DRAFT'),
     ]);
     docChildren.push(makeCustomTable(changeLogHeaders, changeLogRows));
     docChildren.push(new Paragraph({ text: '' }));
 
     docChildren.push(makeH2('Detailed Change Entries'));
     for (const c of changes) {
+      const displayStatus = c.status === 'REVISION_REQUESTED' ? 'SENT_BACK' : (c.status || 'DRAFT');
       docChildren.push(makeH3(`${c.crReference} — ${c.title}`, true));
       docChildren.push(
         makeCustomTable(
@@ -705,7 +673,7 @@ export async function GET() {
             ['Impacted Bureaus', c.impactedBureaus || ' '],
             ['Impacted CAIS Fields', c.impactedDataItems || ' '],
             ['Target Month', c.targetMonth || ' '],
-            ['Status', c.status || ' '],
+            ['Status', displayStatus],
             ['Reviewed / Approved By', c.reviewedByName || 'Stuart H Lindsay'],
           ]
         )
@@ -723,7 +691,7 @@ export async function GET() {
         {
           properties: {
             page: {
-              margin: { top: 1152, bottom: 1152, left: 1152, right: 1152 }, // 0.8 inch margins
+              margin: { top: 1152, bottom: 1152, left: 1152, right: 1152 },
             },
           },
           headers: {
@@ -735,7 +703,7 @@ export async function GET() {
                     new TextRun({
                       text: 'Data Engineering | Data Services',
                       bold: true,
-                      size: 18, // 9pt
+                      size: 18,
                       font: 'Times New Roman',
                       color: COLOR_MID_GREY,
                     }),
@@ -753,7 +721,7 @@ export async function GET() {
                   children: [
                     new TextRun({
                       text: '© HSBC Operations, Services and Technology',
-                      size: 16, // 8pt
+                      size: 16,
                       font: 'Times New Roman',
                       color: COLOR_MID_GREY,
                     }),
@@ -806,15 +774,18 @@ export async function GET() {
     const buffer = await Packer.toBuffer(doc);
 
     return new NextResponse(new Uint8Array(buffer), {
-      status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': 'attachment; filename="CRA_CAIS_Reporting_High_Level_Design.docx"',
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Content-Length': String(buffer.length),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error: any) {
-    console.error('DOCX Export Error:', error);
+    console.error('Docx export error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

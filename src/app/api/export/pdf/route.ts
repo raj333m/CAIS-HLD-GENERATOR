@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import PDFDocument from 'pdfkit';
 import { MASTER_SECTIONS } from '@/lib/sectionsData';
 import { PREPOPULATED_CHANGES } from '@/app/api/changes/route';
-import { getCloudChangeState, deletedIds, getCreatedChanges } from '@/lib/cloudStore';
+import { getMergedChanges } from '@/lib/cloudStore';
 import { getDiagramAPngBuffer, getDiagramBPngBuffer } from '@/lib/exportDiagrams';
 import {
   REGULATORY_TOC,
@@ -30,8 +30,11 @@ function cleanText(str: any): string {
     .replace(/\0/g, '');
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const projectId = searchParams.get('projectId') || 'proj-alpha';
+
     let sections: any[] = [];
     let changes: any[] = [];
 
@@ -40,58 +43,21 @@ export async function GET() {
         include: { subSections: { orderBy: { displayOrder: 'asc' } } },
         orderBy: { displayOrder: 'asc' },
       });
-      changes = await prisma.caisChange.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
     } catch (dbErr) {
       console.error('DB query failed in PDF export, using fallbacks:', dbErr);
     }
 
-    if (!changes || changes.length === 0) {
-      changes = PREPOPULATED_CHANGES;
-    }
-
-    try {
-      const cloudCreated = await getCreatedChanges();
-      if (cloudCreated.length > 0) {
-        const existingRefs = new Set(changes.map((c: any) => c.crReference));
-        const newItems = cloudCreated.filter((c: any) => !existingRefs.has(c.crReference));
-        changes = [...newItems, ...changes];
-      }
-    } catch (e) {}
-
-    const enrichedChanges = await Promise.all(
-      changes.map(async (c: any) => {
-        try {
-          const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
-          const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
-          const isDeleted =
-            (cloudStateByRef && cloudStateByRef.deleted) ||
-            (cloudStateById && cloudStateById.deleted) ||
-            deletedIds.has(c.id) ||
-            deletedIds.has(c.crReference);
-          if (isDeleted) return null;
-
-          const cloudState = cloudStateByRef || cloudStateById;
-          if (cloudState) {
-            return {
-              ...c,
-              status: cloudState.status || c.status,
-              versionNumber: cloudState.versionNumber || c.versionNumber,
-              reviewComments: cloudState.reviewComments || c.reviewComments,
-              reviewedByName: cloudState.reviewedByName || c.reviewedByName,
-              approvalDate: cloudState.approvalDate || c.approvalDate,
-            };
-          }
-        } catch (e) {}
-        return c;
-      })
-    );
-
-    changes = enrichedChanges.filter(Boolean);
-
     if (!sections || sections.length === 0) {
       sections = MASTER_SECTIONS;
+    }
+
+    // Retrieve merged live changes (Gist CloudStore + DB + Baseline)
+    try {
+      const allMerged = await getMergedChanges(prisma, PREPOPULATED_CHANGES);
+      changes = allMerged.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);
+    } catch (err) {
+      console.error('Failed to retrieve merged changes in PDF export:', err);
+      changes = PREPOPULATED_CHANGES.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);
     }
 
     // Pre-render diagram PNG buffers
@@ -119,7 +85,6 @@ export async function GET() {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', (err) => reject(err));
 
-      // Helper for page break and section titles
       const addPageBreak = () => {
         doc.addPage();
       };
@@ -155,6 +120,7 @@ export async function GET() {
       doc.text('Organization: HSBC Operations, Services and Technology');
       doc.text('Classification: RESTRICTED');
       doc.text('Date: 14 September 2026');
+      doc.text(`Project ID: ${projectId}`);
       doc.text('Version: 1.0 (Regulatory Consolidated)');
       doc.moveDown(2);
 
@@ -282,22 +248,26 @@ export async function GET() {
       renderParagraph('The diagram below illustrates the process of creating the extract.');
       doc.moveDown(0.4);
 
-      // Embed Diagram A
+      // Embed Diagram A Image
       if (diagramAPng) {
-        doc.image(diagramAPng, 40, doc.y, { width: 515 });
-        doc.y += 380;
-      } else {
-        doc.fontSize(10).font('Times-Bold').fillColor(primaryRed).text('[Diagram A — Primary Process Flowchart]');
+        try {
+          doc.image(diagramAPng, 40, doc.y, { fit: [515, 450], align: 'center' });
+          doc.y += 455;
+        } catch (e) {
+          console.error('Error embedding Diagram A in PDF:', e);
+        }
       }
       doc.moveDown(1);
 
       addPageBreak();
       renderSubHeading('Operational Swimlane & Manual Intervention Map (Diagram B)');
       if (diagramBPng) {
-        doc.image(diagramBPng, 40, doc.y, { width: 515 });
-        doc.y += 400;
-      } else {
-        doc.fontSize(10).font('Times-Bold').fillColor(primaryRed).text('[Diagram B — Operational Swimlane & Manual Intervention Map]');
+        try {
+          doc.image(diagramBPng, 40, doc.y, { fit: [515, 480], align: 'center' });
+          doc.y += 485;
+        } catch (e) {
+          console.error('Error embedding Diagram B in PDF:', e);
+        }
       }
       doc.moveDown(1);
 
@@ -477,7 +447,7 @@ export async function GET() {
         }
       }
 
-      // --- SECTION 3 (CHANGE REGISTER) ---
+      // --- SECTION 3 (CAIS CHANGE REGISTER) ---
       addPageBreak();
       renderMaroonSectionHeading('3 CAIS Change Register');
       renderParagraph('This section is an append-only historical register of all approved CAIS changes. The latest changes appear at the top. Earlier entries are never overwritten or deleted.');
@@ -534,7 +504,7 @@ export async function GET() {
         doc.moveDown(0.8);
       }
 
-      // --- DRAW DYNAMIC PAGE FURNITURE (HEADERS & FOOTERS) ON ALL CONTENT PAGES ---
+      // --- DRAW DYNAMIC PAGE FURNITURE (HEADERS & FOOTERS) ON ALL PAGES ---
       const range = doc.bufferedPageRange();
       const totalPages = range.count;
 
@@ -543,7 +513,7 @@ export async function GET() {
 
         // Header (Content pages only, i >= 1)
         if (i >= 1) {
-          doc.fontSize(8.5).font('Times-Bold').fillColor('#64748B').text('Data Engineering | Data Services', 40, 20);
+          doc.fontSize(8.5).font('Times-Bold').fillColor('#64748B').text('Data Engineering | Data Services', 40, 20, { lineBreak: false });
           // Header Rule
           doc.strokeColor('#CBD5E1').lineWidth(0.75).moveTo(40, 32).lineTo(555, 32).stroke();
           // Small Maroon Accent Block
@@ -554,9 +524,9 @@ export async function GET() {
         doc.strokeColor('#CBD5E1').lineWidth(0.75).moveTo(40, 805).lineTo(555, 805).stroke();
         doc.rect(540, 802, 15, 5).fill(primaryRed);
 
-        doc.fontSize(8).font('Times-Roman').fillColor('#64748B').text('© HSBC Operations, Services and Technology', 40, 812, { width: 300, align: 'left' });
-        doc.text(`Page ${i + 1} of ${totalPages}`, 350, 812, { width: 205, align: 'right' });
-        doc.fontSize(7.5).font('Times-Bold').fillColor('#94A3B8').text('RESTRICTED', 40, 824, { width: 515, align: 'center' });
+        doc.fontSize(8).font('Times-Roman').fillColor('#64748B').text('© HSBC Operations, Services and Technology', 40, 812, { width: 300, align: 'left', lineBreak: false });
+        doc.text(`Page ${i + 1} of ${totalPages}`, 350, 812, { width: 205, align: 'right', lineBreak: false });
+        doc.fontSize(7.5).font('Times-Bold').fillColor('#94A3B8').text('RESTRICTED', 40, 824, { width: 515, align: 'center', lineBreak: false });
       }
 
       doc.end();
