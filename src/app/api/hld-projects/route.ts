@@ -74,18 +74,9 @@ let hldProjectsStore: HldProject[] = [
   },
 ];
 
-const defaultAlphaSections = JSON.parse(JSON.stringify(BLANK_SECTIONS));
-const sec4Master = MASTER_SECTIONS.find((s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0');
-if (sec4Master) {
-  const alphaSec4Idx = defaultAlphaSections.findIndex((s: any) => s.sectionNumber === '4.0' || s.id === 'sec-4-0');
-  if (alphaSec4Idx !== -1) {
-    defaultAlphaSections[alphaSec4Idx] = JSON.parse(JSON.stringify(sec4Master));
-  }
-}
-
 // In-memory sections store per project ID (starts BLANK until Create New HLD is run with consent)
 let projectSectionsStore: Record<string, any[]> = {
-  'proj-alpha': defaultAlphaSections,
+  'proj-alpha': JSON.parse(JSON.stringify(BLANK_SECTIONS)),
 };
 
 // In-memory section reviews per project ID
@@ -128,6 +119,7 @@ export async function GET(req: NextRequest) {
       });
       if (cloud.projectSections) Object.assign(projectSectionsStore, cloud.projectSections);
       if (cloud.projectMetadata) Object.assign(projectMetadataStore, cloud.projectMetadata);
+      projectSectionsStore['proj-alpha'] = JSON.parse(JSON.stringify(BLANK_SECTIONS));
     }
   } catch (e) {}
 

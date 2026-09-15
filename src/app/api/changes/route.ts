@@ -154,7 +154,7 @@ export async function GET(request: Request) {
     changes = enrichedChanges.filter(Boolean);
 
     const projectId = searchParams.get('projectId');
-    if (projectId && projectId !== 'proj-alpha') {
+    if (projectId) {
       changes = changes.filter((c: any) => c.projectId === projectId);
     }
 
