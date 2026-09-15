@@ -1653,7 +1653,8 @@ export default function LivingDocumentPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          changes: batchChangesList,
+          changes: batchChangesList.map((item) => ({ ...item, projectId: activeProjectId || 'proj-alpha' })),
+          projectId: activeProjectId || 'proj-alpha',
           userId: user?.id,
         }),
       });
@@ -2045,6 +2046,7 @@ export default function LivingDocumentPage() {
         body: JSON.stringify({
           title: submitForm.title,
           crReference: submitForm.crReference,
+          projectId: activeProjectId || 'proj-alpha',
           businessDriver: productsStr,
           impactedProducts: productsStr,
           changeType: submitForm.changeType,

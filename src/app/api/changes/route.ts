@@ -120,7 +120,9 @@ export async function GET(request: Request) {
       const cloudCreated = await getCreatedChanges();
       if (cloudCreated.length > 0) {
         const existingRefs = new Set(changes.map((c: any) => c.crReference));
-        const newItems = cloudCreated.filter((c: any) => !existingRefs.has(c.crReference));
+        const newItems = cloudCreated
+          .filter((c: any) => !existingRefs.has(c.crReference))
+          .map((c: any) => ({ ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' }));
         changes = [...newItems, ...changes];
       }
     } catch (e) {}
@@ -136,9 +138,11 @@ export async function GET(request: Request) {
           if (isDeleted) return null;
 
           const cloudState = cloudStateByRef || cloudStateById;
+          const pId = c.projectId || c.hldDocumentId || 'proj-alpha';
           if (cloudState) {
             return {
               ...c,
+              projectId: pId,
               status: cloudState.status || c.status,
               versionNumber: cloudState.versionNumber || c.versionNumber,
               reviewComments: cloudState.reviewComments || c.reviewComments,
@@ -146,8 +150,9 @@ export async function GET(request: Request) {
               approvalDate: cloudState.approvalDate || c.approvalDate,
             };
           }
+          return { ...c, projectId: pId };
         } catch (e) {}
-        return c;
+        return { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
       })
     );
 
@@ -155,7 +160,7 @@ export async function GET(request: Request) {
 
     const projectId = searchParams.get('projectId');
     if (projectId) {
-      changes = changes.filter((c: any) => c.projectId === projectId);
+      changes = changes.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);
     }
 
     if (status) {
@@ -178,15 +183,19 @@ export async function POST(request: Request) {
       defaultBa = await prisma.user.findFirst({ where: { role: 'BA' } });
     } catch (e) {}
 
+    const targetProjectId = body.projectId || 'proj-alpha';
+
     // Handle batch creation of multiple changes
     if (Array.isArray(body.changes)) {
       const createdList = [];
       for (const item of body.changes) {
         const authorId = item.userId || body.userId || defaultBa?.id || 'ba-demo-user-id';
         if (!item.title || !item.crReference) continue;
+        const itemProjectId = item.projectId || targetProjectId;
 
+        let createdItem: any = null;
         try {
-          const newChange = await prisma.caisChange.create({
+          createdItem = await prisma.caisChange.create({
             data: {
               title: item.title,
               crReference: item.crReference,
@@ -201,13 +210,13 @@ export async function POST(request: Request) {
               impactedDataItems: Array.isArray(item.impactedDataItems) ? item.impactedDataItems.join(', ') : item.impactedDataItems || '',
               targetMonth: item.targetMonth || 'November 2026',
               createdById: authorId,
+              hldDocumentId: itemProjectId,
             },
           });
-          createdList.push(newChange);
         } catch (e) {
           // Fallback if DB is read-only
-          createdList.push({
-            id: `change-${Date.now()}`,
+          createdItem = {
+            id: `change-${Date.now()}-${Math.floor(Math.random()*1000)}`,
             title: item.title,
             crReference: item.crReference,
             status: item.status || 'DRAFT',
@@ -218,8 +227,12 @@ export async function POST(request: Request) {
             impactedBureaus: item.impactedBureaus || 'Experian, Equifax, TransUnion',
             targetMonth: item.targetMonth || 'November 2026',
             createdAt: new Date().toISOString(),
-          });
+          };
         }
+        createdItem.projectId = itemProjectId;
+        createdItem.hldDocumentId = itemProjectId;
+        await saveCreatedChange(createdItem);
+        createdList.push(createdItem);
       }
       return NextResponse.json({ changes: createdList }, { status: 201 });
     }
@@ -248,7 +261,7 @@ export async function POST(request: Request) {
     const authorId = userId || defaultBa?.id || 'ba-demo-user-id';
 
     try {
-      const newChange = await prisma.caisChange.create({
+      const newChange: any = await prisma.caisChange.create({
         data: {
           title,
           crReference,
@@ -263,6 +276,7 @@ export async function POST(request: Request) {
           impactedDataItems: Array.isArray(impactedDataItems) ? impactedDataItems.join(', ') : impactedDataItems || '',
           targetMonth: targetMonth || 'November 2026',
           createdById: authorId,
+          hldDocumentId: targetProjectId,
           risks: {
             create: risks.map((r: any) => ({
               risk: r.risk || 'General operational deployment risk',
@@ -276,6 +290,8 @@ export async function POST(request: Request) {
           risks: true,
         },
       });
+      newChange.projectId = targetProjectId;
+      newChange.hldDocumentId = targetProjectId;
       await saveCreatedChange(newChange);
       return NextResponse.json({ change: newChange }, { status: 201 });
     } catch (dbErr: any) {
@@ -295,10 +311,12 @@ export async function POST(request: Request) {
         impactedDataItems: Array.isArray(impactedDataItems) ? impactedDataItems.join(', ') : impactedDataItems || '',
         targetMonth: targetMonth || 'November 2026',
         author: 'Aishwarya Raj Singh',
+        projectId: targetProjectId,
+        hldDocumentId: targetProjectId,
         createdAt: new Date().toISOString(),
       };
       await saveCreatedChange(mockChange);
-      console.log('[POST /api/changes] Successfully created persistent change record with UUID:', mockChange.id);
+      console.log('[POST /api/changes] Successfully created persistent change record with UUID:', mockChange.id, 'for project:', targetProjectId);
       return NextResponse.json({ change: mockChange }, { status: 201 });
     }
   } catch (error: any) {

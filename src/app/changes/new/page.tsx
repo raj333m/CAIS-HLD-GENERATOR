@@ -65,6 +65,7 @@ export default function NewChangeIntakePage() {
         sectionsUpdated: sectionsUpdated || '1.3',
         impactedBureaus: selectedBureaus,
         targetMonth: targetMonth || 'November 2026',
+        projectId: 'proj-alpha',
         userId: user?.id,
         risks: [
           {
@@ -140,6 +141,7 @@ export default function NewChangeIntakePage() {
           title,
           crReference,
           status: 'IN_REVIEW',
+          projectId: 'proj-alpha',
           changeType,
           businessDriver,
           description,
