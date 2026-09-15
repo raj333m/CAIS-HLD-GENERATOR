@@ -154,30 +154,18 @@ export async function getCreatedChanges(): Promise<any[]> {
 }
 
 export async function saveCreatedChange(newChange: any): Promise<void> {
-  if (!newChange) return;
+  if (!newChange || !newChange.id) return;
   const store: any = await fetchMasterStore();
 
   const id = newChange.id;
   const crRef = newChange.crReference;
-  const cleanRef = crRef ? crRef.toUpperCase() : '';
-  const lowerRef = crRef ? crRef.toLowerCase() : '';
 
-  // Revoke any previous deletion tombstones for this id or crReference
-  if (id) {
-    if (store[id]) delete store[id].deleted;
-    deletedIds.delete(id);
-  }
-  if (crRef) {
-    if (store[crRef]) delete store[crRef].deleted;
-    if (store[cleanRef]) delete store[cleanRef].deleted;
-    if (store[lowerRef]) delete store[lowerRef].deleted;
-    deletedIds.delete(crRef);
-    deletedIds.delete(cleanRef);
-    deletedIds.delete(lowerRef);
-  }
+  // Revoke any previous deletion tombstone strictly for this record's unique ID
+  if (store[id]) delete store[id].deleted;
+  deletedIds.delete(id);
 
   const currentList = Array.isArray(store._createdChanges) ? store._createdChanges : [];
-  const existingIdx = currentList.findIndex((c: any) => (id && c.id === id) || (crRef && c.crReference === crRef));
+  const existingIdx = currentList.findIndex((c: any) => c.id === id);
   let updatedList;
   if (existingIdx >= 0) {
     updatedList = [...currentList];
@@ -187,18 +175,16 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
   }
   store._createdChanges = updatedList;
   await persistStore(store);
-  console.log('[saveCreatedChange] Successfully saved new change:', newChange.crReference, newChange.id);
+  console.log('[saveCreatedChange] Successfully saved active change record:', crRef, id);
 }
 
 export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = []): Promise<any[]> {
-  const mapByRef = new Map<string, any>();
   const mapById = new Map<string, any>();
 
   // 1. Prepopulated Changes (default base template)
   for (const c of prepopulatedList) {
     const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
     if (item.id) mapById.set(item.id, item);
-    if (item.crReference) mapByRef.set(item.crReference, item);
   }
 
   // 2. Database Changes (Prisma DB)
@@ -215,7 +201,6 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
       for (const c of dbChanges) {
         const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
         if (item.id) mapById.set(item.id, item);
-        if (item.crReference) mapByRef.set(item.crReference, item);
       }
     } catch (e) {
       console.warn('[getMergedChanges] DB query skipped:', e);
@@ -228,31 +213,27 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
     for (const c of cloudCreated) {
       const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
       if (item.id) mapById.set(item.id, item);
-      if (item.crReference) mapByRef.set(item.crReference, item);
     }
   } catch (e) {
     console.warn('[getMergedChanges] Cloud created changes query skipped:', e);
   }
 
-  // Deduplicate candidate changes
-  const allCandidates = Array.from(new Set([...mapById.values(), ...mapByRef.values()]));
+  const allCandidates = Array.from(mapById.values());
 
-  // 4. Enrich with CloudStore status & filter tombstones (deleted: true)
+  // 4. Enrich with CloudStore status & filter tombstones (deleted strictly by ID)
   const enrichedList = await Promise.all(
     allCandidates.map(async (c: any) => {
       try {
-        const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
         const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
+        const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
 
         const isDeleted =
-          (cloudStateByRef && cloudStateByRef.deleted) ||
-          (cloudStateById && cloudStateById.deleted) ||
-          deletedIds.has(c.id) ||
-          deletedIds.has(c.crReference);
+          (cloudStateById && cloudStateById.deleted === true) ||
+          deletedIds.has(c.id);
 
         if (isDeleted) return null;
 
-        const cloudState = cloudStateByRef || cloudStateById;
+        const cloudState = cloudStateById || cloudStateByRef;
         const pId = c.projectId || c.hldDocumentId || 'proj-alpha';
 
         if (cloudState) {
@@ -282,19 +263,13 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
 export async function deleteCreatedChange(id: string, crReference?: string): Promise<void> {
   const store: any = await fetchMasterStore();
   const currentList = Array.isArray(store._createdChanges) ? store._createdChanges : [];
-  const cleanRef = crReference ? crReference.toUpperCase() : '';
-  const filtered = currentList.filter((c: any) => {
-    if (c.id === id || c.id === `change-${id}`) return false;
-    if (crReference && (c.crReference === crReference || c.crReference?.toUpperCase() === cleanRef)) return false;
-    return true;
-  });
+  const filtered = currentList.filter((c: any) => c.id !== id && c.id !== `change-${id}`);
   store._createdChanges = filtered;
+
   if (id) {
     store[id] = { ...(store[id] || {}), deleted: true, updatedAt: new Date().toISOString() };
-  }
-  if (crReference) {
-    store[crReference] = { ...(store[crReference] || {}), deleted: true, updatedAt: new Date().toISOString() };
-    store[cleanRef] = { ...(store[cleanRef] || {}), deleted: true, updatedAt: new Date().toISOString() };
+    deletedIds.add(id);
+    deletedIds.add(`change-${id}`);
   }
   await persistStore(store);
 }

@@ -54,12 +54,11 @@ export const STANDARD_CAIS_ITEMS: CAISItemDef[] = [
 ];
 
 export const STANDARD_BRANDS = [
-  'Experian',
-  'Equifax',
-  'TransUnion',
   'HSBC Cards (51)',
   'First Direct (211)',
   'M&S Loans (947)',
+  'HSBC Retail (85)',
+  'M&S Current Accounts (662)',
 ];
 
 /**
