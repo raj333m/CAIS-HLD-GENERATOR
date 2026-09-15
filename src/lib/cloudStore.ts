@@ -272,9 +272,22 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
 
   const activeList = enrichedList.filter(Boolean);
 
+  // 4b. Normalize baseline seed items to CAIS-BASE-00X
+  const normalizedList = activeList.map((c: any) => {
+    const titleLower = (c.title || '').toLowerCase();
+    if (titleLower.includes('consumer duty payment holiday')) {
+      return { ...c, crReference: 'CAIS-BASE-001' };
+    } else if (titleLower.includes('buy-now-pay-later')) {
+      return { ...c, crReference: 'CAIS-BASE-002' };
+    } else if (titleLower.includes('default balance reconciliation')) {
+      return { ...c, crReference: 'CAIS-BASE-003' };
+    }
+    return c;
+  });
+
   // 5. Deduplicate by crReference per project (live created items take precedence over prepopulated items)
   const dedupedByRef = new Map<string, any>();
-  for (const c of activeList) {
+  for (const c of normalizedList) {
     const key = `${c.projectId || 'proj-alpha'}::${(c.crReference || '').trim().toUpperCase()}`;
     if (!dedupedByRef.has(key)) {
       dedupedByRef.set(key, c);

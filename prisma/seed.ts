@@ -2093,7 +2093,7 @@ async function main() {
   // 5. Seed Section 3 CAIS Change Register Entries (Append-only Master Change Log)
   const changesData = [
     {
-      crReference: 'CAIS-2026-003',
+      crReference: 'CAIS-BASE-003',
       title: 'Default Balance Reconciliation & Account Closure Date Alignment',
       status: 'DRAFT',
       changeType: 'Existing data item amended, Business rule change',
@@ -2108,7 +2108,7 @@ async function main() {
       createdById: baUser.id,
     },
     {
-      crReference: 'CAIS-2026-002',
+      crReference: 'CAIS-BASE-002',
       title: 'Buy-Now-Pay-Later (BNPL) Product Scope Expansion to CAIS',
       status: 'IN_REVIEW',
       changeType: 'New product type, New data item added, Technical schema change',
@@ -2125,7 +2125,7 @@ async function main() {
       reviewComments: 'Under review by Risk Committee.',
     },
     {
-      crReference: 'CAIS-2026-001',
+      crReference: 'CAIS-BASE-001',
       title: 'Consumer Duty Payment Holiday & Forbearance Indicator Update',
       status: 'APPROVED',
       changeType: 'Existing data item amended, Business rule change, Bureau variation',

@@ -20,11 +20,32 @@ export default function NewChangeIntakePage() {
   const router = useRouter();
 
   const [title, setTitle] = useState('');
-  const [crReference, setCrReference] = useState(`CAIS-2026-${Math.floor(100 + Math.random() * 900)}`);
+  const [crReference, setCrReference] = useState('CAIS-2026-001');
   const [changeType, setChangeType] = useState('Existing data item amended');
   const [businessDriver, setBusinessDriver] = useState('');
   const [description, setDescription] = useState('');
   const [targetMonth, setTargetMonth] = useState('November 2026');
+
+  useEffect(() => {
+    fetch('/api/changes?projectId=proj-alpha')
+      .then((res) => res.json())
+      .then((data) => {
+        const changes = data.changes || [];
+        let nextNum = 1;
+        changes.forEach((ch: any) => {
+          const ref = (ch.crReference || '').trim();
+          if (ref.startsWith('CAIS-2026-')) {
+            const match = ref.match(/CAIS-2026-(\d+)$/i);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (num >= nextNum) nextNum = num + 1;
+            }
+          }
+        });
+        setCrReference(`CAIS-2026-${String(nextNum).padStart(3, '0')}`);
+      })
+      .catch((e) => console.error('Failed to compute next CR reference:', e));
+  }, []);
 
   // Logic Specification
   const [beforeText, setBeforeText] = useState('');
