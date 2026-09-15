@@ -30,8 +30,14 @@ export default function NewChangeIntakePage() {
   const [beforeText, setBeforeText] = useState('');
   const [afterText, setAfterText] = useState('');
 
-  // Impacted Bureaus & Sections
-  const [selectedBureaus, setSelectedBureaus] = useState<string[]>(['Experian', 'Equifax', 'TransUnion']);
+  // Impacted Brand Portfolios & Sections
+  const [selectedBureaus, setSelectedBureaus] = useState<string[]>([
+    'HSBC Cards (51)',
+    'First Direct (211)',
+    'M&S Loans (947)',
+    'HSBC Retail (85)',
+    'M&S Current Accounts (662)',
+  ]);
   const [sectionsUpdated, setSectionsUpdated] = useState<string>('1.3, 2.2');
 
   // Risks
@@ -298,18 +304,24 @@ export default function NewChangeIntakePage() {
           </div>
         </div>
 
-        {/* Section 2: Bureaus & Living Document Mapping */}
+        {/* Section 2: Brand Portfolios & Living Document Mapping */}
         <div className="space-y-4 pt-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 border-b border-slate-200 dark:border-slate-800/60 pb-1">
-            2. Impacted Credit Reference Agencies & Living Document Sections
+            2. Impacted Brand Portfolios & Living Document Sections
           </h2>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Select Impacted Credit Bureaus <span className="text-rose-500">*</span>
+              Select Impacted Brand Portfolios <span className="text-rose-500">*</span>
             </label>
             <div className="flex flex-wrap gap-3">
-              {['Experian', 'Equifax', 'TransUnion'].map((bureau) => {
+              {[
+                'HSBC Cards (51)',
+                'First Direct (211)',
+                'M&S Loans (947)',
+                'HSBC Retail (85)',
+                'M&S Current Accounts (662)',
+              ].map((bureau) => {
                 const checked = selectedBureaus.includes(bureau);
                 return (
                   <button

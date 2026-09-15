@@ -133,7 +133,7 @@ export default function TraceabilityPage() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-3xl">
-            Live cross-sectional mapping between standard CAIS 44-Field variables and impacted credit bureaus / brand portfolios. Click any non-zero matrix cell to view matching CR audit records.
+            Live cross-sectional mapping between standard CAIS 44-Field variables and impacted brand portfolios (HSBC Cards 51, First Direct 211, M&S Loans 947, HSBC Retail 85, M&S Current Accounts 662). Click any non-zero matrix cell to view matching CR audit records.
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export default function TraceabilityPage() {
             Coverage Brands
           </div>
           <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{STANDARD_BRANDS.length}</div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Standard Bureaus & Brand Portfolios tracked</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Standard Brand Portfolios tracked</p>
         </div>
       </div>
 

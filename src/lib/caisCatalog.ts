@@ -119,24 +119,33 @@ export function isItemMatchedInChange(item: CAISItemDef, change: any): boolean {
  */
 export function isBrandMatchedInChange(brand: string, change: any): boolean {
   const rawBureaus = change?.impactedBureaus;
-  if (!rawBureaus || typeof rawBureaus !== 'string' && !Array.isArray(rawBureaus)) return false;
+  if (!rawBureaus || (typeof rawBureaus !== 'string' && !Array.isArray(rawBureaus))) return false;
 
   const text = Array.isArray(rawBureaus) ? rawBureaus.join(' ') : String(rawBureaus);
   const textLower = text.toLowerCase();
   const brandLower = brand.toLowerCase();
 
-  // "All Bureaus" or "All 3 Bureaus" matches Experian, Equifax, TransUnion
-  if ((textLower.includes('all bureaus') || textLower.includes('all 3 bureaus')) && ['experian', 'equifax', 'transunion'].includes(brandLower)) {
+  // Universal / default bureau matching: "all", "experian", "equifax", "transunion", "all 3 bureaus", "all bureaus"
+  // since requirements apply to all credit reference agencies universally.
+  if (
+    textLower.includes('all') ||
+    textLower.includes('experian') ||
+    textLower.includes('equifax') ||
+    textLower.includes('transunion')
+  ) {
     return true;
   }
 
-  // Exact or keyword matching
-  if (brandLower.includes('experian') && textLower.includes('experian')) return true;
-  if (brandLower.includes('equifax') && textLower.includes('equifax')) return true;
-  if (brandLower.includes('transunion') && textLower.includes('transunion')) return true;
-  if (brandLower.includes('hsbc') && (textLower.includes('hsbc') || textLower.includes('51') || textLower.includes('85'))) return true;
-  if (brandLower.includes('first direct') && (textLower.includes('first direct') || textLower.includes('211'))) return true;
-  if (brandLower.includes('m&s') && (textLower.includes('m&s') || textLower.includes('947'))) return true;
+  // Portfolio specific matching
+  if (brandLower.includes('cards') && (textLower.includes('cards') || textLower.includes('51'))) return true;
+  if (brandLower.includes('retail') && (textLower.includes('retail') || textLower.includes('85'))) return true;
+  if (brandLower.includes('first direct') && (textLower.includes('first direct') || textLower.includes('211') || textLower.includes('fd'))) return true;
+  if (brandLower.includes('loans') && (textLower.includes('loans') || textLower.includes('947'))) return true;
+  if (brandLower.includes('current accounts') && (textLower.includes('current accounts') || textLower.includes('662'))) return true;
+
+  // Brand group level matching
+  if (brandLower.startsWith('hsbc') && textLower.includes('hsbc')) return true;
+  if (brandLower.startsWith('m&s') && (textLower.includes('m&s') || textLower.includes('m & s'))) return true;
 
   return textLower.includes(brandLower);
 }

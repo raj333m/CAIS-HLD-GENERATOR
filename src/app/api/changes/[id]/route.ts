@@ -122,7 +122,7 @@ export async function PUT(
             beforeText: beforeText || '',
             afterText: afterText || '',
             sectionsUpdated: sectionsUpdated || '1.3',
-            impactedBureaus: formattedBureaus || 'Experian, Equifax, TransUnion',
+            impactedBureaus: formattedBureaus || 'HSBC Cards (51), First Direct (211), M&S Loans (947), HSBC Retail (85), M&S Current Accounts (662)',
             impactedDataItems: impactedDataItems || '',
             targetMonth: targetMonth || 'November 2026',
             createdById: defaultBa?.id || 'ba-demo-user-id',
@@ -140,7 +140,7 @@ export async function PUT(
             businessDriver: businessDriver || 'CAIS Regulatory Requirement',
             description: description || '',
             sectionsUpdated: sectionsUpdated || '1.3',
-            impactedBureaus: formattedBureaus || 'Experian, Equifax, TransUnion',
+            impactedBureaus: formattedBureaus || 'HSBC Cards (51), First Direct (211), M&S Loans (947), HSBC Retail (85), M&S Current Accounts (662)',
             targetMonth: targetMonth || 'November 2026',
           },
         });

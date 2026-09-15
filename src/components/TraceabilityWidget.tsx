@@ -66,7 +66,7 @@ export default function TraceabilityWidget({ changes }: TraceabilityWidgetProps)
               CAIS Variable & Brand Traceability Summary
             </h2>
             <p className="text-xs text-slate-500">
-              Cross-sectional mapping across 44 CAIS Data Items and credit bureaus
+              Cross-sectional mapping across 44 CAIS Data Items and 5 brand portfolios
             </p>
           </div>
         </div>
