@@ -15,6 +15,9 @@ import {
   CAIS_44_VARIABLES,
 } from '@/lib/regulatoryHldContent';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const prisma = new PrismaClient();
 
 function cleanText(str: any): string {
