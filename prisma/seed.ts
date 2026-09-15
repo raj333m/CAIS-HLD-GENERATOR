@@ -7,203 +7,129 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding CAIS HLD Generator database with exact verbatim Prompt 14 content...');
 
-  // Clean existing data in order
-  await prisma.sectionVersion.deleteMany({});
-  await prisma.subSection.deleteMany({});
-  await prisma.changeRisk.deleteMany({});
-  await prisma.caisChange.deleteMany({});
-  await prisma.documentSection.deleteMany({});
-  await prisma.hldVersion.deleteMany({});
-  await prisma.hldComment.deleteMany({});
-  await prisma.hldStakeholder.deleteMany({});
-  await prisma.hldRisk.deleteMany({});
-  await prisma.hldBureauNote.deleteMany({});
-  await prisma.hldDataItemImpact.deleteMany({});
-  await prisma.hldDocument.deleteMany({});
-  await prisma.caisDataItem.deleteMany({});
-  await prisma.bureau.deleteMany({});
-  await prisma.user.deleteMany({});
-
-  // 1. Seed Users
   const passwordHash = bcrypt.hashSync('password123', 10);
 
-  const baUser = await prisma.user.create({
-    data: {
-      name: 'Aishwarya Raj Singh',
-      email: 'ba@cais.com',
-      passwordHash,
-      role: 'BA',
-      isActive: true,
-    },
-  });
-
-  const reviewerUser = await prisma.user.create({
-    data: {
-      name: 'Stuart H Lindsay',
-      email: 'reviewer@cais.com',
-      passwordHash,
-      role: 'REVIEWER',
-      isActive: true,
-    },
-  });
-
-  const adminUser = await prisma.user.create({
-    data: {
-      name: 'Manash R Chanda',
-      email: 'admin@cais.com',
-      passwordHash,
-      role: 'ADMIN',
-      isActive: true,
-    },
-  });
-
-  console.log('Seeded Users: BA, Reviewer, Admin');
-
-  // 2. Seed Bureaus
-  await prisma.bureau.create({
-    data: {
-      name: 'Experian',
-      submissionChannel: 'Connect:Direct / Secure FTP Gateway',
-      fileFormat: 'Fixed-Width CAIS Spec v2024.1 (44-Field Record Layout)',
-      cutoffDate: '15th of each month',
-      fileSpecVersion: 'v2024.1',
-      notes: 'Primary UK credit bureau. Requires fixed 44-field record layout with header/trailer checksums.',
-    },
-  });
-
-  await prisma.bureau.create({
-    data: {
-      name: 'Equifax',
-      submissionChannel: 'Equifax Secure Connect (HTTPS/SFTP Gateway)',
-      fileFormat: 'CAIS Pipe-Delimited & Fixed v4.2',
-      cutoffDate: '17th of each month',
-      fileSpecVersion: 'v4.2',
-      notes: 'Requires separate test acknowledgment file verification prior to production batch release.',
-    },
-  });
-
-  await prisma.bureau.create({
-    data: {
-      name: 'TransUnion',
-      submissionChannel: 'TU Direct File Gateway',
-      fileFormat: 'CAIS Standard Fixed/CSV v3.9',
-      cutoffDate: '18th of each month',
-      fileSpecVersion: 'v3.9',
-      notes: 'Accepts monthly incremental batch delta files and full snapshot refreshes.',
-    },
-  });
-
-  console.log('Seeded Bureaus: Experian, Equifax, TransUnion');
-
-  // 3. Seed CAIS 44-Field Catalog Items
-  const catalogFields = [
-    { pos: 1, code: 'CLOSE_DATE', name: 'Close Date', cat: 'Account Identification', def: 'YYYYMMDD format when account closed; blank if active.' },
-    { pos: 2, code: 'MONTHLY_PMT', name: 'Monthly Payment (Derived)', cat: 'Balance & Limit', def: 'CU Team derived monthly contractual payment amount in GBP.' },
-    { pos: 3, code: 'REPAY_PER', name: 'Repayment period (Derived)', cat: 'Account Identification', def: 'CU Team derived total repayment term in months.' },
-    { pos: 4, code: 'CURRENT_BAL', name: 'Current Balance (Derived)', cat: 'Balance & Limit', def: 'CU Team derived outstanding balance (+ for debt, - for credit balance).' },
-    { pos: 5, code: 'ACC_STATUS', name: 'Account Status (Derived)', cat: 'Status & Arrears', def: 'CU Team derived status (0=Up to Date, 1-6=Months in Arrears, D=Default, S=Settled).' },
-    { pos: 6, code: 'FLAG_SETTINGS', name: 'Flag settings (Derived)', cat: 'Special Flags', def: 'CU Team derived special arrangement indicator flag.' },
-    { pos: 7, code: 'TRANS_FLAG', name: 'Transaction Flag', cat: 'Account Identification', def: 'N=New Account, U=Update Record, D=Delete Record.' },
-    { pos: 8, code: 'PMT_FREQ', name: 'Payment frequency', cat: 'Account Identification', def: 'M=Monthly, W=Weekly, Q=Quarterly, A=Annual.' },
-    { pos: 9, code: 'ACC_NUM', name: 'Account Number', cat: 'Account Identification', def: 'Primary account identifier (up to 18 characters).' },
-    { pos: 10, code: 'SEQ_NUM', name: 'Sequence Number', cat: 'Account Identification', def: 'Joint customer sequence number (001=Primary, 002=Joint).' },
-    { pos: 11, code: 'ACC_TYPE', name: 'Account Type', cat: 'Account Identification', def: '2-digit CAIS product type code (02=Loan, 05=Credit Card, 06=Overdraft).' },
-    { pos: 12, code: 'START_DATE', name: 'Start Date', cat: 'Account Identification', def: 'Account open date (YYYYMMDD).' },
-    { pos: 13, code: 'CREDIT_BAL_IND', name: 'Credit Balance indicator (Derived)', cat: 'Balance & Limit', def: 'Y if balance is in credit, blank otherwise.' },
-    { pos: 14, code: 'PMT_AMT', name: 'Payment amount', cat: 'Balance & Limit', def: 'Actual cash payment received in reporting period.' },
-    { pos: 15, code: 'CUST_NAME', name: 'Name', cat: 'Account Identification', def: 'Customer full legal title, forename, surname.' },
-    { pos: 16, code: 'DOB', name: 'Date of Birth', cat: 'Account Identification', def: 'Customer DOB (YYYYMMDD format).' },
-    { pos: 17, code: 'ORIG_DEF_BAL', name: 'Original Default Balance', cat: 'Default & Recovery', def: 'Outstanding balance at initial default notice date.' },
-    { pos: 18, code: 'NEW_SEQ_NUM', name: 'New Sequence Number', cat: 'Account Identification', def: 'Updated joint customer sequence number.' },
-    { pos: 19, code: 'SPEC_INST_FLAG', name: 'Special instruction indicator', cat: 'Special Flags', def: 'Flags for Deceased, Fraud, Forbearance, Payment Holiday.' },
-    { pos: 20, code: 'EXP_BLOCK', name: 'Experian Block', cat: 'Special Flags', def: 'Experian-specific block code indicator.' },
-    { pos: 21, code: 'CREDIT_PMT_IND', name: 'Credit Payment indicator', cat: 'Balance & Limit', def: 'Indicator for credit payment processing.' },
-    { pos: 22, code: 'PREV_STMT_BAL', name: 'PreviousStatement Balance', cat: 'Balance & Limit', def: 'Prior month closing statement balance.' },
-    { pos: 23, code: 'PREV_STMT_BAL_IND', name: 'PreviousStatement Balance Indicator', cat: 'Balance & Limit', def: 'Sign indicator (+/-) for previous statement balance.' },
-    { pos: 24, code: 'NUM_CASH_ADV', name: 'Number of cash advances', cat: 'Balance & Limit', def: 'Cash advance transaction count in period.' },
-    { pos: 25, code: 'VAL_CASH_ADV', name: 'Value of cash advances', cat: 'Balance & Limit', def: 'Total cash advance GBP monetary value.' },
-    { pos: 26, code: 'PMT_CODE', name: 'Payment Code', cat: 'Status & Arrears', def: 'Payment method code (Direct Debit, Standing Order, Cheque).' },
-    { pos: 27, code: 'PROMO_ACT_FLAG', name: 'Promotion activity Flag', cat: 'Special Flags', def: 'Promotional 0% rate flag.' },
-    { pos: 28, code: 'FILLER_1', name: 'Filler 1', cat: 'Account Identification', def: 'Reserved specification filler.' },
-    { pos: 29, code: 'TRANSIENT_ASSOC_FLAG', name: 'Transient Association Flag', cat: 'Special Flags', def: 'Association linkage flag.' },
-    { pos: 30, code: 'AIR_TIME_FLAG', name: 'Air time Flag', cat: 'Special Flags', def: 'Telecom/airtime flag.' },
-    { pos: 31, code: 'ADDR_1', name: 'Address1', cat: 'Account Identification', def: 'Residential address line 1.' },
-    { pos: 32, code: 'ADDR_2', name: 'Address2', cat: 'Account Identification', def: 'Residential address line 2.' },
-    { pos: 33, code: 'ADDR_3', name: 'Address3', cat: 'Account Identification', def: 'Residential address line 3.' },
-    { pos: 34, code: 'ADDR_4', name: 'Address4', cat: 'Account Identification', def: 'Residential address line 4.' },
-    { pos: 35, code: 'POSTCODE', name: 'Postcode', cat: 'Account Identification', def: 'Valid UK Postcode.' },
-    { pos: 36, code: 'CREDIT_LIMIT', name: 'Credit Limit', cat: 'Balance & Limit', def: 'Sanctioned credit facility limit.' },
-    { pos: 37, code: 'FILLER_2', name: 'Filler2', cat: 'Account Identification', def: 'Reserved specification filler.' },
-    { pos: 38, code: 'TRANSFER_COLL_ACC', name: 'Transferred to collection account', cat: 'Default & Recovery', def: 'Y if assigned to Debt Collection Agency (DCA).' },
-    { pos: 39, code: 'BAL_TYPE', name: 'Balance type', cat: 'Balance & Limit', def: 'D=Debt balance, C=Credit balance.' },
-    { pos: 40, code: 'CREDIT_TURNOVER', name: 'Credit turnover', cat: 'Balance & Limit', def: 'Total credit turn-over applied in month.' },
-    { pos: 41, code: 'PRIMARY_ACC_IND', name: 'Primary Account indicator', cat: 'Account Identification', def: 'Y=Primary account holder, N=Secondary holder.' },
-    { pos: 42, code: 'DEF_SAT_DATE', name: 'Default Satisfaction date', cat: 'Default & Recovery', def: 'Date defaulted debt was fully settled (YYYYMMDD).' },
-    { pos: 43, code: 'FILLER_3', name: 'Filler3', cat: 'Account Identification', def: 'Reserved specification filler.' },
-    { pos: 44, code: 'NEW_ACC_NUM', name: 'New Account Number', cat: 'Account Identification', def: 'Replacement account number if re-issued.' },
-  ];
-
-  for (const item of catalogFields) {
-    await prisma.caisDataItem.create({
+  // 1. Seed / Upsert Users
+  let baUser = await prisma.user.findFirst({ where: { email: 'ba@cais.com' } });
+  if (!baUser) {
+    baUser = await prisma.user.create({
       data: {
-        itemCode: item.code,
-        itemName: item.name,
-        category: item.cat,
-        description: `${item.name} (Position ${item.pos} in CAIS 44-field record layout)`,
-        currentDefinition: item.def,
-        positionInLayout: item.pos,
+        id: '92239e9e-cf9f-45db-b4ba-ee4cd97a0742',
+        name: 'Aishwarya Raj Singh',
+        email: 'ba@cais.com',
+        passwordHash,
+        role: 'BA',
         isActive: true,
       },
     });
   }
 
-  console.log(`Seeded ${catalogFields.length} CAIS 44-Field Catalog Items`);
-
-  // 4. Seed Living Document Sections & Relational SubSections
-  const sectionsMaster: any[] = MASTER_SECTIONS;
-
-  for (const s of sectionsMaster) {
-    const createdSection = await prisma.documentSection.create({
+  let reviewerUser = await prisma.user.findFirst({ where: { email: 'reviewer@cais.com' } });
+  if (!reviewerUser) {
+    reviewerUser = await prisma.user.create({
       data: {
-        sectionNumber: s.sectionNumber,
-        title: s.title,
-        displayOrder: s.displayOrder,
-        lastUpdatedById: baUser.id,
+        id: '9c415e6f-7c6f-4b0b-b5b7-ee2e1c18ff02',
+        name: 'Stuart H Lindsay',
+        email: 'reviewer@cais.com',
+        passwordHash,
+        role: 'REVIEWER',
+        isActive: true,
       },
     });
+  }
 
-    for (const sub of s.subSections) {
-      const blocksStr = typeof sub.contentBlocks === 'string' ? sub.contentBlocks : JSON.stringify(sub.contentBlocks || sub.blocks || []);
-      const createdSub = await prisma.subSection.create({
+  let adminUser = await prisma.user.findFirst({ where: { email: 'admin@cais.com' } });
+  if (!adminUser) {
+    adminUser = await prisma.user.create({
+      data: {
+        id: 'ad001e9e-cf9f-45db-b4ba-ee4cd97a0742',
+        name: 'Manash R Chanda',
+        email: 'admin@cais.com',
+        passwordHash,
+        role: 'ADMIN',
+        isActive: true,
+      },
+    });
+  }
+
+  console.log('Seeded Users: BA, Reviewer, Admin');
+
+  // 2. Seed / Upsert Bureaus
+  const bureauExperian = await prisma.bureau.findFirst({ where: { name: 'Experian' } });
+  if (!bureauExperian) {
+    await prisma.bureau.create({
+      data: {
+        name: 'Experian',
+        submissionChannel: 'Connect:Direct / Secure FTP Gateway',
+        fileFormat: 'Fixed-Width CAIS Spec v2024.1 (44-Field Record Layout)',
+        cutoffDate: '15th of each month',
+        fileSpecVersion: 'v2024.1',
+        notes: 'Primary UK credit bureau. Requires fixed 44-field record layout with header/trailer checksums.',
+      },
+    });
+  }
+
+  const bureauEquifax = await prisma.bureau.findFirst({ where: { name: 'Equifax' } });
+  if (!bureauEquifax) {
+    await prisma.bureau.create({
+      data: {
+        name: 'Equifax',
+        submissionChannel: 'Equifax Secure Connect (HTTPS/SFTP Gateway)',
+        fileFormat: 'CAIS Pipe-Delimited & Fixed v4.2',
+        cutoffDate: '17th of each month',
+        fileSpecVersion: 'v4.2',
+        notes: 'Requires separate test acknowledgment file verification prior to production batch release.',
+      },
+    });
+  }
+
+  const bureauTU = await prisma.bureau.findFirst({ where: { name: 'TransUnion' } });
+  if (!bureauTU) {
+    await prisma.bureau.create({
+      data: {
+        name: 'TransUnion',
+        submissionChannel: 'TransUnion Secure Transfer (TUST / SFTP)',
+        fileFormat: 'CAIS Standard XML / Fixed Spec v3.8',
+        cutoffDate: '20th of each month',
+        fileSpecVersion: 'v3.8',
+        notes: 'TransUnion submission window closes 20th 23:59 GMT.',
+      },
+    });
+  }
+
+  console.log('Seeded Bureaus: Experian, Equifax, TransUnion');
+
+  // 3. Seed Document Sections & SubSections if not present
+  const existingSectionCount = await prisma.documentSection.count();
+  if (existingSectionCount === 0) {
+    for (const secData of MASTER_SECTIONS) {
+      const createdSec = await prisma.documentSection.create({
         data: {
-          documentSectionId: createdSection.id,
-          heading: sub.heading,
-          displayOrder: sub.displayOrder,
-          contentBlocks: blocksStr,
-          lastUpdatedById: baUser.id,
+          sectionNumber: secData.sectionNumber,
+          title: secData.title,
+          displayOrder: secData.displayOrder,
         },
       });
 
-      // Create initial Version 1 snapshot
-      await prisma.sectionVersion.create({
-        data: {
-          subSectionId: createdSub.id,
-          versionNumber: 1,
-          contentSnapshot: JSON.stringify({
-            heading: sub.heading,
-            blocks: blocksStr,
-          }),
-          editedById: baUser.id,
-        },
-      });
+      if (secData.subSections && secData.subSections.length > 0) {
+        for (const sub of secData.subSections) {
+          await prisma.subSection.create({
+            data: {
+              documentSectionId: createdSec.id,
+              heading: sub.heading || '',
+              contentBlocks: typeof sub.contentBlocks === 'string' ? sub.contentBlocks : JSON.stringify(sub.contentBlocks),
+              displayOrder: sub.displayOrder || 1,
+            },
+          });
+        }
+      }
     }
   }
 
-  console.log(`Seeded ${sectionsMaster.length} Living Document Sections with relational SubSections`);
-
-  // 5. Seed Section 3 CAIS Change Register Entries (Append-only Master Change Log)
+  // 4. Seed / Upsert Section 3 CAIS Change Register Entries (Idempotent non-destructive seed)
   const changesData = [
     {
+      id: 'f9411d38-2e02-4740-9a29-158a1834279b',
       crReference: 'CAIS-BASE-003',
       title: 'Default Balance Reconciliation & Account Closure Date Alignment',
       status: 'DRAFT',
@@ -219,6 +145,7 @@ async function main() {
       createdById: baUser.id,
     },
     {
+      id: 'b82df910-449e-4e63-8a3e-721fb653ab12',
       crReference: 'CAIS-BASE-002',
       title: 'Buy-Now-Pay-Later (BNPL) Product Scope Expansion to CAIS',
       status: 'IN_REVIEW',
@@ -236,6 +163,7 @@ async function main() {
       reviewComments: 'Under review by Risk Committee.',
     },
     {
+      id: '37eda0d7-1c69-40f4-94ff-452c6141b56a',
       crReference: 'CAIS-BASE-001',
       title: 'Consumer Duty Payment Holiday & Forbearance Indicator Update',
       status: 'APPROVED',
@@ -256,19 +184,21 @@ async function main() {
   ];
 
   for (const c of changesData) {
-    const createdChange = await prisma.caisChange.create({ data: c });
-    await prisma.changeRisk.create({
-      data: {
-        changeId: createdChange.id,
-        risk: 'Upstream deployment delay reduces UAT window',
-        impact: 'Medium',
-        mitigation: 'Build transformation rules against simulated staging schema.',
-      },
-    });
+    const existing = await prisma.caisChange.findFirst({ where: { crReference: c.crReference } });
+    if (!existing) {
+      const createdChange = await prisma.caisChange.create({ data: c });
+      await prisma.changeRisk.create({
+        data: {
+          changeId: createdChange.id,
+          risk: 'Upstream deployment delay reduces UAT window',
+          impact: 'Medium',
+          mitigation: 'Build transformation rules against simulated staging schema.',
+        },
+      });
+    }
   }
 
-  console.log(`Seeded ${changesData.length} Section 3 Change Register entries`);
-  console.log('Database seeding completed successfully!');
+  console.log('Database non-destructive seeding completed successfully!');
 }
 
 main()

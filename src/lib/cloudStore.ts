@@ -244,9 +244,14 @@ export async function getMergedChanges(
       try {
         const cloudStateById = c.id ? store[c.id] : null;
 
+        const isBaseline =
+          (c.crReference && c.crReference.startsWith('CAIS-BASE-')) ||
+          (c.id && ['37eda0d7-1c69-40f4-94ff-452c6141b56a', 'b82df910-449e-4e63-8a3e-721fb653ab12', 'f9411d38-2e02-4740-9a29-158a1834279b', '3f98886e-e31d-443a-a07e-ac133cc7c537', 'b4511b77-390f-4f62-9b1f-6fbd40ee4c5f', '119cd445-79e8-4265-91dd-9e4fa1415bfe'].includes(c.id)) ||
+          ((c.title || '').toLowerCase().includes('default balance reconciliation'));
+
         const isDeleted =
-          (cloudStateById && cloudStateById.deleted === true) ||
-          deletedIds.has(c.id);
+          !isBaseline &&
+          ((cloudStateById && cloudStateById.deleted === true) || deletedIds.has(c.id));
 
         if (isDeleted) return null;
 
