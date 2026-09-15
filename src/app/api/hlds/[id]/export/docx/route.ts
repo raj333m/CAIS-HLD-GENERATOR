@@ -16,6 +16,7 @@ import {
   Header,
   Footer,
   BorderStyle,
+  TableOfContents,
 } from 'docx';
 
 function cleanText(str: any): string {
@@ -271,6 +272,9 @@ export async function GET(
 
     // Assemble Document
     const doc = new Document({
+      features: {
+        updateFields: true,
+      },
       title: cleanText(hld.title),
       subject: cleanText(hld.changeReference),
       creator: 'CAIS HLD Generator',

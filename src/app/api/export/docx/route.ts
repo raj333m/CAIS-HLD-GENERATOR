@@ -17,6 +17,7 @@ import {
   BorderStyle,
   ShadingType,
   ImageRun,
+  TableOfContents,
 } from 'docx';
 import { MASTER_SECTIONS } from '@/lib/sectionsData';
 import { PREPOPULATED_CHANGES } from '@/app/api/changes/route';
@@ -404,6 +405,12 @@ export async function GET(req: NextRequest) {
 
     // --- 3. TABLE OF CONTENTS PAGE ---
     docChildren.push(makeH1('Table of Contents', true));
+    docChildren.push(
+      new TableOfContents('Table of Contents', {
+        hyperlink: true,
+        headingStyleRange: '1-3',
+      })
+    );
     const tocRows = REGULATORY_TOC.map((t) => [
       `${t.num} ${t.title}`,
       `....................................................................................`,
@@ -683,6 +690,9 @@ export async function GET(req: NextRequest) {
 
     // Assemble Document with Header & Footer
     const doc = new Document({
+      features: {
+        updateFields: true,
+      },
       title: 'CRA CAIS Reporting High Level Design',
       subject: 'Regulatory High Level Design Document',
       creator: 'Aishwarya Raj Singh',
