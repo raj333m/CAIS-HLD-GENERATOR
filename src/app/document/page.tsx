@@ -2191,7 +2191,7 @@ export default function LivingDocumentPage() {
   };
 
   // Render SubSection Blocks (Skipping diagram blocks completely)
-  const renderSubSectionBlocks = (blocksJsonStr: string, sectionId?: string, subSectionId?: string, subHeading?: string) => {
+  const renderSubSectionBlocks = (blocksJsonStr: string, secDataOrId?: any, subSectionId?: string, subHeading?: string) => {
     try {
       const blocks = typeof blocksJsonStr === 'string' ? JSON.parse(blocksJsonStr) : blocksJsonStr || [];
       return blocks.map((block: any, idx: number) => {
@@ -2202,7 +2202,20 @@ export default function LivingDocumentPage() {
               <div
                 key={idx}
                 onClick={() => {
-                  const targetSec = sections.find((s) => s.id === sectionId || s.sectionNumber === sectionId);
+                  let targetSec = null;
+                  if (typeof secDataOrId === 'object' && secDataOrId !== null) {
+                    targetSec = secDataOrId;
+                  } else if (typeof secDataOrId === 'string') {
+                    targetSec = sections.find((s) => s.id === secDataOrId || s.sectionNumber === secDataOrId);
+                  }
+                  if (!targetSec && typeof secDataOrId === 'string') {
+                    targetSec = {
+                      id: secDataOrId,
+                      sectionNumber: secDataOrId,
+                      title: `Section ${secDataOrId}`,
+                      subSections: [],
+                    };
+                  }
                   if (targetSec) handleOpenEditModal(targetSec);
                 }}
                 className="my-2 p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors"
@@ -2240,10 +2253,11 @@ export default function LivingDocumentPage() {
           );
         }
         if (block.type === 'table') {
+          const sectionIdStr = typeof secDataOrId === 'object' ? secDataOrId?.id || secDataOrId?.sectionNumber || '' : secDataOrId || '';
           return (
             <InteractiveBlockTable
               key={idx}
-              sectionId={sectionId || ''}
+              sectionId={sectionIdStr}
               subSectionId={subSectionId || ''}
               blockIndex={idx}
               initialPayload={block.payload}
@@ -4179,7 +4193,7 @@ export default function LivingDocumentPage() {
                             </h2>
                           )}
                           <div>
-                            {renderSubSectionBlocks(sub.contentBlocks, secData.id, sub.id, sub.heading)}
+                            {renderSubSectionBlocks(sub.contentBlocks, secData, sub.id, sub.heading)}
                           </div>
                         </div>
                       ))
@@ -4385,7 +4399,7 @@ export default function LivingDocumentPage() {
                         </h3>
                       )}
                       <div>
-                        {renderSubSectionBlocks(sub.contentBlocks, secData.id, sub.id, sub.heading)}
+                        {renderSubSectionBlocks(sub.contentBlocks, secData, sub.id, sub.heading)}
                       </div>
                     </div>
                   ))}
