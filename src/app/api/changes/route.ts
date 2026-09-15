@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getCloudChangeState, deletedIds, saveCreatedChange, getCreatedChanges } from '@/lib/cloudStore';
+import { getCloudChangeState, deletedIds, saveCreatedChange, getCreatedChanges, getMergedChanges } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -14,7 +14,7 @@ export const PREPOPULATED_CHANGES: any[] = [
     businessDriver: 'Accurately flag temporary forbearance/payment holidays in support of Consumer Duty.',
     description: 'Enhance monthly reporting to flag temporary forbearance payment holidays accurately across all 3 bureaus, preventing erroneous arrears scoring for impacted customers.',
     sectionsUpdated: '1.3, 2.5',
-    impactedBureaus: 'Experian, Equifax, TransUnion',
+    impactedBureaus: 'HSBC Cards (51), First Direct (211), M&S Loans (947), HSBC Retail (85), M&S Current Accounts (662)',
     impactedDataItems: '19. Special Instruction Indicator, 05. Account Status',
     targetMonth: 'October 2026',
     author: 'Aishwarya Raj Singh',
@@ -29,7 +29,7 @@ export const PREPOPULATED_CHANGES: any[] = [
     businessDriver: 'Bring the new BNPL instalment product into scope in line with expanding regulatory expectations on BNPL data sharing.',
     description: 'Incorporate new BNPL installment product line into monthly CAIS reporting files submitted to Experian, Equifax, and TransUnion.',
     sectionsUpdated: '1.3, 2.5',
-    impactedBureaus: 'Experian, Equifax, TransUnion',
+    impactedBureaus: 'HSBC Cards (51), First Direct (211), M&S Loans (947), HSBC Retail (85), M&S Current Accounts (662)',
     impactedDataItems: '11. Account Type, 36. Credit Limit / Total Loan Amount',
     targetMonth: 'November 2026',
     author: 'Aishwarya Raj Singh',
@@ -44,7 +44,7 @@ export const PREPOPULATED_CHANGES: any[] = [
     businessDriver: 'Internal data quality remediation — align Original Default Balance and Default Satisfaction Date fields for accounts sold to debt collection agencies so default balances remain accurate post-sale.',
     description: 'Align the Original Default Balance and Default Satisfaction Date fields for accounts sold to debt collection agencies to ensure default balances are correctly reflected once an account is transferred.',
     sectionsUpdated: '1.3, 2.5',
-    impactedBureaus: 'Experian, Equifax, TransUnion',
+    impactedBureaus: 'HSBC Cards (51), First Direct (211), M&S Loans (947), HSBC Retail (85), M&S Current Accounts (662)',
     impactedDataItems: '17. Original Default Balance, 42. Default Satisfaction Date',
     targetMonth: 'December 2026',
     author: 'Aishwarya Raj Singh',
@@ -60,111 +60,35 @@ export async function GET(request: Request) {
     const status = searchParams.get('status') || '';
     const bureau = searchParams.get('bureau') || '';
     const changeType = searchParams.get('changeType') || '';
-
-    const where: any = {};
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { crReference: { contains: search } },
-        { businessDriver: { contains: search } },
-        { description: { contains: search } },
-      ];
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (bureau) {
-      where.impactedBureaus = { contains: bureau };
-    }
-
-    if (changeType) {
-      where.changeType = { contains: changeType };
-    }
-
-    let changes: any[] = [];
-    try {
-      changes = await prisma.caisChange.findMany({
-        where,
-        include: {
-          createdBy: { select: { id: true, name: true, email: true, role: true } },
-          reviewedBy: { select: { id: true, name: true, email: true, role: true } },
-          risks: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-    } catch (dbError) {
-      console.warn('Prisma lookup failed in GET /api/changes:', dbError);
-    }
-
-    // Fallback to pre-populated changes if DB returns empty
-    if (changes.length === 0) {
-      let filtered = PREPOPULATED_CHANGES;
-      if (search) {
-        const s = search.toLowerCase();
-        filtered = filtered.filter(c => c.title.toLowerCase().includes(s) || c.crReference.toLowerCase().includes(s) || c.description.toLowerCase().includes(s));
-      }
-      if (bureau) {
-        filtered = filtered.filter(c => c.impactedBureaus.includes(bureau));
-      }
-      if (changeType) {
-        filtered = filtered.filter(c => c.changeType.includes(changeType));
-      }
-      changes = filtered;
-    }
-
-    // Merge cloud persisted created changes
-    try {
-      const cloudCreated = await getCreatedChanges();
-      if (cloudCreated.length > 0) {
-        const existingRefs = new Set(changes.map((c: any) => c.crReference));
-        const newItems = cloudCreated
-          .filter((c: any) => !existingRefs.has(c.crReference))
-          .map((c: any) => ({ ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' }));
-        changes = [...newItems, ...changes];
-      }
-    } catch (e) {}
-
-    // Enrich changes with CloudStore persisted state & filter deleted changes
-    const enrichedChanges = await Promise.all(
-      changes.map(async (c: any) => {
-        try {
-          const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
-          const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
-          const isDeleted = (cloudStateByRef && cloudStateByRef.deleted) || (cloudStateById && cloudStateById.deleted) || deletedIds.has(c.id) || deletedIds.has(c.crReference);
-          
-          if (isDeleted) return null;
-
-          const cloudState = cloudStateByRef || cloudStateById;
-          const pId = c.projectId || c.hldDocumentId || 'proj-alpha';
-          if (cloudState) {
-            return {
-              ...c,
-              projectId: pId,
-              status: cloudState.status || c.status,
-              versionNumber: cloudState.versionNumber || c.versionNumber,
-              reviewComments: cloudState.reviewComments || c.reviewComments,
-              reviewedByName: cloudState.reviewedByName || c.reviewedByName,
-              approvalDate: cloudState.approvalDate || c.approvalDate,
-            };
-          }
-          return { ...c, projectId: pId };
-        } catch (e) {}
-        return { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
-      })
-    );
-
-    changes = enrichedChanges.filter(Boolean);
-
     const projectId = searchParams.get('projectId');
+
+    let changes = await getMergedChanges(prisma, PREPOPULATED_CHANGES);
+
     if (projectId) {
       changes = changes.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);
     }
 
+    if (search) {
+      const s = search.toLowerCase();
+      changes = changes.filter(
+        (c: any) =>
+          c.title?.toLowerCase().includes(s) ||
+          c.crReference?.toLowerCase().includes(s) ||
+          c.businessDriver?.toLowerCase().includes(s) ||
+          c.description?.toLowerCase().includes(s)
+      );
+    }
+
     if (status) {
       changes = changes.filter((c: any) => c.status === status);
+    }
+
+    if (bureau) {
+      changes = changes.filter((c: any) => c.impactedBureaus?.includes(bureau));
+    }
+
+    if (changeType) {
+      changes = changes.filter((c: any) => c.changeType?.includes(changeType));
     }
 
     return NextResponse.json({ changes });

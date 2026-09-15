@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { PREPOPULATED_CHANGES } from '../route';
-import { saveCloudChangeState, deletedIds, deleteCreatedChange, getCreatedChanges, getCloudChangeState } from '@/lib/cloudStore';
+import { saveCloudChangeState, deletedIds, deleteCreatedChange, getCreatedChanges, getCloudChangeState, getMergedChanges } from '@/lib/cloudStore';
 
 const prisma = new PrismaClient();
 
@@ -12,61 +12,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    let change: any = null;
+    const allChanges = await getMergedChanges(prisma, PREPOPULATED_CHANGES);
+    const cleanRef = id.replace(/^change-/, '').toUpperCase();
 
-    try {
-      change = await prisma.caisChange.findUnique({
-        where: { id },
-        include: {
-          createdBy: { select: { id: true, name: true, email: true, role: true } },
-          reviewedBy: { select: { id: true, name: true, email: true, role: true } },
-          risks: true,
-        },
-      });
-    } catch (e) {
-      console.warn('DB lookup failed in GET /api/changes/[id]:', e);
-    }
-
-    if (!change) {
-      try {
-        const cloudCreated = await getCreatedChanges();
-        change = cloudCreated.find(
-          (c: any) => c.id === id || c.crReference === id || c.crReference?.toLowerCase() === id.toLowerCase()
-        );
-      } catch (e) {}
-    }
-
-    if (!change) {
-      change = PREPOPULATED_CHANGES.find(
-        (c) => c.id === id || c.crReference === id || c.crReference.toLowerCase() === id.toLowerCase()
-      );
-    }
+    const change = allChanges.find(
+      (c: any) =>
+        c.id === id ||
+        c.crReference === id ||
+        c.crReference?.toLowerCase() === id.toLowerCase() ||
+        c.crReference?.toUpperCase() === cleanRef
+    );
 
     if (!change) {
       return NextResponse.json({ error: 'Change entry not found' }, { status: 404 });
     }
-
-    change.projectId = change.projectId || change.hldDocumentId || 'proj-alpha';
-
-    // Enrich with CloudStore state (status, review comments, approval date, etc.)
-    try {
-      const cloudStateByRef = change.crReference ? await getCloudChangeState(change.crReference) : null;
-      const cloudStateById = change.id ? await getCloudChangeState(change.id) : null;
-      const cloudState = cloudStateByRef || cloudStateById;
-      if (cloudState) {
-        change = {
-          ...change,
-          status: cloudState.status || change.status,
-          versionNumber: cloudState.versionNumber || change.versionNumber,
-          reviewComments: cloudState.reviewComments || change.reviewComments,
-          reviewedByName: cloudState.reviewedByName || change.reviewedByName,
-          approvalDate: cloudState.approvalDate || change.approvalDate,
-          reviews: cloudState.reviews || change.reviews,
-          currentFeedbackRound: cloudState.currentFeedbackRound || change.currentFeedbackRound,
-          feedbackRoundsHistory: cloudState.feedbackRoundsHistory || change.feedbackRoundsHistory,
-        };
-      }
-    } catch (e) {}
 
     return NextResponse.json({ change });
   } catch (error: any) {

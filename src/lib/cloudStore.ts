@@ -156,8 +156,28 @@ export async function getCreatedChanges(): Promise<any[]> {
 export async function saveCreatedChange(newChange: any): Promise<void> {
   if (!newChange) return;
   const store: any = await fetchMasterStore();
+
+  const id = newChange.id;
+  const crRef = newChange.crReference;
+  const cleanRef = crRef ? crRef.toUpperCase() : '';
+  const lowerRef = crRef ? crRef.toLowerCase() : '';
+
+  // Revoke any previous deletion tombstones for this id or crReference
+  if (id) {
+    if (store[id]) delete store[id].deleted;
+    deletedIds.delete(id);
+  }
+  if (crRef) {
+    if (store[crRef]) delete store[crRef].deleted;
+    if (store[cleanRef]) delete store[cleanRef].deleted;
+    if (store[lowerRef]) delete store[lowerRef].deleted;
+    deletedIds.delete(crRef);
+    deletedIds.delete(cleanRef);
+    deletedIds.delete(lowerRef);
+  }
+
   const currentList = Array.isArray(store._createdChanges) ? store._createdChanges : [];
-  const existingIdx = currentList.findIndex((c: any) => c.id === newChange.id || c.crReference === newChange.crReference);
+  const existingIdx = currentList.findIndex((c: any) => (id && c.id === id) || (crRef && c.crReference === crRef));
   let updatedList;
   if (existingIdx >= 0) {
     updatedList = [...currentList];
@@ -168,6 +188,95 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
   store._createdChanges = updatedList;
   await persistStore(store);
   console.log('[saveCreatedChange] Successfully saved new change:', newChange.crReference, newChange.id);
+}
+
+export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = []): Promise<any[]> {
+  const mapByRef = new Map<string, any>();
+  const mapById = new Map<string, any>();
+
+  // 1. Prepopulated Changes (default base template)
+  for (const c of prepopulatedList) {
+    const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
+    if (item.id) mapById.set(item.id, item);
+    if (item.crReference) mapByRef.set(item.crReference, item);
+  }
+
+  // 2. Database Changes (Prisma DB)
+  if (prisma) {
+    try {
+      const dbChanges = await prisma.caisChange.findMany({
+        include: {
+          createdBy: { select: { id: true, name: true, email: true, role: true } },
+          reviewedBy: { select: { id: true, name: true, email: true, role: true } },
+          risks: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      for (const c of dbChanges) {
+        const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
+        if (item.id) mapById.set(item.id, item);
+        if (item.crReference) mapByRef.set(item.crReference, item);
+      }
+    } catch (e) {
+      console.warn('[getMergedChanges] DB query skipped:', e);
+    }
+  }
+
+  // 3. Cloud Store Created Changes (highest priority for user creations)
+  try {
+    const cloudCreated = await getCreatedChanges();
+    for (const c of cloudCreated) {
+      const item = { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
+      if (item.id) mapById.set(item.id, item);
+      if (item.crReference) mapByRef.set(item.crReference, item);
+    }
+  } catch (e) {
+    console.warn('[getMergedChanges] Cloud created changes query skipped:', e);
+  }
+
+  // Deduplicate candidate changes
+  const allCandidates = Array.from(new Set([...mapById.values(), ...mapByRef.values()]));
+
+  // 4. Enrich with CloudStore status & filter tombstones (deleted: true)
+  const enrichedList = await Promise.all(
+    allCandidates.map(async (c: any) => {
+      try {
+        const cloudStateByRef = c.crReference ? await getCloudChangeState(c.crReference) : null;
+        const cloudStateById = c.id ? await getCloudChangeState(c.id) : null;
+
+        const isDeleted =
+          (cloudStateByRef && cloudStateByRef.deleted) ||
+          (cloudStateById && cloudStateById.deleted) ||
+          deletedIds.has(c.id) ||
+          deletedIds.has(c.crReference);
+
+        if (isDeleted) return null;
+
+        const cloudState = cloudStateByRef || cloudStateById;
+        const pId = c.projectId || c.hldDocumentId || 'proj-alpha';
+
+        if (cloudState) {
+          return {
+            ...c,
+            projectId: pId,
+            status: cloudState.status || c.status,
+            versionNumber: cloudState.versionNumber || c.versionNumber,
+            reviewComments: cloudState.reviewComments || c.reviewComments,
+            reviewedByName: cloudState.reviewedByName || c.reviewedByName,
+            approvalDate: cloudState.approvalDate || c.approvalDate,
+            reviews: cloudState.reviews || c.reviews,
+            currentFeedbackRound: cloudState.currentFeedbackRound || c.currentFeedbackRound,
+            feedbackRoundsHistory: cloudState.feedbackRoundsHistory || c.feedbackRoundsHistory,
+          };
+        }
+        return { ...c, projectId: pId };
+      } catch (e) {
+        return { ...c, projectId: c.projectId || c.hldDocumentId || 'proj-alpha' };
+      }
+    })
+  );
+
+  return enrichedList.filter(Boolean);
 }
 
 export async function deleteCreatedChange(id: string, crReference?: string): Promise<void> {
