@@ -62,7 +62,8 @@ export async function GET(request: Request) {
     const changeType = searchParams.get('changeType') || '';
     const projectId = searchParams.get('projectId');
 
-    let changes = await getMergedChanges(prisma, PREPOPULATED_CHANGES);
+    const includeDrafts = searchParams.get('includeDrafts') === 'true' || status === 'DRAFT';
+    let changes = await getMergedChanges(prisma, PREPOPULATED_CHANGES, { includeDrafts });
 
     if (projectId) {
       changes = changes.filter((c: any) => (c.projectId || 'proj-alpha') === projectId);

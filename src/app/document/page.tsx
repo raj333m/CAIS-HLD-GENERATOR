@@ -1154,6 +1154,8 @@ export default function LivingDocumentPage() {
     description: string;
     beforeText: string;
     afterText: string;
+    riskText: string;
+    mitigationText: string;
   }>({
     crReference: 'CAIS-2026-004',
     title: '',
@@ -1166,6 +1168,8 @@ export default function LivingDocumentPage() {
     description: '',
     beforeText: '',
     afterText: '',
+    riskText: 'Potential legacy SAS pipeline execution timeout during batch window',
+    mitigationText: 'Run pre-cutover parallel dry run on staging DB',
   });
 
   const handleOpenSubmitModal = () => {
@@ -1196,6 +1200,8 @@ export default function LivingDocumentPage() {
       description: '',
       beforeText: '',
       afterText: '',
+      riskText: '',
+      mitigationText: '',
     });
 
     setShowSubmitModal(true);
@@ -1868,12 +1874,22 @@ export default function LivingDocumentPage() {
   // Open Edit Modal for a Section
   const handleOpenEditModal = (sec: any) => {
     setEditingSection(sec);
-    const parsedSubSections = (sec.subSections || []).map((sub: any) => ({
+    let parsedSubSections = (sec.subSections || []).map((sub: any) => ({
       id: sub.id,
       heading: sub.heading || '',
       displayOrder: sub.displayOrder,
       blocksText: parseBlocksToText(sub.contentBlocks),
     }));
+    if (parsedSubSections.length === 0) {
+      parsedSubSections = [
+        {
+          id: `new-sub-${Date.now()}`,
+          heading: '',
+          displayOrder: 1,
+          blocksText: '',
+        },
+      ];
+    }
     setEditingSubSections(parsedSubSections);
   };
 
@@ -1884,9 +1900,18 @@ export default function LivingDocumentPage() {
       const lines: string[] = [];
       for (const b of blocks) {
         if (b.type === 'paragraph') {
-          lines.push(b.payload.text);
+          const txt = b.payload?.text || '';
+          if (
+            txt.includes('[No content written yet') ||
+            txt.includes('[Content to be confirmed by BA') ||
+            txt.includes('[Business rule content to be confirmed')
+          ) {
+            // Exclude placeholder string so textarea opens clean and empty
+          } else {
+            lines.push(txt);
+          }
         } else if (b.type === 'bullets') {
-          for (const item of b.payload.items || []) {
+          for (const item of b.payload?.items || []) {
             lines.push(`• ${item}`);
           }
         } else if (b.type === 'table') {
@@ -2063,6 +2088,15 @@ export default function LivingDocumentPage() {
           biImpactedChange: biImpactStr,
           beforeText: submitForm.beforeText,
           afterText: submitForm.afterText,
+          risks: submitForm.riskText
+            ? [
+                {
+                  risk: submitForm.riskText,
+                  impact: 'Medium',
+                  mitigation: submitForm.mitigationText || 'Pre-cutover staging validation dry-run',
+                },
+              ]
+            : [],
           userId: user?.id,
         }),
       });
@@ -2165,9 +2199,16 @@ export default function LivingDocumentPage() {
           const isPendingText = typeof block.payload?.text === 'string' && block.payload.text.startsWith('[') && block.payload.text.endsWith(']');
           if (isPendingText) {
             return (
-              <div key={idx} className="my-2 p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between">
+              <div
+                key={idx}
+                onClick={() => {
+                  const targetSec = sections.find((s) => s.id === sectionId || s.sectionNumber === sectionId);
+                  if (targetSec) handleOpenEditModal(targetSec);
+                }}
+                className="my-2 p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors"
+              >
                 <span>{block.payload.text}</span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-mono tracking-wider font-semibold">Not Yet Written</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-mono tracking-wider font-semibold">Not Yet Written (Click to Edit)</span>
               </div>
             );
           }
@@ -4138,9 +4179,12 @@ export default function LivingDocumentPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between">
+                      <div
+                        onClick={() => handleOpenEditModal(secData)}
+                        className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-xs text-slate-500 dark:text-slate-400 italic flex items-center justify-between cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors"
+                      >
                         <span>[No content written yet for this section]</span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-mono tracking-wider font-semibold">Not Yet Written</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-600 uppercase font-mono tracking-wider font-semibold">Not Yet Written (Click to Edit)</span>
                       </div>
                     )}
                   </div>
@@ -5014,6 +5058,32 @@ export default function LivingDocumentPage() {
                   formContext={submitForm}
                   placeholder="Describe corrected processing logic once implemented..."
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Operational / Systems Risk *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Potential batch execution timeout..."
+                    value={submitForm.riskText || ''}
+                    onChange={(e) => setSubmitForm({ ...submitForm, riskText: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Mitigation Strategy & Audit Control *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Parallel staging execution dry-run..."
+                    value={submitForm.mitigationText || ''}
+                    onChange={(e) => setSubmitForm({ ...submitForm, mitigationText: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
+                  />
+                </div>
               </div>
             </div>
 

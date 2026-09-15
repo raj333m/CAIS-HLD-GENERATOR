@@ -186,7 +186,11 @@ export async function saveCreatedChange(newChange: any): Promise<void> {
   console.log('[saveCreatedChange] Successfully saved active change record:', crRef, id);
 }
 
-export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = []): Promise<any[]> {
+export async function getMergedChanges(
+  prisma?: any,
+  prepopulatedList: any[] = [],
+  options?: { includeDrafts?: boolean }
+): Promise<any[]> {
   const mapById = new Map<string, any>();
 
   // 1. Fetch Cloud Store Created Changes FIRST (highest authority for live data)
@@ -273,6 +277,9 @@ export async function getMergedChanges(prisma?: any, prepopulatedList: any[] = [
   const activeList = enrichedList.filter((c: any) => {
     if (!c) return false;
     if (c.title === 'Draft CAIS Change Intake' && (!c.description || c.description.trim() === '')) {
+      return false;
+    }
+    if (!options?.includeDrafts && c.status === 'DRAFT') {
       return false;
     }
     return true;

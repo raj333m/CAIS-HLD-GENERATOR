@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const allChanges = await getMergedChanges(prisma, PREPOPULATED_CHANGES);
+    const allChanges = await getMergedChanges(prisma, PREPOPULATED_CHANGES, { includeDrafts: true });
     const cleanRef = id.replace(/^change-/, '').toUpperCase();
 
     const change = allChanges.find(
