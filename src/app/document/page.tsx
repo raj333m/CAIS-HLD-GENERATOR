@@ -2076,6 +2076,7 @@ export default function LivingDocumentPage() {
         body: JSON.stringify({
           title: submitForm.title,
           crReference: submitForm.crReference,
+          status: 'IN_REVIEW',
           projectId: activeProjectId || 'proj-alpha',
           businessDriver: productsStr,
           impactedProducts: productsStr,

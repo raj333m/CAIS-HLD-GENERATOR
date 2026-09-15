@@ -106,9 +106,13 @@ export async function saveCloudChangeState(
   const lowerRef = changeRef.toLowerCase();
 
   const currentStore = await fetchMasterStore(true);
+  const isBase001 = cleanRef.includes('BASE-001') || changeRef.includes('37eda0d7');
+  const isBase003 = cleanRef.includes('BASE-003') || changeRef.includes('f9411d38');
+  const baseDefaultStatus = isBase001 ? 'APPROVED' : isBase003 ? 'DRAFT' : 'IN_REVIEW';
+
   const existing = currentStore[changeRef] || currentStore[cleanRef] || currentStore[lowerRef] || {
     crReference: updates.crReference || cleanRef,
-    status: 'IN_REVIEW',
+    status: updates.status || baseDefaultStatus,
     versionNumber: 1,
     reviews: {},
     feedbackRoundsHistory: [],
@@ -295,15 +299,15 @@ export async function getMergedChanges(
     return true;
   });
 
-  // 4b. Normalize baseline seed items to CAIS-BASE-00X
+  // 4b. Normalize baseline seed items to CAIS-BASE-00X & enforce canonical baseline statuses
   const normalizedList = activeList.map((c: any) => {
     const titleLower = (c.title || '').toLowerCase();
-    if (titleLower.includes('consumer duty payment holiday')) {
-      return { ...c, crReference: 'CAIS-BASE-001' };
-    } else if (titleLower.includes('buy-now-pay-later')) {
-      return { ...c, crReference: 'CAIS-BASE-002' };
-    } else if (titleLower.includes('default balance reconciliation')) {
-      return { ...c, crReference: 'CAIS-BASE-003' };
+    if (titleLower.includes('consumer duty payment holiday') || c.crReference === 'CAIS-BASE-001') {
+      return { ...c, crReference: 'CAIS-BASE-001', status: 'APPROVED' };
+    } else if (titleLower.includes('buy-now-pay-later') || c.crReference === 'CAIS-BASE-002') {
+      return { ...c, crReference: 'CAIS-BASE-002', status: 'IN_REVIEW' };
+    } else if (titleLower.includes('default balance reconciliation') || c.crReference === 'CAIS-BASE-003') {
+      return { ...c, crReference: 'CAIS-BASE-003', status: 'DRAFT' };
     }
     return c;
   });

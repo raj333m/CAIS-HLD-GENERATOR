@@ -185,7 +185,7 @@ export async function POST(request: Request) {
     }
 
     const authorId = userId || defaultBa?.id || 'ba-demo-user-id';
-    const singleStatus = (body.status === 'APPROVED' ? 'IN_REVIEW' : body.status) || 'DRAFT';
+    const singleStatus = (body.status === 'APPROVED' ? 'IN_REVIEW' : body.status) || 'IN_REVIEW';
 
     try {
       const newChange: any = await prisma.caisChange.create({
