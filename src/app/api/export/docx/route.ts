@@ -102,7 +102,7 @@ function makeH3(text: string, pageBreakBefore = false) {
   });
 }
 
-function makeP(text: string, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.JUSTIFY) {
+function makeP(text: string, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.JUSTIFIED) {
   return new Paragraph({
     spacing: { before: 0, after: 120, line: 276 },
     alignment: align,
@@ -121,7 +121,7 @@ function makeBullet(text: string) {
   return new Paragraph({
     spacing: { before: 0, after: 60, line: 276 },
     indent: { left: 360 },
-    alignment: AlignmentType.JUSTIFY,
+    alignment: AlignmentType.JUSTIFIED,
     children: [
       new TextRun({
         text: '▸  ',
@@ -738,7 +738,7 @@ export async function GET() {
               children: [
                 new Paragraph({
                   border: { top: { color: COLOR_PRIMARY_RED, space: 4, style: BorderStyle.SINGLE, size: 6 } },
-                  alignment: AlignmentType.JUSTIFY,
+                  alignment: AlignmentType.JUSTIFIED,
                   children: [
                     new TextRun({
                       text: '© HSBC Operations, Services and Technology',
