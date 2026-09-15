@@ -227,7 +227,7 @@ export async function POST(request: Request) {
         id: crypto.randomUUID(),
         title,
         crReference,
-        status: body.status || 'DRAFT',
+        status: singleStatus,
         changeType: Array.isArray(changeType) ? changeType.join(', ') : changeType || 'Existing data item amended',
         businessDriver: businessDriver || 'CAIS Regulatory Requirement',
         description: description || '',
