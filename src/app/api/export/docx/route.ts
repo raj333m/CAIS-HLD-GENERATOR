@@ -520,36 +520,44 @@ export async function GET() {
     docChildren.push(new Paragraph({ text: '' }));
 
     // Diagram A Image
-    docChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 120, after: 120 },
-        children: [
-          new ImageRun({
-            data: diagramAPng,
-            type: 'png',
-            transformation: { width: 500, height: 575 },
-            altText: { title: 'Diagram A', description: 'Primary Process Flow', name: 'Diagram A' },
-          }),
-        ],
-      })
-    );
+    if (diagramAPng) {
+      docChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 120, after: 120 },
+          children: [
+            new ImageRun({
+              data: diagramAPng,
+              type: 'png',
+              transformation: { width: 500, height: 575 },
+              altText: { title: 'Diagram A', description: 'Primary Process Flow', name: 'Diagram A' },
+            }),
+          ],
+        })
+      );
+    } else {
+      docChildren.push(makeP('[Diagram A — Primary Process Flowchart]'));
+    }
 
     docChildren.push(makeH2('Operational Swimlane & Manual Intervention Map (Diagram B)', true));
-    docChildren.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 120, after: 120 },
-        children: [
-          new ImageRun({
-            data: diagramBPng,
-            type: 'png',
-            transformation: { width: 500, height: 583 },
-            altText: { title: 'Diagram B', description: 'Operational Swimlane Diagram', name: 'Diagram B' },
-          }),
-        ],
-      })
-    );
+    if (diagramBPng) {
+      docChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 120, after: 120 },
+          children: [
+            new ImageRun({
+              data: diagramBPng,
+              type: 'png',
+              transformation: { width: 500, height: 583 },
+              altText: { title: 'Diagram B', description: 'Operational Swimlane Diagram', name: 'Diagram B' },
+            }),
+          ],
+        })
+      );
+    } else {
+      docChildren.push(makeP('[Diagram B — Operational Swimlane & Manual Intervention Map]'));
+    }
 
     docChildren.push(makeH2('Detailed Process Steps (as per data flow)', true));
 

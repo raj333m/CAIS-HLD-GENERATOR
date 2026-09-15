@@ -280,14 +280,22 @@ export async function GET() {
       doc.moveDown(0.4);
 
       // Embed Diagram A
-      doc.image(diagramAPng, 40, doc.y, { width: 515 });
-      doc.y += 380;
+      if (diagramAPng) {
+        doc.image(diagramAPng, 40, doc.y, { width: 515 });
+        doc.y += 380;
+      } else {
+        doc.fontSize(10).font('Times-Bold').fillColor(primaryRed).text('[Diagram A — Primary Process Flowchart]');
+      }
       doc.moveDown(1);
 
       addPageBreak();
       renderSubHeading('Operational Swimlane & Manual Intervention Map (Diagram B)');
-      doc.image(diagramBPng, 40, doc.y, { width: 515 });
-      doc.y += 400;
+      if (diagramBPng) {
+        doc.image(diagramBPng, 40, doc.y, { width: 515 });
+        doc.y += 400;
+      } else {
+        doc.fontSize(10).font('Times-Bold').fillColor(primaryRed).text('[Diagram B — Operational Swimlane & Manual Intervention Map]');
+      }
       doc.moveDown(1);
 
       addPageBreak();

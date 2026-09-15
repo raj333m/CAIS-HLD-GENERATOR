@@ -222,14 +222,24 @@ export function generateDiagramBSvg(): string {
 }
 
 // Helper to convert SVG strings to PNG Buffers
-export function getDiagramAPngBuffer(): Buffer {
-  const svg = generateDiagramASvg();
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
-  return resvg.render().asPng();
+export function getDiagramAPngBuffer(): Buffer | null {
+  try {
+    const svg = generateDiagramASvg();
+    const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
+    return resvg.render().asPng();
+  } catch (e) {
+    console.error('[getDiagramAPngBuffer Error]:', e);
+    return null;
+  }
 }
 
-export function getDiagramBPngBuffer(): Buffer {
-  const svg = generateDiagramBSvg();
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
-  return resvg.render().asPng();
+export function getDiagramBPngBuffer(): Buffer | null {
+  try {
+    const svg = generateDiagramBSvg();
+    const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } });
+    return resvg.render().asPng();
+  } catch (e) {
+    console.error('[getDiagramBPngBuffer Error]:', e);
+    return null;
+  }
 }
