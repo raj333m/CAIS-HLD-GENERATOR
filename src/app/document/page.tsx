@@ -869,6 +869,11 @@ export default function LivingDocumentPage() {
         }),
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        setDraftSavedNotice(data.error || `Cannot approve section ${sectionNum}.`);
+        setTimeout(() => setDraftSavedNotice(null), 4000);
+        return;
+      }
       if (data.allReviews) {
         setSectionReviews(data.allReviews);
         setDraftSavedNotice(`Section ${sectionNum} approved by Reviewer!`);

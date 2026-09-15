@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 import { getCloudChangeState, saveCloudChangeState } from '@/lib/cloudStore';
+import { MASTER_SECTIONS } from '@/lib/sectionsData';
 
 const prisma = new PrismaClient();
 
@@ -377,6 +378,60 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'APPROVE') {
+      let isWritten = true;
+      try {
+        let sec = await prisma.documentSection.findFirst({
+          where: { sectionNumber: sectionNum },
+          include: { subSections: true },
+        });
+        if (!sec || !sec.subSections || sec.subSections.length === 0) {
+          sec = MASTER_SECTIONS.find((s: any) => s.sectionNumber === sectionNum);
+        }
+        if (sec && sec.subSections) {
+          for (const sub of sec.subSections) {
+            const raw = typeof sub.contentBlocks === 'string' ? sub.contentBlocks : JSON.stringify(sub.contentBlocks || []);
+            if (
+              raw.includes('[Content to be confirmed by BA') ||
+              raw.includes('[No content written yet') ||
+              raw.includes('[Business rule content to be confirmed') ||
+              raw.trim() === '[]' ||
+              raw.trim() === ''
+            ) {
+              isWritten = false;
+              break;
+            }
+          }
+        } else {
+          isWritten = false;
+        }
+      } catch (e) {
+        const sec = MASTER_SECTIONS.find((s: any) => s.sectionNumber === sectionNum);
+        if (sec && sec.subSections) {
+          for (const sub of sec.subSections) {
+            const raw = typeof sub.contentBlocks === 'string' ? sub.contentBlocks : JSON.stringify(sub.contentBlocks || []);
+            if (
+              raw.includes('[Content to be confirmed by BA') ||
+              raw.includes('[No content written yet') ||
+              raw.includes('[Business rule content to be confirmed') ||
+              raw.trim() === '[]' ||
+              raw.trim() === ''
+            ) {
+              isWritten = false;
+              break;
+            }
+          }
+        } else {
+          isWritten = false;
+        }
+      }
+
+      if (!isWritten) {
+        return NextResponse.json(
+          { error: 'Cannot approve unwritten section. Section content must be populated prior to Reviewer sign-off.', sectionNum },
+          { status: 400 }
+        );
+      }
+
       const approvalDateStr = new Date().toISOString().split('T')[0];
       reviews[sectionNum] = {
         sectionNum,
